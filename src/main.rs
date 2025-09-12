@@ -1,13 +1,15 @@
 mod lex;
-
-use lex::lexer::Lexer;
 use std::time::Instant;
 
 
 fn main() {
-    let source : &str = "these\nare\nsome\nlines\n";
+    let source : &str = "     \n          these\nare\nsome\nlines\n";
 
-    let lexer = Lexer::new(&source.chars().collect());
+    let mut lexer = lex::lexer::Lexer::new(source.chars().collect());
+    println!("Tokens: \n{:?}\n", lexer.lex().unwrap());
+
+
+    //let lexer = Lexer::new(&source.chars().collect());
     //record_time("tokenization", lexe);
 }
 

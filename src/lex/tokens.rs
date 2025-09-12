@@ -1,10 +1,12 @@
 #[derive(Debug, PartialEq, Clone)]
-pub enum Tokens {
+pub enum Token {
 
     //
-    Keyword,
-    Identifier,
-    Integer,
+    Keyword(Keyword),
+    Identifier(String),
+    Integer(i32),
+
+    EOF,
 
     // tecnical stuff
     L_brace,        // {
@@ -25,13 +27,20 @@ pub enum Tokens {
     And,            // &&
     Or,             // ||
     Equals,         // ==
+    Not_equal,    // !=
 
     Less,           // <
-    Less_equals,    // <=
+    Less_equal,    // <=
     Greater,        // >
-    Greater_equals, // >=
+    Greater_equal, // >=
 
     //unary operators
-    Negative,       // -
     Exclamation,    // !
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum Keyword {
+    Function,
+    Return,
+    Var,
 }
