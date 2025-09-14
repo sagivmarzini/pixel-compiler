@@ -9,10 +9,10 @@ pub enum Token {
     EOF,
 
     // tecnical stuff
-    L_brace,        // {
-    R_brace,        // }
-    L_paren,        // (
-    R_paren,        // )
+    LBrace,        // {
+    RBrace,        // }
+    LParen,        // (
+    RParen,        // )
     Semicolon,      // ;
 
     Assignment,     // =
@@ -27,12 +27,12 @@ pub enum Token {
     And,            // &&
     Or,             // ||
     Equals,         // ==
-    Not_equal,    // !=
+    NotEqual,    // !=
 
     Less,           // <
-    Less_equal,    // <=
+    LessEqual,    // <=
     Greater,        // >
-    Greater_equal, // >=
+    GreaterEqual, // >=
 
     //unary operators
     Exclamation,    // !
@@ -43,4 +43,12 @@ pub enum Keyword {
     Function,
     Return,
     Var,
+
+    If,
+    Else,
+    Match,
+    
+    While,
+    For,
+
 }

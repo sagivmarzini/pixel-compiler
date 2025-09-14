@@ -1,6 +1,7 @@
 use std::collections::VecDeque;
 
 use super::tokens::Token;
+use super::tokens::Keyword;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Lexer {
@@ -46,10 +47,10 @@ impl Lexer {
                 'a'..='z' | 'A'..='Z' | '_' => self.lex_identifier(current), // try to lex an identifier
 
                 ';' => Ok(Token::Semicolon),
-                '{' => Ok(Token::L_brace),
-                '}' => Ok(Token::R_brace),
-                '(' => Ok(Token::L_paren),
-                ')' => Ok(Token::R_brace),
+                '{' => Ok(Token::LBrace),
+                '}' => Ok(Token::RBrace),
+                '(' => Ok(Token::LParen),
+                ')' => Ok(Token::RParen),
 
                 _ => {
                     // if the result of the function returns Ok then return it
@@ -126,7 +127,21 @@ impl Lexer {
             }
         }
 
-        Ok(Token::Identifier(identifier))
+        match identifier.as_str() {
+            "function" => Ok(Token::Keyword(Keyword::Function)),
+            "return" => Ok(Token::Keyword(Keyword::Return)),
+            "var" => Ok(Token::Keyword(Keyword::Var)),
+            
+            "if" => Ok(Token::Keyword(Keyword::If)),
+            "else" => Ok(Token::Keyword(Keyword::Else)),
+            "match" => Ok(Token::Keyword(Keyword::Match)),
+
+            "While" => Ok(Token::Keyword(Keyword::While)),
+            "for" => Ok(Token::Keyword(Keyword::For)),
+            
+            _ => Ok(Token::Identifier(identifier))
+        }
+
     }
 
     fn lex_binary_operators(&mut self, current: char) -> Result<Token, String> {
@@ -171,7 +186,7 @@ impl Lexer {
             '<' => { match self.peek().unwrap() {
                 '=' => {
                     self.eat();
-                    Ok(Token::Less_equal)
+                    Ok(Token::LessEqual)
                 },
                 _ => Ok(Token::Less)
                 }
@@ -180,7 +195,7 @@ impl Lexer {
             '>' => { match self.peek().unwrap() {
                 '=' => {
                     self.eat();
-                    Ok(Token::Greater_equal)
+                    Ok(Token::GreaterEqual)
                 },
                 _ => Ok(Token::Greater)
                 }
@@ -189,7 +204,7 @@ impl Lexer {
             '!' => { match self.peek().unwrap() {
                 '=' => {
                     self.eat();
-                    Ok(Token::Not_equal)
+                    Ok(Token::NotEqual)
                 },
                 _ => Ok(Token::Exclamation)
                 }
