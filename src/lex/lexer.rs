@@ -1,216 +1,187 @@
 use std::collections::VecDeque;
 
-use super::tokens::Token;
-use super::tokens::Keyword;
+use super::token::{Keyword, Token};
 
-#[derive(Debug, PartialEq, Clone)]
 pub struct Lexer {
-    source : VecDeque<char>,
-    original_source_code : String,
-    line : i32,
-    index : i32,
+    source: VecDeque<char>,
+    line_index: i32,
+    inline_pos: i32,
 }
-
 
 impl Lexer {
     pub fn new(source_code: Vec<char>) -> Self {
         Lexer {
-             source: VecDeque::<char>::from_iter(source_code.clone()),
-             original_source_code: String::from_iter(source_code),
-             line: 1,
-             index: 0,
+            source: VecDeque::<char>::from_iter(source_code),
+            line_index: 1,
+            inline_pos: 0,
         }
     }
 
+    pub fn lex(&mut self) -> Result<VecDeque<Token>, String> {
+        let mut tokens = VecDeque::<Token>::new();
 
-
-    pub fn lex(&mut self) -> Result<Vec<Token>, String> {
-        
-        let mut tokens = Vec::<Token>::new();
-
-        // iterate over the whole source code until nothing is left
         while !self.source.is_empty() {
-
-            self.skip_whitespaces();
-
-            if self.source.is_empty() {break}; // if skip whitespaces skips over to the end
-
-            // get the next char from the source code
+            // TODO: Replace unwrap usage
             let current = self.eat().unwrap();
 
-            let curr_token = 
-                match current {
-                //try to lex every type of token
+            if let Some(token) = self.lex_single_char_token(current) {
+                tokens.push_back(token);
+                continue;
+            } else if let Some(token) = self.lex_two_char_token(current)? {
+                tokens.push_back(token);
+                continue;
+            }
 
-
-                '0'..='9' => self.lex_number(current), // try to lex a number
-                'a'..='z' | 'A'..='Z' | '_' => self.lex_identifier(current), // try to lex an identifier
-
-                ';' => Ok(Token::Semicolon),
-                '{' => Ok(Token::LBrace),
-                '}' => Ok(Token::RBrace),
-                '(' => Ok(Token::LParen),
-                ')' => Ok(Token::RParen),
-
+            let token = match current {
+                '\t' | ' ' => continue, // Skip whitespace
+                '\n' => {
+                    self.line_index += 1;
+                    self.inline_pos = 0;
+                    continue;
+                }
+                '0'..='9' => Token::Integer(self.read_number(current)?),
+                'a'..='z' => match self.read_string(current)?.as_str() {
+                    "function" => Token::Keyword(Keyword::Function),
+                    "return" => Token::Keyword(Keyword::Return),
+                    "var" => Token::Keyword(Keyword::Var),
+                    string => Token::Identifier(String::from(string)),
+                },
                 _ => {
-                    // if the result of the function returns Ok then return it
-                    if let Ok(token) = self.lex_binary_operators(current) {
-                        Ok(token) //try to lex binary operators (+, - ...)
-                    }
-                    else if let Ok(token) = self.lex_boolian_operators(current) {
-                        Ok(token) // try to lex bollian ops (<, ==)
-                    } 
-                    else { //if all else fails, throw an error
-                        Err(format!("Unexpected character: {}", current))
-                    }
-            }};
+                    return Err(self.generate_unexpected_char_error(current));
+                }
+            };
 
-            //push the selected token
-            tokens.push(curr_token.unwrap());
+            tokens.push_back(token);
         }
 
-        // add end of file to the token list, and return it
-        tokens.push(Token::EOF);
-        
+        tokens.push_back(Token::EOF);
+
         Ok(tokens)
     }
-
 
     fn peek(&self) -> Option<&char> {
         self.source.front()
     }
     fn eat(&mut self) -> Option<char> {
-        self.index += 1;
+        self.inline_pos += 1;
         self.source.pop_front()
     }
 
-    fn skip_whitespaces(&mut self) {
-        loop {
-            match self.peek() {
-                Some(' ') | Some('\t') => (),
-                Some('\n') => {
-                    self.index = 0;
-                    self.line += 1;
-                },
-                _ => break,
-            }
-            self.eat();
-        }
-    }
-
-    fn lex_number(&mut self, current: char) -> Result<Token, String> {
-        // add numbers until the next char isnt a number
-        let mut number = String::new();
-        number.push(current);
+    fn read_number(&mut self, first: char) -> Result<i32, String> {
+        let mut num_str = String::new();
+        num_str.push(first);
 
         while let Some(ch) = self.peek() {
             if ch.is_ascii_digit() {
-                number.push(self.eat().unwrap());
+                num_str.push(self.eat().unwrap());
             } else {
                 break;
             }
         }
 
-        Ok(Token::Integer(number.parse::<i32>().unwrap()))
+        Ok(num_str.parse::<i32>().unwrap())
     }
 
-    fn lex_identifier(&mut self, current: char) -> Result<Token, String> {
-        // add letters to the string until it is not a letter
-        let mut identifier = String::new();    
-        identifier.push(current);
+    fn read_string(&mut self, first: char) -> Result<String, String> {
+        let mut string = String::new();
+        string.push(first);
 
         while let Some(ch) = self.peek() {
             if ch.is_ascii_alphanumeric() || *ch == '_' {
-                identifier.push(self.eat().unwrap());
+                string.push(self.eat().unwrap());
             } else {
                 break;
             }
         }
 
-        match identifier.as_str() {
-            "function" => Ok(Token::Keyword(Keyword::Function)),
-            "return" => Ok(Token::Keyword(Keyword::Return)),
-            "var" => Ok(Token::Keyword(Keyword::Var)),
-            
-            "if" => Ok(Token::Keyword(Keyword::If)),
-            "else" => Ok(Token::Keyword(Keyword::Else)),
-            "match" => Ok(Token::Keyword(Keyword::Match)),
-
-            "While" => Ok(Token::Keyword(Keyword::While)),
-            "for" => Ok(Token::Keyword(Keyword::For)),
-            
-            _ => Ok(Token::Identifier(identifier))
-        }
-
+        Ok(string)
     }
 
-    fn lex_binary_operators(&mut self, current: char) -> Result<Token, String> {
-        match current {
-            '+' => Ok(Token::Plus),
-            '-' => Ok(Token::Minus),
-            '/' => Ok(Token::Slash),
-            '*' => Ok(Token::Star),
-            _ => Err(format!("not a binary op"))
+    fn match_next(&mut self, expected: char) -> bool {
+        if self.peek() == Some(&expected) {
+            self.eat();
+            true
+        } else {
+            false
         }
     }
 
-    fn lex_boolian_operators(&mut self, current: char) -> Result<Token, String> {
-        match current {
-            '&' => { match self.peek().unwrap() {
-                '&' => {
-                    self.eat();
-                    Ok(Token::And)
-                },
-                _ => Err(format!("not and"))
+    fn generate_unexpected_char_error(&self, ch: char) -> String {
+        format!(
+            "Unexpected character '{}' at line {}, column {}",
+            ch, self.line_index, self.inline_pos
+        )
+    }
+
+    fn lex_single_char_token(&mut self, current: char) -> Option<Token> {
+        let token = match current {
+            '{' => Token::LBrace,
+            '}' => Token::RBrace,
+            '(' => Token::LParen,
+            ')' => Token::RParen,
+            ';' => Token::Semicolon,
+            // TODO: Parse as negative number if there is a number right after minus sign
+            '-' => Token::Minus,
+            '+' => Token::Plus,
+            '*' => Token::Star,
+            '/' => Token::Slash,
+
+            _ => return None,
+        };
+
+        Some(token)
+    }
+
+    fn lex_two_char_token(&mut self, current: char) -> Result<Option<Token>, String> {
+        let token = match current {
+            '!' => {
+                if self.match_next('=') {
+                    Token::NotEqual
+                } else {
+                    Token::Exclamation
                 }
             }
 
-            '|' => { match self.peek().unwrap() {
-                '|' => {
-                    self.eat();
-                    Ok(Token::Or)
-                },
-                _ => Err(format!("not or"))
+            '&' => {
+                if self.match_next('&') {
+                    Token::And
+                } else {
+                    return Err(self.generate_unexpected_char_error(current));
                 }
             }
 
-            '=' => { match self.peek().unwrap() {
-                '=' => {
-                    self.eat();
-                    Ok(Token::Equals)
-                },
-                _ => Ok(Token::Assignment)
+            '|' => {
+                if self.match_next('|') {
+                    Token::Or
+                } else {
+                    return Err(self.generate_unexpected_char_error(current));
+                }
+            }
+            '=' => {
+                if self.match_next('=') {
+                    Token::Equal
+                } else {
+                    Token::Assignment
+                }
+            }
+            '>' => {
+                if self.match_next('=') {
+                    Token::GreaterEqual
+                } else {
+                    Token::Greater
+                }
+            }
+            '<' => {
+                if self.match_next('=') {
+                    Token::GreaterEqual
+                } else {
+                    Token::Less
                 }
             }
 
-            '<' => { match self.peek().unwrap() {
-                '=' => {
-                    self.eat();
-                    Ok(Token::LessEqual)
-                },
-                _ => Ok(Token::Less)
-                }
-            }
+            _ => return Ok(None),
+        };
 
-            '>' => { match self.peek().unwrap() {
-                '=' => {
-                    self.eat();
-                    Ok(Token::GreaterEqual)
-                },
-                _ => Ok(Token::Greater)
-                }
-            }
-
-            '!' => { match self.peek().unwrap() {
-                '=' => {
-                    self.eat();
-                    Ok(Token::NotEqual)
-                },
-                _ => Ok(Token::Exclamation)
-                }
-            }
-
-            _ => Err(format!("not logical op"))
-        }
+        Ok(Some(token))
     }
 }
