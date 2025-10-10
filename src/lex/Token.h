@@ -9,56 +9,40 @@
 enum class TokenType
 {
     Identifier,
-
-
-    //types
     Integer,
-    //float?
-
-
-    //symbols
-    Semicolon, //;
-    LBrace,    // {
-    RBrace,    // }
-
-    LParen,    // (
-    RParen,    // )
-
     EndOfFile,
 
+    Keyword_Function,
+    Keyword_Return,
+    Keyword_Var,
+    Keyword_If,
+    Keyword_Else,
+    Keyword_While,
+    Keyword_For,
 
-    //Keywords
-    Function,
-    Return,
-    Var,
+    Symbol_Semicolon,
+    Symbol_LBrace,
+    Symbol_RBrace,
+    Symbol_LParen,
+    Symbol_RParen,
 
-    If,
-    Else,
-    
-    While,
-    For,
+    Operator_Assignment,
 
+    Operator_Plus,
+    Operator_Minus,
+    Operator_Star,
+    Operator_Slash,
 
-    //operators
-    Assignment, // =
+    Operator_And,
+    Operator_Or,
+    Operator_Equal,
+    Operator_NotEqual,
+    Operator_Exclamation,
 
-    Plus,  // +
-    Minus, // -
-    Star,  // *
-    Slash, // /
-
-
-    //boolian ops
-    And,         // &&
-    Or,          // ||
-    Equal,       // ==
-    NotEqual,    // !=
-    Exclamation, // !
-
-    Less,         // <
-    LessEqual,    // <=
-    Greater,      // >
-    GreaterEqual, // >=
+    Operator_Less,
+    Operator_LessEqual,
+    Operator_Greater,
+    Operator_GreaterEqual,
 };
 
 struct Token
@@ -66,30 +50,4 @@ struct Token
     TokenType type;
     std::string value;
 };
-
-const std::unordered_map<std::string, TokenType> KEYWORDS = {
-    {"function", TokenType::Function},
-    {"return", TokenType::Return},
-    {"var", TokenType::Var},
-
-    {"if", TokenType::If},
-    {"else", TokenType::Else},
-
-    {"while", TokenType::While},
-    {"for", TokenType::For},
-};
-
-void setKeyword(Token* token)
-{
-    auto iterator = KEYWORDS.find(token->value);
-    if (iterator != KEYWORDS.end())
-    {
-        token->type = iterator->second;
-    }
-    else 
-    {
-        token->type = TokenType::Identifier;
-    }
-}
-
 #endif //TOKEN_H

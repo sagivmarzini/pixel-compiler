@@ -2,3 +2,7 @@
 *.o
 out
 *.asm
+/.idea
+/cmake-build-debug
+/.vscode
+/build
