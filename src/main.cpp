@@ -1,4 +1,5 @@
 #include "lex/Lexer.h"
+#include "Timer.h"
 
 #include <iostream>
 #include <fstream>
@@ -23,13 +24,23 @@ int main(int argc, char** argv)
         return -2;
     }
     
+    //extract all text to source
     std::ostringstream buffer;
     buffer << file.rdbuf();
     file.close();
+    auto source = buffer.str();
     
-    Lexer lexer = Lexer(buffer.str());
 
+    std::cout << "Starting Compilation\n\n";
+    Timer timer = Timer();
+
+
+
+    Lexer lexer = Lexer(source);
+
+    timer.start();
     auto tokens = lexer.lex();
+    timer.stop("Lexing");
     std::cout << lexer.printTokens(tokens);
     
     return 0;

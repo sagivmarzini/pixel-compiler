@@ -21,9 +21,10 @@ private:
         // important! must put the longer stuff first so
         // == will parse as '==' and not '=' + '=' (equals instead of 2 asignments)
         
-        // []- group stuff together: a-zA-Z is lowercase and upercase letters
+        // []- group stuff together: [a-zA-Z] is lowercase and upercase letters
         // + - one or more charecters: [a-z]+ will catch helo but not empty string
-        // \\- the literal charecter: [a-z \\[ \\] ] will include a-z and []
+        // \\- the literal charecter: [a-z \\[ \\] ] will include a-z and '[', ']'
+        // ^ - starts with: [1-3] will catch 321 from 54321, while [^1-3] will not
 
         {std::regex("^[a-zA-Z_][a-zA-Z0-9_]*"), TokenType::Identifier},
         { std::regex("^[0-9]+"), TokenType::Integer },
