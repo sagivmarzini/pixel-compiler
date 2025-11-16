@@ -19,5 +19,9 @@ Compiler::Compiler(std::string source) : source(source)
 
 void Compiler::compile()
 {
-    //compile here
+    Lexer lexer = Lexer(source);
+
+    auto tokens = lexer.lex();
+
+    std::cout << lexer.printTokens(tokens);
 }

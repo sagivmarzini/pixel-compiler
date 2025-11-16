@@ -1,6 +1,4 @@
-#include <iostream>
 #include <fstream>
-#include <sstream>
 
 #include "Compiler.h"
 
@@ -26,8 +24,6 @@ int main(int argc, char** argv)
     file.close();
 
     Compiler compiler = Compiler(buffer.str());
-
-    compiler.compile();
 
     return 0;
 }

@@ -7,4 +7,7 @@ add_executable(compiler_project
         src/main.cpp
         src/Compiler.cpp
         src/Compiler.cpp
-        src/Compiler.h)
+        src/Compiler.h
+        src/lex/Token.h
+        src/lex/Lexer.cpp
+        src/lex/Lexer.h)

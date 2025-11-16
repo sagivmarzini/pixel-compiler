@@ -1,0 +1,15 @@
+// This is a demo program covering all features
+
+var score: int = 0;
+const pi = 3.14159;
+var x = 50;
+var msg : String = "game over!";
+var isGameOver: bool = false;
+
+func add() -> Int {
+  if (isGameOver) {
+    print(msg);
+    return pi;
+  }
+  return a + b;
+}
