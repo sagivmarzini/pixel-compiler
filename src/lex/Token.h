@@ -73,13 +73,13 @@ struct Token
     friend std::ostream& operator<<(std::ostream& out, const Token& token)
     {
         if (token.type == TokenType::Identifier)
-            out << "Identifier(" << token.value.value() << ')';
+            out << "Identifier(" + token.value.value() + ')';
 
         else if (token.type == TokenType::LiteralNumber)
-            out << "Num(" << token.value.value() << ')';
+            out << "Num(" + token.value.value() + ')';
 
         else if (token.type == TokenType::LiteralString)
-            out << "String(" << token.value.value() << ')';
+            out << "String(" + token.value.value() + ')';
 
         else
             out << getTokenTypeString(token.type);

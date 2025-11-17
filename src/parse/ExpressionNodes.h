@@ -35,6 +35,17 @@ struct BoolLiteral : ExpressionNode
     bool _value;
 };
 
+struct StringLiteral : ExpressionNode
+{
+    StringLiteral(std::string& value) : _value(value) {}
+
+    void access(Visitor& visitor) override
+    {
+        visitor.visit(*this);
+    }
+
+    std::string _value;
+};
 
 struct Identifier : ExpressionNode
 {
