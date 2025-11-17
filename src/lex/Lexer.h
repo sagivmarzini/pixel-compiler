@@ -1,9 +1,9 @@
 #ifndef COMPILER_PROJECT_LEXER_H
 #define COMPILER_PROJECT_LEXER_H
 
-#include <regex>
-
 #include "Token.h"
+
+#include <regex>
 
 class Lexer
 {

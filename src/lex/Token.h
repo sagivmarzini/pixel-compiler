@@ -35,12 +35,13 @@ enum class TokenType
 
     SymbolSemicolon,
     SymbolColon,
+    SymbolComma,
     SymbolLBrace,
     SymbolRBrace,
     SymbolLParen,
     SymbolRParen,
     SymbolArrow,
-    SymbolTowDots,
+    SymbolDoublePeriod,
 
     OperatorAssignment,
 
@@ -115,12 +116,13 @@ const std::unordered_map<TokenType, std::string> TOKEN_TYPE_TO_NAME =
 
     { TokenType::SymbolSemicolon, "Semicolon" },
     { TokenType::SymbolColon, "Colon" },
+    {TokenType::SymbolComma, "Comma"},
     { TokenType::SymbolLBrace, "LBrace" },
     { TokenType::SymbolRBrace, "RBrace" },
     { TokenType::SymbolLParen, "LParen" },
     { TokenType::SymbolRParen, "RParen" },
     { TokenType::SymbolArrow, "Arrow" },
-    { TokenType::SymbolTowDots, "TowDots" },
+    { TokenType::SymbolDoublePeriod, "DoublePeriod"},
 
     { TokenType::OperatorAssignment, "Assignment" },
 

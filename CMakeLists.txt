@@ -8,6 +8,12 @@ add_executable(compiler_project
         src/Compiler.cpp
         src/Compiler.cpp
         src/Compiler.h
+
         src/lex/Token.h
         src/lex/Lexer.cpp
-        src/lex/Lexer.h)
+        src/lex/Lexer.h
+
+        src/parse/AstNode.h
+        src/parse/Visitor.h
+        src/parse/ExpressionNodes.h
+        src/parse/StatementNode.h)

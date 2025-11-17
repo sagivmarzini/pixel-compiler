@@ -23,12 +23,13 @@ const std::vector<std::pair<std::regex, TokenType>> rules = {
     // --- symbols ---
     { std::regex("^;"), TokenType::SymbolSemicolon },
     {std::regex("^:"), TokenType::SymbolColon},
+    {std::regex("^,"), TokenType::SymbolComma},
     { std::regex("^\\{"), TokenType::SymbolLBrace },
     { std::regex("^\\}"), TokenType::SymbolRBrace },
     { std::regex("^\\("), TokenType::SymbolLParen },
     { std::regex("^\\)"), TokenType::SymbolRParen },
     {std::regex("^->"), TokenType::SymbolArrow},
-    {std::regex("\\.\\."), TokenType::SymbolTowDots},
+    {std::regex("\\.\\."), TokenType::SymbolDoublePeriod},
 
     // opps (longer first)
     { std::regex("^=="), TokenType::OperatorEqual },

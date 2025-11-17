@@ -1,9 +1,10 @@
 #ifndef COMPILER_PROJECT_COMPILER_H
 #define COMPILER_PROJECT_COMPILER_H
 
+#include "lex/Lexer.h"
+
 #include <iostream>
 
-#include "lex/Lexer.h"
 
 class Compiler
 {
