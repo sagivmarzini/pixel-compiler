@@ -3,6 +3,7 @@
 
 #include <string>
 #include <optional>
+#include <unordered_map>
 
 enum class TokenType
 {
@@ -11,53 +12,53 @@ enum class TokenType
 
     Identifier,
 
-    Literal_Number,
-    Literal_True,
-    Literal_False,
-    Literal_String,
+    LiteralNumber,
+    LiteralTrue,
+    LiteralFalse,
+    LiteralString,
 
-    Type_Int,
-    Type_Float,
-    Type_Bool,
-    Type_Ptr,
-    Type_String,
-    Type_Color,
-    Type_Void,
+    TypeInt,
+    TypeFloat,
+    TypeBool,
+    TypePtr,
+    TypeString,
+    TypeColor,
+    TypeVoid,
 
-    Keyword_Func,
-    Keyword_Var,
-    Keyword_Return,
-    Keyword_If,
-    Keyword_Else,
-    Keyword_While,
-    Keyword_For,
+    KeywordFunc,
+    KeywordVar,
+    KeywordReturn,
+    KeywordIf,
+    KeywordElse,
+    KeywordWhile,
+    KeywordFor,
 
-    Symbol_Semicolon,
-    Symbol_Colon,
-    Symbol_LBrace,
-    Symbol_RBrace,
-    Symbol_LParen,
-    Symbol_RParen,
-    Symbol_Arrow,
-    Symbol_TowDots,
+    SymbolSemicolon,
+    SymbolColon,
+    SymbolLBrace,
+    SymbolRBrace,
+    SymbolLParen,
+    SymbolRParen,
+    SymbolArrow,
+    SymbolTowDots,
 
-    Operator_Assignment,
+    OperatorAssignment,
 
-    Operator_Plus,
-    Operator_Minus,
-    Operator_Star,
-    Operator_Slash,
+    OperatorPlus,
+    OperatorMinus,
+    OperatorStar,
+    OperatorSlash,
 
-    Operator_And,
-    Operator_Or,
-    Operator_Equal,
-    Operator_NotEqual,
-    Operator_Exclamation,
+    OperatorAnd,
+    OperatorOr,
+    OperatorEqual,
+    OperatorNotEqual,
+    OperatorExclamation,
 
-    Operator_Less,
-    Operator_LessEqual,
-    Operator_Greater,
-    Operator_GreaterEqual,
+    OperatorLess,
+    OperatorLessEqual,
+    OperatorGreater,
+    OperatorGreaterEqual,
 };
 
 const std::string& getTokenTypeString(TokenType type);
@@ -68,19 +69,20 @@ struct Token
     std::optional<std::string> value;
 
 
-    void print(std::ostream& out) const
+    friend std::ostream& operator<<(std::ostream& out, const Token& token)
     {
-        if (type == TokenType::Identifier)
-            out << "Identifier(" << value.value() << ')';
+        if (token.type == TokenType::Identifier)
+            out << "Identifier(" << token.value.value() << ')';
 
-        else if (type == TokenType::Literal_Number)
-            out << "Num(" << value.value() << ')';
+        else if (token.type == TokenType::LiteralNumber)
+            out << "Num(" << token.value.value() << ')';
 
-        else if (type == TokenType::Literal_String)
-            out << "String(" << value.value() << ')';
+        else if (token.type == TokenType::LiteralString)
+            out << "String(" << token.value.value() << ')';
 
         else
-            out << getTokenTypeString(type);
+            out << getTokenTypeString(token.type);
+        return out;
     }
 };
 
@@ -90,53 +92,53 @@ const std::unordered_map<TokenType, std::string> TOKEN_TYPE_TO_NAME =
 
     { TokenType::Identifier, "Identifier" },
 
-    { TokenType::Literal_Number, "Number" },
-    { TokenType::Literal_True, "True" },
-    { TokenType::Literal_False, "False" },
-    { TokenType::Literal_String, "String" },
+    { TokenType::LiteralNumber, "Number" },
+    { TokenType::LiteralTrue, "True" },
+    { TokenType::LiteralFalse, "False" },
+    { TokenType::LiteralString, "String" },
 
-    { TokenType::Type_Int, "Int" },
-    { TokenType::Type_Float, "_Float" },
-    { TokenType::Type_Bool, "Bool" },
-    { TokenType::Type_Ptr, "Ptr" },
-    { TokenType::Type_String, "_String" },
-    { TokenType::Type_Color, "Color" },
-    { TokenType::Type_Void, "Void" },
+    { TokenType::TypeInt, "Int" },
+    { TokenType::TypeFloat, "Float" },
+    { TokenType::TypeBool, "Bool" },
+    { TokenType::TypePtr, "Ptr" },
+    { TokenType::TypeString, "String" },
+    { TokenType::TypeColor, "Color" },
+    { TokenType::TypeVoid, "Void" },
 
-    { TokenType::Keyword_Func, "Func" },
-    { TokenType::Keyword_Var, "Var" },
-    { TokenType::Keyword_Return, "Return" },
-    { TokenType::Keyword_If, "If" },
-    { TokenType::Keyword_Else, "Else" },
-    { TokenType::Keyword_While, "While" },
-    { TokenType::Keyword_For, "For" },
+    { TokenType::KeywordFunc, "Func" },
+    { TokenType::KeywordVar, "Var" },
+    { TokenType::KeywordReturn, "Return" },
+    { TokenType::KeywordIf, "If" },
+    { TokenType::KeywordElse, "Else" },
+    { TokenType::KeywordWhile, "While" },
+    { TokenType::KeywordFor, "For" },
 
-    { TokenType::Symbol_Semicolon, "Semicolon" },
-    { TokenType::Symbol_Colon, "Colon" },
-    { TokenType::Symbol_LBrace, "LBrace" },
-    { TokenType::Symbol_RBrace, "RBrace" },
-    { TokenType::Symbol_LParen, "LParen" },
-    { TokenType::Symbol_RParen, "RParen" },
-    { TokenType::Symbol_Arrow, "Arrow" },
-    { TokenType::Symbol_TowDots, "TowDots" },
+    { TokenType::SymbolSemicolon, "Semicolon" },
+    { TokenType::SymbolColon, "Colon" },
+    { TokenType::SymbolLBrace, "LBrace" },
+    { TokenType::SymbolRBrace, "RBrace" },
+    { TokenType::SymbolLParen, "LParen" },
+    { TokenType::SymbolRParen, "RParen" },
+    { TokenType::SymbolArrow, "Arrow" },
+    { TokenType::SymbolTowDots, "TowDots" },
 
-    { TokenType::Operator_Assignment, "Assignment" },
+    { TokenType::OperatorAssignment, "Assignment" },
 
-    { TokenType::Operator_Plus, "Plus" },
-    { TokenType::Operator_Minus, "Minus" },
-    { TokenType::Operator_Star, "Star" },
-    { TokenType::Operator_Slash, "Slash" },
+    { TokenType::OperatorPlus, "Plus" },
+    { TokenType::OperatorMinus, "Minus" },
+    { TokenType::OperatorStar, "Star" },
+    { TokenType::OperatorSlash, "Slash" },
 
-    { TokenType::Operator_And, "And" },
-    { TokenType::Operator_Or, "Or" },
-    { TokenType::Operator_Equal, "Equal" },
-    { TokenType::Operator_NotEqual, "NotEqual" },
-    { TokenType::Operator_Exclamation, "Exclamation" },
+    { TokenType::OperatorAnd, "And" },
+    { TokenType::OperatorOr, "Or" },
+    { TokenType::OperatorEqual, "Equal" },
+    { TokenType::OperatorNotEqual, "NotEqual" },
+    { TokenType::OperatorExclamation, "Exclamation" },
 
-    { TokenType::Operator_Less, "Less" },
-    { TokenType::Operator_LessEqual, "LessEqual" },
-    { TokenType::Operator_Greater, "Greater" },
-    { TokenType::Operator_GreaterEqual, "GreaterEqual" }
+    { TokenType::OperatorLess, "Less" },
+    { TokenType::OperatorLessEqual, "LessEqual" },
+    { TokenType::OperatorGreater, "Greater" },
+    { TokenType::OperatorGreaterEqual, "GreaterEqual" }
 };
 
 inline const std::string& getTokenTypeString(TokenType type)

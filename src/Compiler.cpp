@@ -1,6 +1,6 @@
 #include "Compiler.h"
 
-Compiler::Compiler(std::string source) : source(source)
+Compiler::Compiler(std::string sourceCode) : _sourceCode(sourceCode)
 {
     std::cout << "Starting compilation\n";
 
@@ -19,9 +19,9 @@ Compiler::Compiler(std::string source) : source(source)
 
 void Compiler::compile()
 {
-    Lexer lexer = Lexer(source);
+    Lexer lexer(_sourceCode);
 
     auto tokens = lexer.lex();
 
-    std::cout << lexer.printTokens(tokens);
+    Lexer::printTokens(tokens);
 }

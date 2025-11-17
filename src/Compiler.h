@@ -14,7 +14,7 @@ public:
 
     //TODO: add error handler
 private:
-    std::string source;
+    std::string _sourceCode;
 };
 
 
