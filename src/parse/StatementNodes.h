@@ -1,35 +1,28 @@
 #ifndef COMPILER_PROJECT_STATEMENTNODE_H
 #define COMPILER_PROJECT_STATEMENTNODE_H
 
-#include "AstNode.h"
-#include "Visitor.h"
-
+#include "ExpressionNodes.h"
 #include <vector>
-#include <memory>
-
 
 struct BlockNode // stuff containing { } (function, if)
 {
+    void addNode(std::unique_ptr<AstNode> node);
 
-    void addNode(std::unique_ptr<AstNode> node)
-    {
-        body.push_back(std::move(node));
-    }
     std::vector<std::unique_ptr<AstNode>> body;
-
 };
 
+//root node- program
+struct Program
+{
+    BlockNode _body;
+};
 
 struct VariableDeclaration : StatementNode
 {
     VariableDeclaration(const std::string& name, std::unique_ptr<ExpressionNode> value, std::optional<BaseType> type) :
-        _variableName(name), _value(std::move(value)), _type(type)
-    {}
+        _variableName(name), _value(std::move(value)), _type(type) {}
 
-    void accept(Visitor& visitor) override
-    {
-        visitor.visit(*this);
-    }
+    void accept(Visitor& visitor) override;
 
     std::string _variableName;
     std::unique_ptr<ExpressionNode> _value;
@@ -40,13 +33,9 @@ struct VariableDeclaration : StatementNode
 struct Function : StatementNode
 {
     Function(std::string& name, BaseType returnType) :
-        _funcName(name), _returnType(returnType)
-    {}
+        _funcName(name), _returnType(returnType) {}
 
-    void accept(Visitor& visitor) override
-    {
-        visitor.visit(*this);
-    }
+    void accept(Visitor& visitor) override;
 
     std::string _funcName;
     BaseType _returnType;
@@ -55,25 +44,20 @@ struct Function : StatementNode
 
 struct Return : StatementNode
 {
-    Return(std::unique_ptr<ExpressionNode> value) : _value(std::move(value))
-    {}
+    Return(std::unique_ptr<ExpressionNode> value) :
+        _value(std::move(value)) {}
 
-    void accept(Visitor& visitor) override
-    {
-        visitor.visit(*this);
-    }
+    void accept(Visitor& visitor) override;
 
     std::unique_ptr<ExpressionNode> _value;
 };
 
 struct If : StatementNode
 {
-    If(std::unique_ptr<ExpressionNode> condition) : _condition(std::move(condition)) {}
+    If(std::unique_ptr<ExpressionNode> condition) :
+        _condition(std::move(condition)) {}
 
-    void accept(Visitor& visitor) override
-    {
-        visitor.visit(*this);
-    }
+    void accept(Visitor& visitor) override;
 
     std::unique_ptr<ExpressionNode> _condition;
     BlockNode _body;
@@ -81,15 +65,10 @@ struct If : StatementNode
 
 struct While : StatementNode
 {
-    While(std::unique_ptr<ExpressionNode> condition) : _condition(std::move(condition))
-    {
-        _block = BlockNode();
-    }
+    While(std::unique_ptr<ExpressionNode> condition) :
+        _condition(std::move(condition)) {}
 
-    void accept(Visitor& visitor) override
-    {
-        visitor.visit(*this);
-    }
+    void accept(Visitor& visitor) override;
 
     std::unique_ptr<ExpressionNode> _condition;
     BlockNode _body;
@@ -100,10 +79,7 @@ struct VariableAssignment : StatementNode
     VariableAssignment(std::unique_ptr<ExpressionNode> value, std::string& name) :
     _newValue(std::move(value)), _variableName(name) {}
 
-    void accept(Visitor& visitor) override
-    {
-        visitor.visit(*this);
-    }
+    void accept(Visitor& visitor) override;
 
     std::unique_ptr<ExpressionNode> _newValue;
     std::string _variableName;
@@ -114,10 +90,7 @@ struct FunctionCallStatement : StatementNode
 {
     FunctionCallStatement(std::string& name) : _funcName(name) {}
 
-    void accept(Visitor& visitor) override
-    {
-        visitor.visit(*this);
-    }
+    void accept(Visitor& visitor) override;
 
     std::string _funcName;
 };

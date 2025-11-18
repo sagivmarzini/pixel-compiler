@@ -16,4 +16,6 @@ add_executable(compiler_project
         src/parse/AstNode.h
         src/parse/Visitor.h
         src/parse/ExpressionNodes.h
-        src/parse/StatementNode.h)
+        src/parse/StatementNodes.h
+        src/parse/ExpressionNodes.cpp
+        src/parse/StatementNodes.cpp)
