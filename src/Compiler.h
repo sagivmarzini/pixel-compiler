@@ -3,8 +3,6 @@
 
 #include "lex/Lexer.h"
 
-#include <iostream>
-
 
 class Compiler
 {

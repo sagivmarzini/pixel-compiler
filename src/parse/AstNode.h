@@ -11,6 +11,8 @@ struct AstNode
 
     virtual void accept(Visitor&) = 0;
 };
+inline AstNode::~AstNode() {}
+
 
 struct ExpressionNode : AstNode {};
 

@@ -1,5 +1,7 @@
 #include "Compiler.h"
 
+#include <iostream>
+
 Compiler::Compiler(std::string sourceCode) : _sourceCode(sourceCode)
 {
     std::cout << "Starting compilation\n";
