@@ -14,7 +14,7 @@ struct NumberLiteral : ExpressionNode
 {
     NumberLiteral(double value) : _value(value) {}
 
-    void access(Visitor& visitor) override
+    void accept(Visitor& visitor) override
     {
         visitor.visit(*this);
     }
@@ -27,7 +27,7 @@ struct BoolLiteral : ExpressionNode
 {
     BoolLiteral(bool value) : _value(value) {}
 
-    void access(Visitor& visitor) override
+    void accept(Visitor& visitor) override
     {
         visitor.visit(*this);
     }
@@ -39,7 +39,7 @@ struct StringLiteral : ExpressionNode
 {
     StringLiteral(std::string& value) : _value(value) {}
 
-    void access(Visitor& visitor) override
+    void accept(Visitor& visitor) override
     {
         visitor.visit(*this);
     }
@@ -47,11 +47,11 @@ struct StringLiteral : ExpressionNode
     std::string _value;
 };
 
-struct Identifier : ExpressionNode
+struct Variable : ExpressionNode
 {
-    Identifier(std::string& name) : _name(name) {}
+    Variable(std::string& name) : _name(name) {}
 
-    void access(Visitor& visitor) override
+    void accept(Visitor& visitor) override
     {
         visitor.visit(*this);
     }
@@ -62,44 +62,44 @@ struct Identifier : ExpressionNode
 
 struct BinaryExpression : ExpressionNode
 {
-    BinaryExpression(std::unique_ptr<ExpressionNode> left, std::unique_ptr<ExpressionNode> right, TokenType operation) :
-        _left(std::move(left)), _right(std::move(right)), _operation(operation) {}
+    BinaryExpression(std::unique_ptr<ExpressionNode> left, std::unique_ptr<ExpressionNode> right, Operator operation) :
+        _left(std::move(left)), _right(std::move(right)), _operator(operation) {}
 
-    void access(Visitor& visitor) override
+    void accept(Visitor& visitor) override
     {
         visitor.visit(*this);
     }
 
     std::unique_ptr<ExpressionNode> _left;
     std::unique_ptr<ExpressionNode> _right;
-    TokenType _operation;
+    Operator _operator;
 };
 
 struct UnaryExpression : ExpressionNode
 {
-    UnaryExpression(std::unique_ptr<ExpressionNode> operand, TokenType operation) :
-        _operand(std::move(operand)), _operation(operation)
+    UnaryExpression(std::unique_ptr<ExpressionNode> operand, Operator operation) :
+        _operand(std::move(operand)), _operator(operation)
     {}
 
-    void access(Visitor& visitor) override
+    void accept(Visitor& visitor) override
     {
         visitor.visit(*this);
     }
 
     std::unique_ptr<ExpressionNode> _operand;
-    TokenType _operation;
+    Operator _operator;
 
 };
 
 struct FunctionCall : ExpressionNode
 {
-    FunctionCall(std::string& name) : _name(name) {}
+    FunctionCall(const std::string& callee) : _callee(callee) {}
 
-    void access(Visitor& visitor) override
+    void accept(Visitor& visitor) override
     {
         visitor.visit(*this);
     }
 
-    std::string _name;
+    std::string _callee;
 };
 #endif //COMPILER_PROJECT_EXPRESSIONNODES_H

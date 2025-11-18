@@ -12,10 +12,6 @@
 
 struct BlockNode // stuff containing { } (function, if)
 {
-    BlockNode()
-    {
-        body = std::vector<std::unique_ptr<AstNode>>();
-    }
 
     void addNode(std::unique_ptr<AstNode> node)
     {
@@ -28,38 +24,35 @@ struct BlockNode // stuff containing { } (function, if)
 
 struct VariableDeclaration : StatementNode
 {
-    VariableDeclaration(std::string& name, std::unique_ptr<ExpressionNode> value, std::optional<TokenType> type) :
-        _name(name), _value(std::move(value)), _type(type)
+    VariableDeclaration(const std::string& name, std::unique_ptr<ExpressionNode> value, std::optional<BaseType> type) :
+        _variableName(name), _value(std::move(value)), _type(type)
     {}
 
-    void access(Visitor& visitor) override
+    void accept(Visitor& visitor) override
     {
         visitor.visit(*this);
     }
 
-    std::string _name;
+    std::string _variableName;
     std::unique_ptr<ExpressionNode> _value;
-    std::optional<TokenType> _type; //this is optional bc var type can be inferred
+    std::optional<BaseType> _type; //this is optional bc var type can be inferred
 };
 
 
 struct Function : StatementNode
 {
-    //TODO: add params!
-    Function(std::string& name, TokenType returnType) :
-        _name(name), _returnType(returnType)
-    {
-        _block = BlockNode();
-    }
+    Function(std::string& name, BaseType returnType) :
+        _funcName(name), _returnType(returnType)
+    {}
 
-    void access(Visitor& visitor) override
+    void accept(Visitor& visitor) override
     {
         visitor.visit(*this);
     }
 
-    std::string _name;
-    TokenType _returnType;
-    BlockNode _block;
+    std::string _funcName;
+    BaseType _returnType;
+    BlockNode _body;
 };
 
 struct Return : StatementNode
@@ -67,7 +60,7 @@ struct Return : StatementNode
     Return(std::unique_ptr<ExpressionNode> value) : _value(std::move(value))
     {}
 
-    void access(Visitor& visitor) override
+    void accept(Visitor& visitor) override
     {
         visitor.visit(*this);
     }
@@ -77,18 +70,15 @@ struct Return : StatementNode
 
 struct If : StatementNode
 {
-    If(std::unique_ptr<ExpressionNode> condition) : _condition(std::move(condition))
-    {
-        _block = BlockNode();
-    }
+    If(std::unique_ptr<ExpressionNode> condition) : _condition(std::move(condition)) {}
 
-    void access(Visitor& visitor) override
+    void accept(Visitor& visitor) override
     {
         visitor.visit(*this);
     }
 
     std::unique_ptr<ExpressionNode> _condition;
-    BlockNode _block;
+    BlockNode _body;
 };
 
 /* TODO: add these statements:
@@ -104,13 +94,13 @@ struct While : StatementNode
         _block = BlockNode();
     }
 
-    void access(Visitor& visitor) override
+    void accept(Visitor& visitor) override
     {
         visitor.visit(*this);
     }
 
     std::unique_ptr<ExpressionNode> _condition;
-    BlockNode _block;
+    BlockNode _body;
 };
 
 struct VariableAssignment : StatementNode
@@ -120,7 +110,7 @@ struct VariableAssignment : StatementNode
     {
     }
 
-    void access(Visitor& visitor) override
+    void accept(Visitor& visitor) override
     {
         visitor.visit(*this);
     }
@@ -134,7 +124,7 @@ struct FunctionCallStatement : StatementNode
 {
     FunctionCallStatement(std::string& name) : _name(name) {}
 
-    void access(Visitor& visitor) override
+    void accept(Visitor& visitor) override
     {
         visitor.visit(*this);
     }

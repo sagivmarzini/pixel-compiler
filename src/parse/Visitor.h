@@ -5,7 +5,7 @@
 struct NumberLiteral;
 struct BoolLiteral;
 struct StringLiteral;
-struct Identifier;
+struct Variable;
 struct BinaryExpression;
 struct UnaryExpression;
 struct FunctionCall;
@@ -29,7 +29,7 @@ public:
     virtual void visit(NumberLiteral&) = 0;
     virtual void visit(BoolLiteral&) = 0;
     virtual void visit(StringLiteral&) = 0;
-    virtual void visit(Identifier&) = 0;
+    virtual void visit(Variable&) = 0;
     virtual void visit(BinaryExpression&) = 0;
     virtual void visit(UnaryExpression&) = 0;
     virtual void visit(FunctionCall&) = 0;
