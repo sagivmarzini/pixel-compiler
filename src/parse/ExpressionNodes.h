@@ -2,12 +2,10 @@
 #define COMPILER_PROJECT_EXPRESSIONNODES_H
 
 #include "AstNode.h"
-#include "../lex/Token.h"
-
 #include "Visitor.h"
+
 #include <string>
 #include <memory>
-
 
 
 struct NumberLiteral : ExpressionNode

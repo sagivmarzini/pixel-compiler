@@ -2,12 +2,10 @@
 #define COMPILER_PROJECT_STATEMENTNODE_H
 
 #include "AstNode.h"
-#include "../lex/Token.h"
+#include "Visitor.h"
 
 #include <vector>
 #include <memory>
-
-#include "Visitor.h"
 
 
 struct BlockNode // stuff containing { } (function, if)
@@ -81,12 +79,6 @@ struct If : StatementNode
     BlockNode _body;
 };
 
-/* TODO: add these statements:
- *  else
- *  else if
- *  for
- */
-
 struct While : StatementNode
 {
     While(std::unique_ptr<ExpressionNode> condition) : _condition(std::move(condition))
@@ -106,9 +98,7 @@ struct While : StatementNode
 struct VariableAssignment : StatementNode
 {
     VariableAssignment(std::unique_ptr<ExpressionNode> value, std::string& name) :
-    _newValue(std::move(value)), _name(name)
-    {
-    }
+    _newValue(std::move(value)), _variableName(name) {}
 
     void accept(Visitor& visitor) override
     {
@@ -116,20 +106,20 @@ struct VariableAssignment : StatementNode
     }
 
     std::unique_ptr<ExpressionNode> _newValue;
-    std::string _name;
+    std::string _variableName;
 };
 
 
 struct FunctionCallStatement : StatementNode
 {
-    FunctionCallStatement(std::string& name) : _name(name) {}
+    FunctionCallStatement(std::string& name) : _funcName(name) {}
 
     void accept(Visitor& visitor) override
     {
         visitor.visit(*this);
     }
 
-    std::string _name;
+    std::string _funcName;
 };
 
 #endif //COMPILER_PROJECT_STATEMENTNODE_H
