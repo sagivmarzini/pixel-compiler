@@ -19,12 +19,12 @@ struct Program
 
 struct VariableDeclaration : StatementNode
 {
-    VariableDeclaration(const std::string& name, std::unique_ptr<ExpressionNode> value, std::optional<BaseType> type) :
-        _variableName(name), _value(std::move(value)), _type(type) {}
+    VariableDeclaration(const Identifier& varName, std::unique_ptr<ExpressionNode> value, std::optional<BaseType> type) :
+        _variableName(varName), _value(std::move(value)), _type(type) {}
 
     void accept(Visitor& visitor) override;
 
-    std::string _variableName;
+    Identifier _variableName;
     std::unique_ptr<ExpressionNode> _value;
     std::optional<BaseType> _type; //this is optional bc var type can be inferred
 };
@@ -32,12 +32,12 @@ struct VariableDeclaration : StatementNode
 
 struct Function : StatementNode
 {
-    Function(std::string& name, BaseType returnType) :
-        _funcName(name), _returnType(returnType) {}
+    Function(const Identifier& funcName, BaseType returnType) :
+        _funcName(funcName), _returnType(returnType) {}
 
     void accept(Visitor& visitor) override;
 
-    std::string _funcName;
+    Identifier _funcName;
     BaseType _returnType;
     BlockNode _body;
 };
@@ -76,23 +76,23 @@ struct While : StatementNode
 
 struct VariableAssignment : StatementNode
 {
-    VariableAssignment(std::unique_ptr<ExpressionNode> value, std::string& name) :
-    _newValue(std::move(value)), _variableName(name) {}
+    VariableAssignment(const Identifier& varName, std::unique_ptr<ExpressionNode> value) :
+        _variableName(varName), _newValue(std::move(value)) {}
 
     void accept(Visitor& visitor) override;
 
     std::unique_ptr<ExpressionNode> _newValue;
-    std::string _variableName;
+    Identifier _variableName;
 };
 
 
 struct FunctionCallStatement : StatementNode
 {
-    FunctionCallStatement(std::string& name) : _funcName(name) {}
+    FunctionCallStatement(const Identifier funcName) : _funcName(funcName) {}
 
     void accept(Visitor& visitor) override;
 
-    std::string _funcName;
+    Identifier _funcName;
 };
 
 #endif //COMPILER_PROJECT_STATEMENTNODE_H

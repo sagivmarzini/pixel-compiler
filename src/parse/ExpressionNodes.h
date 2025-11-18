@@ -5,6 +5,13 @@
 
 #include <memory>
 
+struct Identifier
+{
+    Identifier(const std::string& name) : _name(name) {}
+
+    std::string _name;
+};
+
 struct NumberLiteral : ExpressionNode
 {
     NumberLiteral(double value) : _value(value) {}
@@ -35,11 +42,11 @@ struct StringLiteral : ExpressionNode
 
 struct Variable : ExpressionNode
 {
-    Variable(std::string& name) : _name(name) {}
+    Variable(const Identifier& varName) : _varName(varName) {}
 
     void accept(Visitor& visitor) override;
 
-    std::string _name;
+    Identifier _varName;
 };
 
 
@@ -70,10 +77,10 @@ struct UnaryExpression : ExpressionNode
 
 struct FunctionCall : ExpressionNode
 {
-    FunctionCall(const std::string& callee) : _callee(callee) {}
+    FunctionCall(const Identifier& callee) : _callee(callee) {}
 
     void accept(Visitor& visitor) override;
 
-    std::string _callee;
+    Identifier _callee;
 };
 #endif //COMPILER_PROJECT_EXPRESSIONNODES_H
