@@ -4,20 +4,57 @@
 #include "Token.h"
 
 #include <regex>
+#include <unordered_map>
 
-class Lexer
-{
+class Lexer {
 public:
-    Lexer(std::string& src);
+    explicit Lexer(const std::string &sourceCode);
+
     ~Lexer() = default;
 
-    std::vector<TokenType> lex() const;
-    static void printTokens(const std::vector<TokenType>& tokens);
+
+    [[nodiscard]] std::vector<Token> lex();
+
+    static void printTokens(const std::vector<Token> &tokens);
 
 private:
     std::string _sourceCode;
+    size_t _position;
 
-    TokenType getKeyword(const std::string& value) const;
+    [[nodiscard]] char peek() const;
+
+    char eat();
+
+    double parseNumber();
+
+    std::string parseIdentifierOrKeyword();
+
+    Token makeToken(TokenType type);
+};
+
+const std::unordered_map<std::string, Keyword> Keywords = {
+    {"func", Keyword::Func},
+    {"var", Keyword::Var},
+    {"return", Keyword::Return},
+    {"if", Keyword::If},
+    {"else", Keyword::Else},
+    {"while", Keyword::While},
+    {"for", Keyword::For}
+};
+
+const std::unordered_map<std::string, Type> Types = {
+    {"int", Type::Int},
+    {"float", Type::Float},
+    {"bool", Type::Bool},
+    {"ptr", Type::Ptr},
+    {"string", Type::String},
+    {"color", Type::Color},
+    {"void", Type::Void}
+};
+
+const std::unordered_map<std::string, BooleanLiteral> Booleans = {
+    {"true", BooleanLiteral{true}},
+    {"false", BooleanLiteral{false}}
 };
 
 

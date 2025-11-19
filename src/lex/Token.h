@@ -62,17 +62,27 @@ enum class Operator {
     GreaterEqual,
 };
 
+struct Semicolon {};
+struct Colon {};
+struct LBrace {};
+struct RBrace {};
+struct LParen {};
+struct RParen {};
+struct Arrow {};
+struct TowDots {};
+struct EndOfFile {};
+
 // Token variant
 using TokenType = std::variant<
     // simple tokens
-    struct Semicolon,
-    struct Colon,
-    struct LBrace,
-    struct RBrace,
-    struct LParen,
-    struct RParen,
-    struct Arrow,
-    struct TowDots,
+    Semicolon,
+    Colon,
+    LBrace,
+    RBrace,
+    LParen,
+    RParen,
+    Arrow,
+    TowDots,
 
     // payload tokens
     Keyword,
@@ -84,7 +94,14 @@ using TokenType = std::variant<
     Operator,
 
     // EOF
-    struct EndOfFile
+    EndOfFile
 >;
+
+struct Token {
+    TokenType type;
+    // std::string lexeme;
+    // int line = 0;
+    // int column = 0;};
+};
 
 #endif // COMPILER_PROJECT_TOKEN_H

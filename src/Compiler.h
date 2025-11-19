@@ -4,10 +4,9 @@
 #include "lex/Lexer.h"
 
 
-class Compiler
-{
+class Compiler {
 public:
-    Compiler(std::string source);
+    Compiler(const std::string &source);
 
     void compile();
 
