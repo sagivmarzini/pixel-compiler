@@ -11,8 +11,8 @@ public:
     Lexer(std::string& src);
     ~Lexer() = default;
 
-    std::vector<Token> lex() const;
-    static void printTokens(const std::vector<Token>& tokens);
+    std::vector<TokenType> lex() const;
+    static void printTokens(const std::vector<TokenType>& tokens);
 
 private:
     std::string _sourceCode;

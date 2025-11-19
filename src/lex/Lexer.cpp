@@ -76,9 +76,9 @@ const std::unordered_map<std::string, TokenType> KEYWORDS = {
 
 Lexer::Lexer(std::string& sourceCode) : _sourceCode(sourceCode) {}
 
-std::vector<Token> Lexer::lex() const
+std::vector<TokenType> Lexer::lex() const
 {
-    std::vector<Token> tokens;
+    std::vector<TokenType> tokens;
 
     std::smatch match;
     auto currentChar = _sourceCode.cbegin();
@@ -135,7 +135,7 @@ TokenType Lexer::getKeyword(const std::string& value) const
     return TokenType::Identifier;
 }
 
-void Lexer::printTokens(const std::vector<Token> &tokens)
+void Lexer::printTokens(const std::vector<TokenType> &tokens)
 {
     std::cout << "result:\n[";
     for (int i = 0; i < tokens.size(); i++)
