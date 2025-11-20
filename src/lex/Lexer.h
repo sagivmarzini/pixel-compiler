@@ -8,7 +8,7 @@
 
 class Lexer {
 public:
-    explicit Lexer(const std::string &sourceCode);
+    explicit Lexer(std::string sourceCode);
 
     ~Lexer() = default;
 
@@ -25,11 +25,11 @@ private:
 
     char eat();
 
-    double parseNumber();
+    Token parseNumber();
 
-    std::string parseIdentifierOrKeyword();
+    Token parseIdentifierOrKeyword();
 
-    Token makeToken(TokenType type);
+    static Token makeToken(const TokenType &type);
 };
 
 const std::unordered_map<std::string, Keyword> Keywords = {

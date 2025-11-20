@@ -3,7 +3,7 @@
 
 #include <string>
 #include <variant>
-#include <iostream>
+#include <unordered_map>
 
 enum class Keyword {
     Func,
@@ -43,34 +43,53 @@ struct BooleanLiteral {
 };
 
 enum class Operator {
-    Assignment,
+    Assignment, // =
 
-    Plus,
-    Minus,
-    Star,
-    Slash,
+    Plus, // +
+    PlusPlus, // ++
+    Minus, // -
+    MinusMinus, // --
+    Star, // *
+    Slash, // /
 
-    And,
-    Or,
-    Equal,
-    NotEqual,
-    Exclamation,
+    And, // &&
+    Or, // ||
+    Equal, // ==
+    NotEqual, // !=
+    Exclamation, // !
 
-    Less,
-    LessEqual,
-    Greater,
-    GreaterEqual,
+    Less, // <
+    LessEqual, // <=
+    Greater, // >
+    GreaterEqual, // >=
 };
 
-struct Semicolon {};
-struct Colon {};
-struct LBrace {};
-struct RBrace {};
-struct LParen {};
-struct RParen {};
-struct Arrow {};
-struct TowDots {};
-struct EndOfFile {};
+struct Semicolon {
+};
+
+struct Colon {
+};
+
+struct LBrace {
+};
+
+struct RBrace {
+};
+
+struct LParen {
+};
+
+struct RParen {
+};
+
+struct Arrow {
+};
+
+struct DoubleDot {
+};
+
+struct EndOfFile {
+};
 
 // Token variant
 using TokenType = std::variant<
@@ -82,20 +101,42 @@ using TokenType = std::variant<
     LParen,
     RParen,
     Arrow,
-    TowDots,
+    DoubleDot,
 
     // payload tokens
+    Operator,
+
     Keyword,
-    Identifier,
     IntegerLiteral,
     StringLiteral,
     BooleanLiteral,
     Type,
-    Operator,
+    Identifier,
 
     // EOF
     EndOfFile
 >;
+
+static const std::unordered_map<std::string, TokenType> keywords = {
+    {"func", Keyword::Func},
+    {"var", Keyword::Var},
+    {"return", Keyword::Return},
+    {"if", Keyword::If},
+    {"else", Keyword::Else},
+    {"while", Keyword::While},
+    {"for", Keyword::For},
+
+    {"int", Type::Int},
+    {"float", Type::Float},
+    {"bool", Type::Bool},
+    {"ptr", Type::Ptr},
+    {"string", Type::String},
+    {"color", Type::Color},
+    {"void", Type::Void},
+
+    {"true", BooleanLiteral{true}},
+    {"false", BooleanLiteral{false}},
+};
 
 struct Token {
     TokenType type;
