@@ -1,18 +1,17 @@
 #ifndef COMPILER_PROJECT_COMPILER_H
 #define COMPILER_PROJECT_COMPILER_H
 
-#include <iostream>
-
 #include "lex/Lexer.h"
 
-class Compiler
-{
+
+class Compiler {
 public:
-    Compiler(std::string source);
+    explicit Compiler(std::string source);
 
-    void compile();
+    void compile() const;
 
-    //TODO: add error handler
+    static void printTokens(const std::vector<Token> &tokens);
+
 private:
     std::string _sourceCode;
 };

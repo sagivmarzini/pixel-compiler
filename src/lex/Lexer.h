@@ -1,23 +1,58 @@
 #ifndef COMPILER_PROJECT_LEXER_H
 #define COMPILER_PROJECT_LEXER_H
 
-#include <regex>
-
 #include "Token.h"
 
-class Lexer
-{
+#include <regex>
+#include <unordered_map>
+
+class Lexer {
 public:
-    Lexer(std::string& src);
+    explicit Lexer(std::string sourceCode);
+
     ~Lexer() = default;
 
-    std::vector<Token> lex() const;
-    static void printTokens(const std::vector<Token>& tokens);
+
+    [[nodiscard]] std::vector<Token> lex();
 
 private:
     std::string _sourceCode;
+    size_t _position;
 
-    TokenType getKeyword(const std::string& value) const;
+    [[nodiscard]] char peek() const;
+
+    char eat();
+
+    Token parseNumber();
+
+    Token parseIdentifierOrKeyword();
+
+    static Token makeToken(const TokenType &type);
+};
+
+const std::unordered_map<std::string, Keyword> Keywords = {
+    {"func", Keyword::Func},
+    {"var", Keyword::Var},
+    {"return", Keyword::Return},
+    {"if", Keyword::If},
+    {"else", Keyword::Else},
+    {"while", Keyword::While},
+    {"for", Keyword::For}
+};
+
+const std::unordered_map<std::string, Type> Types = {
+    {"int", Type::Int},
+    {"float", Type::Float},
+    {"bool", Type::Bool},
+    {"ptr", Type::Ptr},
+    {"string", Type::String},
+    {"color", Type::Color},
+    {"void", Type::Void}
+};
+
+const std::unordered_map<std::string, BooleanLiteral> Booleans = {
+    {"true", BooleanLiteral{true}},
+    {"false", BooleanLiteral{false}}
 };
 
 
