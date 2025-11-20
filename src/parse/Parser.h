@@ -1,19 +1,18 @@
 #ifndef COMPILER_PROJECT_PARSER_H
 #define COMPILER_PROJECT_PARSER_H
 
-
-#include "ast.h"
+#include "AST/AstNode.h"
 #include "lex/Lexer.h"
 
 class Parser {
 public:
-    Parser(Lexer &lex);
+    Parser(std::vector<Token> tokens);
 
     std::unique_ptr<ASTNode> parse();
 
 private:
-    std::vector<Token> tokens;
-    size_t position;
+    std::vector<Token> _tokens;
+    size_t _position;
 
     Token &current();
 

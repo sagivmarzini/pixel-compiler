@@ -1,5 +1,6 @@
-//
-// Created by Sagiv Marzini on 20/11/2025.
-//
-
 #include "Parser.h"
+
+Parser::Parser(std::vector<Token> tokens)
+    : _tokens(std::move(tokens)), _position(0) {
+}
+
