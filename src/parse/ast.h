@@ -9,6 +9,8 @@
 #include <vector>
 #include <memory>
 
+enum class Operator;
+
 class ASTNode {
 public:
     virtual ~ASTNode() = default;
@@ -45,8 +47,6 @@ public:
 // Binary operations (e.g., a + b, x * y)
 class BinaryExpression : public Expression {
 public:
-    enum Operator { Add, Subtract, Multiply, Divide, Equal, NotEqual, LessThan, /* etc */ };
-
     std::unique_ptr<ASTNode> left;
     Operator op;
     std::unique_ptr<ASTNode> right;
@@ -161,10 +161,10 @@ public:
     std::string returnType;
     std::string name;
     std::vector<Parameter> parameters;
-    ASTNodePtr body; // Usually a Block
-    FunctionDeclaration(const std::string &ret, const std::string &n,
-                        std::vector<Parameter> params, ASTNodePtr b)
-        : returnType(ret), name(n), parameters(std::move(params)), body(std::move(b)) {
+    std::unique_ptr<ASTNode> body; // Usually a Block
+    FunctionDeclaration(std::string ret, std::string n,
+                        std::vector<Parameter> params, std::unique_ptr<ASTNode> b)
+        : returnType(std::move(ret)), name(std::move(n)), parameters(std::move(params)), body(std::move(b)) {
     }
 
     void accept(ASTVisitor &visitor) override;
@@ -173,14 +173,12 @@ public:
 // Program root
 class Program : public ASTNode {
 public:
-    std::vector<ASTNodePtr> declarations;
+    std::vector<std::unique_ptr<ASTNode> > declarations;
 
-    Program(std::vector<ASTNodePtr> decls) : declarations(std::move(decls)) {
+    Program(std::vector<std::unique_ptr<ASTNode> > decls) : declarations(std::move(decls)) {
     }
 
     void accept(ASTVisitor &visitor) override;
 };
-
-#endif // AST_H
 
 #endif //COMPILER_PROJECT_AST_H

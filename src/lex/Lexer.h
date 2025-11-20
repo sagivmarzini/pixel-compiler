@@ -1,19 +1,19 @@
 #ifndef COMPILER_PROJECT_LEXER_H
 #define COMPILER_PROJECT_LEXER_H
 
-#include "token.h"
+#include "Token.h"
 
 #include <regex>
 #include <unordered_map>
 
-class lexer {
+class Lexer {
 public:
-    explicit lexer(std::string sourceCode);
+    explicit Lexer(std::string sourceCode);
 
-    ~lexer() = default;
+    ~Lexer() = default;
 
 
-    [[nodiscard]] std::vector<token> lex();
+    [[nodiscard]] std::vector<Token> lex();
 
 private:
     std::string _sourceCode;
@@ -23,11 +23,11 @@ private:
 
     char eat();
 
-    token parseNumber();
+    Token parseNumber();
 
-    token parseIdentifierOrKeyword();
+    Token parseIdentifierOrKeyword();
 
-    static token makeToken(const TokenType &type);
+    static Token makeToken(const TokenType &type);
 };
 
 const std::unordered_map<std::string, Keyword> Keywords = {

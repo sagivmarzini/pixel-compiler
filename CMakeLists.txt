@@ -6,7 +6,14 @@ set(CMAKE_CXX_STANDARD 23)
 # Add your source files here
 add_executable(compiler-project
         src/main.cpp
-        src/Compiler.cpp
-        src/lex/Lexer.cpp
+        src/compiler.cpp
+        src/lex/lexer.cpp
         src/parse/AST.h
+        src/parse/parser.cpp
+        src/parse/parser.h
+)
+
+target_include_directories(compiler-project
+        PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
