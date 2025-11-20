@@ -147,6 +147,7 @@ struct Token {
     // int column = 0;};
 };
 
+
 inline std::string tokenToString(const Token &token) {
     return std::visit([]<typename U>(U &&arg) -> std::string {
         using T = std::decay_t<U>;
