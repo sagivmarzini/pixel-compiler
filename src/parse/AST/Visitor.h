@@ -14,7 +14,10 @@ struct WhileStatement;
 struct IfStatement;
 struct FunctionDeclaration;
 
+struct Program;
+
 class Visitor {
+public:
     virtual ~Visitor() = 0;
 
     virtual void visit(IntegerLiteralNode &node) = 0;
@@ -38,6 +41,8 @@ class Visitor {
     virtual void visit(IfStatement &node) = 0;
 
     virtual void visit(FunctionDeclaration &node) = 0;
+
+    virtual void visit(Program &program) = 0;
 };
 
 

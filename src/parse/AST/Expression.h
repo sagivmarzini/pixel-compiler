@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "AstNode.h"
-#include "lex/Token.h"
+#include "../../lex/Token.h"
 
 class Visitor;
 
@@ -16,8 +16,7 @@ public:
     ~Expression() override = default;
 };
 
-class IntegerLiteralNode : public Expression {
-public:
+struct IntegerLiteralNode : Expression {
     long value;
 
     IntegerLiteralNode(const long val) : value(val) {
@@ -26,8 +25,7 @@ public:
     void accept(Visitor &visitor) override;
 };
 
-class StringLiteralNode : public Expression {
-public:
+struct StringLiteralNode : Expression {
     std::string value;
 
     StringLiteralNode(std::string val) : value(std::move(val)) {
@@ -37,8 +35,7 @@ public:
 };
 
 // Binary operations (e.g., a + b, x * y)
-class BinaryExpression : public Expression {
-public:
+struct BinaryExpression : Expression {
     std::unique_ptr<Expression> left;
     Operator op;
     std::unique_ptr<Expression> right;
@@ -51,8 +48,7 @@ public:
 };
 
 // Variable reference
-class IdentifierNode : public Expression {
-public:
+struct IdentifierNode : Expression {
     std::string name;
 
     IdentifierNode(std::string n) : name(std::move(n)) {
@@ -62,8 +58,7 @@ public:
 };
 
 // Function call
-class CallExpression : public Expression {
-public:
+struct CallExpression : Expression {
     std::string functionName;
     std::vector<std::unique_ptr<Expression> > arguments;
 

@@ -1,12 +1,10 @@
 #ifndef COMPILER_PROJECT_STATEMENT_H
 #define COMPILER_PROJECT_STATEMENT_H
 
-#include "parse/AST/Expression.h"
+#include "Expression.h"
 
 #include <string>
 #include <memory>
-
-class Visitor;
 
 class Statement : public ASTNode {
 public:
@@ -14,8 +12,7 @@ public:
 };
 
 // Variable declaration: int x = 5;
-class VariableDeclaration : public Statement {
-public:
+struct VariableDeclaration : Statement {
     std::string type;
     std::string name;
     std::unique_ptr<Expression> initializer; // Can be null
@@ -29,8 +26,7 @@ public:
 
 
 // Return statement
-class ReturnStatement : public Statement {
-public:
+struct ReturnStatement : Statement {
     std::unique_ptr<Expression> value; // Can be null for void returns
 
     ReturnStatement(std::unique_ptr<Expression> val = nullptr) : value(std::move(val)) {
@@ -40,8 +36,7 @@ public:
 };
 
 // Block (compound statement)
-class Block : public Statement {
-public:
+struct Block : Statement {
     std::vector<std::unique_ptr<Statement> > statements;
 
     Block(std::vector<std::unique_ptr<Statement> > stmts) : statements(std::move(stmts)) {
@@ -51,8 +46,7 @@ public:
 };
 
 // While loop
-class WhileStatement : public Statement {
-public:
+struct WhileStatement : Statement {
     std::unique_ptr<Expression> condition;
     std::unique_ptr<Block> body;
 
@@ -64,8 +58,7 @@ public:
 };
 
 // If statement
-class IfStatement : public Statement {
-public:
+struct IfStatement : Statement {
     std::unique_ptr<Expression> condition;
     std::unique_ptr<Block> thenBranch;
     std::unique_ptr<Block> elseBranch; // Can be null
@@ -79,8 +72,7 @@ public:
 };
 
 // Function declaration
-class FunctionDeclaration : public ASTNode {
-public:
+struct FunctionDeclaration : ASTNode {
     struct Parameter {
         std::string type;
         std::string name;
@@ -99,8 +91,7 @@ public:
 };
 
 // Program root
-class Program : public ASTNode {
-public:
+struct Program : ASTNode {
     std::vector<std::unique_ptr<ASTNode> > declarations;
 
     Program(std::vector<std::unique_ptr<ASTNode> > decls) : declarations(std::move(decls)) {

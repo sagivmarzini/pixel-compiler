@@ -6,10 +6,10 @@ set(CMAKE_CXX_STANDARD 23)
 # Add your source files here
 add_executable(compiler-project
         src/main.cpp
-        src/compiler.cpp
-        src/lex/lexer.cpp
-        src/parse/parser.cpp
-        src/parse/parser.h
+        src/Compiler.cpp
+        src/lex/Lexer.cpp
+        src/parse/Parser.cpp
+        src/parse/Parser.h
         src/parse/AST/Expression.h
         src/parse/AST/AstNode.h
         src/parse/AST/Statement.h
