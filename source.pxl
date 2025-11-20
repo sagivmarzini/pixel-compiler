@@ -1,15 +1,43 @@
-// This is a demo program covering all features
+func main() -> int {
+    var x: int = 42;
+    var y: float = 3;
+    var flag: bool = true;
+    var name: string = hello;
+    var empty: void;
+    var data: ptr;
+    var rgb: color;
+    
+    x = x + 1;
+    y = y - 2;
+    x = x * 3;
+    y = y / 4;
+    
+    x++;
+    y--;
+    ++x;
+    --y;
+    
+    if (x == 42 && y != 0) {
+        return 1;
+    } else {
+        return 0;
+    }
+    
+    while (x > 10 && x < 100) {
+        x = x - 1;
+    }
+    
+    for (x = 0..10) {
+        y = y + 1;
+    }
+    
+    if (flag || !flag) {
+        if (x >= 5 && y <= 20) {
+            var result: int = x + y;
+        }
+    }
+}
 
-var score: int = 0;
-const pi = 3.14159;
-var x = 50;
-var msg : String = "game over!";
-var isGameOver: bool = false;
-
-func add() -> Int {
-  if (isGameOver) {
-    print(msg);
-    return pi;
-  }
-  return a + b;
+func helper(a: int) -> bool {
+    return a > b;
 }

@@ -15,8 +15,6 @@ public:
 
     [[nodiscard]] std::vector<Token> lex();
 
-    static void printTokens(const std::vector<Token> &tokens);
-
 private:
     std::string _sourceCode;
     size_t _position;

@@ -50,8 +50,8 @@ std::vector<Token> Lexer::lex() {
                         eat();
                         token = makeToken(DoubleDot{});
                     } else {
-                        // TODO: Handle single dot error
-                        throw std::runtime_error("Invalid char " + current);
+                        // TODO: Replace with dedicated lexer exception class
+                        throw std::runtime_error(std::format("Invalid token: {}", current));
                     }
                     break;
                 case '-':
@@ -116,8 +116,8 @@ std::vector<Token> Lexer::lex() {
                         eat();
                         token = makeToken(Operator::And);
                     } else {
-                        // TODO: Handle single & error
-                        throw std::runtime_error("Invalid char " + current);
+                        // TODO: Replace with dedicated lexer exception class
+                        throw std::runtime_error(std::format("Invalid token: {}", current));
                     }
                     break;
                 case '|':
@@ -125,13 +125,13 @@ std::vector<Token> Lexer::lex() {
                         eat();
                         token = makeToken(Operator::Or);
                     } else {
-                        // TODO: Handle single | error
-                        throw std::runtime_error("Invalid char " + current);
+                        // TODO: Replace with dedicated lexer exception class
+                        throw std::runtime_error(std::format("Invalid token: {}", current));
                     }
                     break;
                 default:
-                    // TODO: Unknown character - error
-                    throw std::runtime_error("Invalid char " + current);
+                    // TODO: Replace with dedicated lexer exception class
+                    throw std::runtime_error(std::format("Invalid token: {}", current));
             }
         }
 

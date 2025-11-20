@@ -1,27 +1,42 @@
 #include "Compiler.h"
-
 #include <fstream>
+#include <sstream>
 #include <iostream>
-
+#include <cstdlib>
 
 int main(int argc, char **argv) {
-    if (argc != 2)
-        throw std::runtime_error("Please add input file as an argument!");
+    try {
+        if (argc != 2) {
+            std::cerr << "Usage: " << argv[0] << " <input_file>\n";
+            return EXIT_FAILURE;
+        }
 
-    // read input file
-    std::fstream file(argv[1]);
-    if (!file.is_open())
-        throw std::runtime_error("Failed to open file " + std::string(argv[1]) + "!\n");
+        const std::string inputPath = argv[1];
 
-    // extract all text to source
-    // std::ostringstream buffer;
-    // buffer << file.rdbuf();
-    // file.close();
-    std::string sourceCode;
-    std::cout << "Enter your code: ";
-    std::cin >> sourceCode;
+        // Open and validate input file
+        std::ifstream file(inputPath);
+        if (!file.is_open()) {
+            std::cerr << "Error: Failed to open file '" << inputPath << "'\n";
+            return EXIT_FAILURE;
+        }
 
-    Compiler compiler(sourceCode);
+        // Read source code from file
+        std::ostringstream buffer;
+        buffer << file.rdbuf();
+        file.close();
 
-    return 0;
+        const std::string sourceCode = buffer.str();
+
+        // Initialize and run compiler
+        Compiler compiler(sourceCode);
+        compiler.compile();
+
+        return EXIT_SUCCESS;
+    } catch (const std::exception &e) {
+        std::cerr << "Fatal error: " << e.what() << '\n';
+        return EXIT_FAILURE;
+    } catch (...) {
+        std::cerr << "Fatal error: Unknown exception occurred\n";
+        return EXIT_FAILURE;
+    }
 }
