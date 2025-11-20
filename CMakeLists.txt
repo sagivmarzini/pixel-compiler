@@ -8,4 +8,5 @@ add_executable(compiler-project
         src/main.cpp
         src/Compiler.cpp
         src/lex/Lexer.cpp
+        src/parse/AST.h
 )

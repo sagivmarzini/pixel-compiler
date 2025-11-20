@@ -140,14 +140,14 @@ static const std::unordered_map<std::string, TokenType> keywords = {
 };
 
 
-struct Token {
+struct token {
     TokenType type;
     // std::string lexeme;
     // int line = 0;
     // int column = 0;};
 };
 
-inline std::string tokenToString(const Token &token) {
+inline std::string tokenToString(const token &token) {
     return std::visit([]<typename U>(U &&arg) -> std::string {
         using T = std::decay_t<U>;
 
@@ -213,7 +213,7 @@ inline std::string tokenToString(const Token &token) {
     }, token.type);
 }
 
-inline std::ostream &operator<<(std::ostream &os, const Token &token) {
+inline std::ostream &operator<<(std::ostream &os, const token &token) {
     os << tokenToString(token);
     return os;
 }

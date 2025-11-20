@@ -1,4 +1,4 @@
-#include "Compiler.h"
+#include "compiler.h"
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
         const std::string sourceCode = buffer.str();
 
         // Initialize and run compiler
-        Compiler compiler(sourceCode);
+        compiler compiler(sourceCode);
         compiler.compile();
 
         return EXIT_SUCCESS;

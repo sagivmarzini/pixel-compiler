@@ -1,14 +1,14 @@
-#include "Lexer.h"
+#include "lexer.h"
 
 #include <utility>
 #include <vector>
 
-Lexer::Lexer(std::string sourceCode)
+lexer::lexer(std::string sourceCode)
     : _sourceCode(std::move(sourceCode)), _position(0) {
 }
 
-std::vector<Token> Lexer::lex() {
-    std::vector<Token> tokens;
+std::vector<token> lexer::lex() {
+    std::vector<token> tokens;
 
     while (_position < _sourceCode.length()) {
         const auto current = peek();
@@ -18,7 +18,7 @@ std::vector<Token> Lexer::lex() {
             continue;
         }
 
-        Token token;
+        token token;
 
         if (isdigit(current)) {
             token = parseNumber();
@@ -142,15 +142,15 @@ std::vector<Token> Lexer::lex() {
     return tokens;
 }
 
-char Lexer::peek() const {
+char lexer::peek() const {
     return _sourceCode[_position];
 }
 
-char Lexer::eat() {
+char lexer::eat() {
     return _sourceCode[_position++];
 }
 
-Token Lexer::parseNumber() {
+token lexer::parseNumber() {
     std::string numberStr;
 
     while (isdigit(peek())) {
@@ -162,7 +162,7 @@ Token Lexer::parseNumber() {
     return makeToken(IntegerLiteral{std::stol(numberStr)});
 }
 
-Token Lexer::parseIdentifierOrKeyword() {
+token lexer::parseIdentifierOrKeyword() {
     std::string text;
 
     // Identifiers and keywords must start with a letter
@@ -182,6 +182,6 @@ Token Lexer::parseIdentifierOrKeyword() {
     return makeToken(Identifier{text});
 }
 
-Token Lexer::makeToken(const TokenType &type) {
-    return Token{type};
+token lexer::makeToken(const TokenType &type) {
+    return token{type};
 }

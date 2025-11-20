@@ -1,9 +1,9 @@
-#include "Compiler.h"
+#include "compiler.h"
 
 #include <iostream>
 #include <utility>
 
-Compiler::Compiler(std::string sourceCode) : _sourceCode(std::move(sourceCode)) {
+compiler::compiler(std::string sourceCode) : _sourceCode(std::move(sourceCode)) {
     std::cout << "Starting compilation\n";
 
     try {
@@ -15,14 +15,14 @@ Compiler::Compiler(std::string sourceCode) : _sourceCode(std::move(sourceCode)) 
     }
 }
 
-void Compiler::compile() const {
-    Lexer lexer(_sourceCode);
+void compiler::compile() const {
+    lexer lexer(_sourceCode);
 
     const auto tokens = lexer.lex();
     printTokens(tokens);
 }
 
-void Compiler::printTokens(const std::vector<Token> &tokens) {
+void compiler::printTokens(const std::vector<token> &tokens) {
     for (const auto &token: tokens) {
         std::cout << token << '\n';
     }
