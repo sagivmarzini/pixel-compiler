@@ -150,6 +150,7 @@ struct Token {
     std::string lexeme;
 };
 
+
 inline std::string tokenToString(const Token &token) {
     return std::visit([]<typename U>(U &&arg) -> std::string {
         using T = std::decay_t<U>;
