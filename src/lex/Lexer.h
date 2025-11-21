@@ -28,8 +28,6 @@ private:
     Token parseNumber();
 
     Token parseIdentifierOrKeyword();
-
-    static Token makeToken(const TokenType &type, int line, int col, const std::string &lexeme);
 };
 
 const std::unordered_map<std::string, Keyword> Keywords = {

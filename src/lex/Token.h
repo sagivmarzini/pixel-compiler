@@ -148,8 +148,13 @@ struct Token {
     TokenType type;
     TokenLocation location;
     std::string lexeme;
-};
 
+    Token() = default;
+
+    Token(const TokenType &type, int line, int col, const std::string &lexeme)
+        : type(type), location(line, col), lexeme(lexeme) {
+    }
+};
 
 inline std::string tokenToString(const Token &token) {
     return std::visit([]<typename U>(U &&arg) -> std::string {
