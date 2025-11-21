@@ -3,11 +3,14 @@ project(compiler-project)
 
 set(CMAKE_CXX_STANDARD 23)
 
-# Add your source files here
 add_executable(compiler-project
         src/main.cpp
         src/Compiler.cpp
         src/lex/Lexer.cpp
+        src/CompilerException.cpp
+        src/CompilerException.h
+        src/lex/LexerException.cpp
+        src/lex/LexerException.h
         src/parse/Parser.cpp
         src/parse/Parser.h
         src/parse/AST/Expression.h

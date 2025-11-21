@@ -1,25 +1,35 @@
 #include "Compiler.h"
 
+#include <fstream>
 #include <iostream>
+#include <sstream>
 #include <utility>
 
-Compiler::Compiler(std::string sourceCode) : _sourceCode(std::move(sourceCode)) {
-    std::cout << "Starting compilation\n";
+#include "lex/LexerException.h"
 
-    try {
-        compile();
-    } catch (std::exception &e) {
-        std::cout << e.what() << std::endl;
-    } catch (...) {
-        std::cout << "Uncaught exception. Somthing went wrong bro. Good luck, i believe in you.\n";
+Compiler::Compiler(std::string sourceFile) : _sourceFile(std::move(sourceFile)) {
+    std::ifstream file(_sourceFile);
+    if (!file.is_open()) {
+        throw std::invalid_argument(std::format("Failed to open file: '{}'", sourceFile));
     }
+
+    std::ostringstream buffer;
+    buffer << file.rdbuf();
+
+    _sourceCode = buffer.str();
 }
 
 void Compiler::compile() const {
     Lexer lexer(_sourceCode);
 
-    const auto tokens = lexer.lex();
-    printTokens(tokens);
+    try {
+        const auto tokens = lexer.lex();
+        printTokens(tokens);
+    } catch (const LexerException &e) {
+        const auto [line, col] = e.location();
+
+        throw CompilerException(std::format("{}:{}:{}: {}", _sourceFile, line, col, e.what()));
+    }
 }
 
 void Compiler::printTokens(const std::vector<Token> &tokens) {

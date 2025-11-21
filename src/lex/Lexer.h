@@ -18,6 +18,8 @@ public:
 private:
     std::string _sourceCode;
     size_t _position;
+    int _line;
+    int _col;
 
     [[nodiscard]] char peek() const;
 
@@ -26,8 +28,6 @@ private:
     Token parseNumber();
 
     Token parseIdentifierOrKeyword();
-
-    static Token makeToken(const TokenType &type);
 };
 
 const std::unordered_map<std::string, Keyword> Keywords = {

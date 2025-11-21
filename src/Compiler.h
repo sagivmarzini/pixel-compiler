@@ -6,13 +6,14 @@
 
 class Compiler {
 public:
-    explicit Compiler(std::string source);
+    explicit Compiler(std::string sourceFile);
 
     void compile() const;
 
     static void printTokens(const std::vector<Token> &tokens);
 
 private:
+    std::string _sourceFile;
     std::string _sourceCode;
 };
 
