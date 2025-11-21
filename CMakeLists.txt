@@ -8,4 +8,13 @@ add_executable(compiler-project
         src/main.cpp
         src/Compiler.cpp
         src/lex/Lexer.cpp
+        src/CompilerException.cpp
+        src/CompilerException.h
+        src/lex/LexerException.cpp
+        src/lex/LexerException.h
+)
+
+target_include_directories(compiler-project
+        PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
 )

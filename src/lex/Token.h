@@ -32,7 +32,7 @@ struct Identifier {
 };
 
 struct IntegerLiteral {
-    long value;
+    int value;
 };
 
 struct StringLiteral {
@@ -139,12 +139,15 @@ static const std::unordered_map<std::string, TokenType> keywords = {
     {"false", BooleanLiteral{false}},
 };
 
+struct TokenLocation {
+    int line;
+    int col;
+};
 
 struct Token {
     TokenType type;
-    // std::string lexeme;
-    // int line = 0;
-    // int column = 0;};
+    TokenLocation location;
+    std::string lexeme;
 };
 
 inline std::string tokenToString(const Token &token) {

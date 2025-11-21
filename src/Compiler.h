@@ -6,7 +6,8 @@
 
 class Compiler {
 public:
-    explicit Compiler(std::string source);
+    // TODO: Change it so the compiler takes a file name.
+    explicit Compiler(std::string sourceCode);
 
     void compile() const;
 

@@ -3,8 +3,10 @@
 #include <utility>
 #include <vector>
 
+#include "LexerException.h"
+
 Lexer::Lexer(std::string sourceCode)
-    : _sourceCode(std::move(sourceCode)), _position(0) {
+    : _sourceCode(std::move(sourceCode)), _position(0), _line(1), _col(1) {
 }
 
 std::vector<Token> Lexer::lex() {
@@ -14,6 +16,11 @@ std::vector<Token> Lexer::lex() {
         const auto current = peek();
 
         if (isspace(current)) {
+            if (current == '\n') {
+                _line++;
+                _col = 0;
+            }
+
             eat();
             continue;
         }
@@ -28,130 +35,129 @@ std::vector<Token> Lexer::lex() {
             eat(); // Consume the character
             switch (current) {
                 case ';':
-                    token = makeToken(Semicolon{});
+                    token = makeToken(Semicolon{}, _line, _col - 1, std::string(1, current));
                     break;
                 case ':':
-                    token = makeToken(Colon{});
+                    token = makeToken(Colon{}, _line, _col - 1, std::string(1, current));
                     break;
                 case '{':
-                    token = makeToken(LBrace{});
+                    token = makeToken(LBrace{}, _line, _col - 1, std::string(1, current));
                     break;
                 case '}':
-                    token = makeToken(RBrace{});
+                    token = makeToken(RBrace{}, _line, _col - 1, std::string(1, current));
                     break;
                 case '(':
-                    token = makeToken(LParen{});
+                    token = makeToken(LParen{}, _line, _col - 1, std::string(1, current));
                     break;
                 case ')':
-                    token = makeToken(RParen{});
+                    token = makeToken(RParen{}, _line, _col - 1, std::string(1, current));
                     break;
                 case '.':
                     if (peek() == '.') {
                         eat();
-                        token = makeToken(DoubleDot{});
+                        token = makeToken(DoubleDot{}, _line, _col - 1, std::string(1, current));
                     } else {
-                        // TODO: Replace with dedicated lexer exception class
-                        throw std::runtime_error(std::format("Invalid token: {}", current));
+                        throw LexerException(LexerError::UnexpectedChar, _line, _col - 1, std::string(1, current));
                     }
                     break;
                 case '-':
                     if (peek() == '>') {
                         eat();
-                        token = makeToken(Arrow{});
+                        token = makeToken(Arrow{}, _line, _col - 1, std::string(1, current));
                     } else if (peek() == '-') {
                         eat();
-                        token = makeToken(Operator::MinusMinus);
+                        token = makeToken(Operator::MinusMinus, _line, _col - 1, std::string(1, current));
                     } else {
-                        token = makeToken(Operator::Minus);
+                        token = makeToken(Operator::Minus, _line, _col - 1, std::string(1, current));
                     }
                     break;
                 case '+':
                     if (peek() == '+') {
                         eat();
-                        token = makeToken(Operator::PlusPlus);
+                        token = makeToken(Operator::PlusPlus, _line, _col - 1, std::string(1, current));
                     } else {
-                        token = makeToken(Operator::Plus);
+                        token = makeToken(Operator::Plus, _line, _col - 1, std::string(1, current));
                     }
                     break;
                 case '*':
-                    token = makeToken(Operator::Star);
+                    token = makeToken(Operator::Star, _line, _col - 1, std::string(1, current));
                     break;
                 case '/':
-                    token = makeToken(Operator::Slash);
+                    token = makeToken(Operator::Slash, _line, _col - 1, std::string(1, current));
                     break;
                 case '=':
                     if (peek() == '=') {
                         eat();
-                        token = makeToken(Operator::Equal);
+                        token = makeToken(Operator::Equal, _line, _col - 1, std::string(1, current));
                     } else {
-                        token = makeToken(Operator::Assignment);
+                        token = makeToken(Operator::Assignment, _line, _col - 1, std::string(1, current));
                     }
                     break;
                 case '!':
                     if (peek() == '=') {
                         eat();
-                        token = makeToken(Operator::NotEqual);
+                        token = makeToken(Operator::NotEqual, _line, _col - 1, std::string(1, current));
                     } else {
-                        token = makeToken(Operator::Exclamation);
+                        token = makeToken(Operator::Exclamation, _line, _col - 1, std::string(1, current));
                     }
                     break;
                 case '<':
                     if (peek() == '=') {
                         eat();
-                        token = makeToken(Operator::LessEqual);
+                        token = makeToken(Operator::LessEqual, _line, _col - 1, std::string(1, current));
                     } else {
-                        token = makeToken(Operator::Less);
+                        token = makeToken(Operator::Less, _line, _col - 1, std::string(1, current));
                     }
                     break;
                 case '>':
                     if (peek() == '=') {
                         eat();
-                        token = makeToken(Operator::GreaterEqual);
+                        token = makeToken(Operator::GreaterEqual, _line, _col - 1, std::string(1, current));
                     } else {
-                        token = makeToken(Operator::Greater);
+                        token = makeToken(Operator::Greater, _line, _col - 1, std::string(1, current));
                     }
                     break;
                 case '&':
                     if (peek() == '&') {
                         eat();
-                        token = makeToken(Operator::And);
+                        token = makeToken(Operator::And, _line, _col - 1, std::string(1, current));
                     } else {
-                        // TODO: Replace with dedicated lexer exception class
-                        throw std::runtime_error(std::format("Invalid token: {}", current));
+                        throw LexerException(LexerError::UnexpectedChar, _line, _col - 1, std::string(1, current));
                     }
                     break;
                 case '|':
                     if (peek() == '|') {
                         eat();
-                        token = makeToken(Operator::Or);
+                        token = makeToken(Operator::Or, _line, _col - 1, std::string(1, current));
                     } else {
-                        // TODO: Replace with dedicated lexer exception class
-                        throw std::runtime_error(std::format("Invalid token: {}", current));
+                        throw LexerException(LexerError::UnexpectedChar, _line, _col - 1, std::string(1, current));
                     }
                     break;
                 default:
-                    // TODO: Replace with dedicated lexer exception class
-                    throw std::runtime_error(std::format("Invalid token: {}", current));
+                    throw LexerException(LexerError::UnexpectedChar, _line, _col - 1, std::string(1, current));
             }
         }
 
         tokens.push_back(token);
     }
 
-    tokens.push_back(makeToken(EndOfFile{}));
+    tokens.push_back(makeToken(EndOfFile{}, _line, _col - 1, "EOF"));
     return tokens;
 }
 
 char Lexer::peek() const {
+    if (_position >= _sourceCode.size()) return '\0';
     return _sourceCode[_position];
 }
 
 char Lexer::eat() {
+    _col++;
     return _sourceCode[_position++];
 }
 
 Token Lexer::parseNumber() {
     std::string numberStr;
+    int number = 0;
 
     while (isdigit(peek())) {
         numberStr.push_back(eat());
@@ -159,7 +165,13 @@ Token Lexer::parseNumber() {
 
     if (numberStr.empty()) throw std::runtime_error("There was no number to parse.");
 
-    return makeToken(IntegerLiteral{std::stol(numberStr)});
+    try {
+        number = std::stoi(numberStr);
+    } catch (const std::out_of_range &) {
+        throw LexerException(LexerError::InvalidNumber, _line, _col - 1, numberStr);
+    }
+
+    return makeToken(IntegerLiteral{number}, _line, _col - 1, numberStr);
 }
 
 Token Lexer::parseIdentifierOrKeyword() {
@@ -175,13 +187,14 @@ Token Lexer::parseIdentifierOrKeyword() {
 
     // Look up in keyword map
     if (const auto it = keywords.find(text); it != keywords.end()) {
-        return makeToken(it->second);
+        return makeToken(it->second, _line, _col - 1, text);
     }
 
     // Default to identifier
-    return makeToken(Identifier{text});
+    return makeToken(Identifier{text}, _line, _col - 1, text);
 }
 
-Token Lexer::makeToken(const TokenType &type) {
-    return Token{type};
+Token Lexer::makeToken(const TokenType &type, int line, int col, const std::string &lexeme) {
+    return Token{type, {line, col}, lexeme};
 }
+
