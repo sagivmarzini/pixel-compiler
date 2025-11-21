@@ -18,17 +18,13 @@ private:
 
     Token &peek(int offset = 1);
 
-    void advance();
-
     bool match(TokenType type);
 
-    Token expect(TokenType type);
+    Token expect(TokenType type); //expects and eats the token if it matches
 
     bool isAtEnd();
 
     // Recursive descent parsing methods
-    std::unique_ptr<ASTNode> parseProgram();
-
     std::unique_ptr<ASTNode> parseFunctionDeclaration();
 
     std::unique_ptr<ASTNode> parseStatement();
