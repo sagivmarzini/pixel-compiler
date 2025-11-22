@@ -14,6 +14,7 @@ struct Block;
 struct WhileStatement;
 struct IfStatement;
 struct FunctionDeclaration;
+struct FunctionCall;
 
 struct Program;
 
@@ -44,6 +45,8 @@ public:
     virtual void visit(IfStatement &node) = 0;
 
     virtual void visit(FunctionDeclaration &node) = 0;
+
+    virtual void visit(FunctionCall &node) = 0;
 
     virtual void visit(Program &program) = 0;
 };

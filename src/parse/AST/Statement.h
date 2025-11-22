@@ -49,6 +49,8 @@ struct ReturnStatement : Statement {
 struct Block : Statement {
     std::vector<std::unique_ptr<Statement> > statements;
 
+    Block() = default;
+
     Block(std::vector<std::unique_ptr<Statement> > stmts) : statements(std::move(stmts)) {
     }
 
@@ -82,23 +84,36 @@ struct IfStatement : Statement {
 };
 
 // Function declaration
-struct FunctionDeclaration : ASTNode {
+struct FunctionDeclaration : Statement {
     struct Parameter {
-        Type type;
         Identifier name;
+        Type type;
 
-        Parameter(const Type t, Identifier n)
-            : type(t), name(std::move(n)) {
+        Parameter(Identifier n, const Type t)
+            : name(std::move(n)), type(t) {
         }
     };
 
     Type returnType;
     Identifier name;
     std::vector<Parameter> parameters;
-    std::unique_ptr<ASTNode> body; // Usually a Block
+    std::unique_ptr<Statement> body; //usually a block
+
     FunctionDeclaration(const Type ret, Identifier n,
-                        std::vector<Parameter> params, std::unique_ptr<ASTNode> b)
+                        std::vector<Parameter> params, std::unique_ptr<Statement> b)
         : returnType(ret), name(std::move(n)), parameters(std::move(params)), body(std::move(b)) {
+    }
+
+    void accept(Visitor &visitor) override;
+};
+
+// Function call
+struct FunctionCall : Statement {
+    Identifier functionName;
+    std::vector<std::unique_ptr<Expression> > arguments;
+
+    FunctionCall(Identifier name, std::vector<std::unique_ptr<Expression> > args)
+        : functionName(std::move(name)), arguments(std::move(args)) {
     }
 
     void accept(Visitor &visitor) override;

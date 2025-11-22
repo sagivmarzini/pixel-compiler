@@ -40,6 +40,9 @@ std::vector<Token> Lexer::lex() {
                 case ':':
                     token = Token(Colon{}, _line, _col - 1, std::string{current});
                     break;
+                case ',':
+                    token = Token(Comma{}, _line, _col - 1, std::string{current});
+                    break;
                 case '{':
                     token = Token(LBrace{}, _line, _col - 1, std::string{current});
                     break;

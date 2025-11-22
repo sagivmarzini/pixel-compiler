@@ -28,6 +28,10 @@ void FunctionDeclaration::accept(Visitor &visitor) {
     visitor.visit(*this);
 }
 
+void FunctionCall::accept(Visitor &visitor) {
+    visitor.visit(*this);
+}
+
 void Program::accept(Visitor &visitor) {
     visitor.visit(*this);
 }

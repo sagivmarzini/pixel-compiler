@@ -1,7 +1,7 @@
 #ifndef COMPILER_PROJECT_PARSER_H
 #define COMPILER_PROJECT_PARSER_H
 
-#include "AST/AstNode.h"
+#include "AST/Statement.h"
 #include "lex/Lexer.h"
 
 class Parser {
@@ -17,32 +17,33 @@ private:
     Program parseProgram();
 
     // Recursive descent parsing methods
-    std::unique_ptr<ASTNode> parseStatement();
+    std::unique_ptr<Statement> parseStatement();
 
-    std::unique_ptr<ASTNode> parseBlock();
+    std::unique_ptr<Statement> parseBlock();
 
-    std::unique_ptr<ASTNode> parseFunctionDeclaration();
+    std::unique_ptr<Statement> parseFunctionDeclaration();
 
-    std::unique_ptr<ASTNode> parseVariableDeclaration();
+    std::unique_ptr<Statement> parseVariableDeclaration();
 
-    //parses statements that begin with an identifier like function calls or variable assignments
-    std::unique_ptr<ASTNode> parseStatementIdentifier();
+    std::unique_ptr<Statement> parseVariableAssignment();
 
-    std::unique_ptr<ASTNode> parseIfStatement();
+    std::unique_ptr<Statement> parseFunctionCall();
 
-    std::unique_ptr<ASTNode> parseWhileStatement();
+    std::unique_ptr<Statement> parseIfStatement();
 
-    std::unique_ptr<ASTNode> parseReturnStatement();
+    std::unique_ptr<Statement> parseWhileStatement();
 
-    std::unique_ptr<ASTNode> parseExpression();
+    std::unique_ptr<Statement> parseReturnStatement();
 
-    std::unique_ptr<ASTNode> parseComparison();
+    std::unique_ptr<Expression> parseExpression();
 
-    std::unique_ptr<ASTNode> parseTerm();
+    std::unique_ptr<Expression> parseComparison();
 
-    std::unique_ptr<ASTNode> parseFactor();
+    std::unique_ptr<Expression> parseTerm();
 
-    std::unique_ptr<ASTNode> parsePrimary();
+    std::unique_ptr<Expression> parseFactor();
+
+    std::unique_ptr<Expression> parsePrimary();
 
     Token &peek(int offset = 1);
 
@@ -50,7 +51,7 @@ private:
     bool match();
 
     template<typename T>
-    Token expect(); //expects and eats the token if it matches
+    T expect(); //expects and eats the token if it matches
 
     bool isAtEnd();
 };

@@ -17,6 +17,7 @@ enum class Keyword {
 };
 
 enum class Type {
+    Undefined = -1, //if initializing with inferred type (var x = 5; - int)
     Int,
     Float,
     Bool,
@@ -71,6 +72,9 @@ struct Semicolon {
 struct Colon {
 };
 
+struct Comma {
+};
+
 struct LBrace {
 };
 
@@ -97,6 +101,7 @@ using TokenType = std::variant<
     // simple tokens
     Semicolon,
     Colon,
+    Comma,
     LBrace,
     RBrace,
     LParen,
