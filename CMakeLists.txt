@@ -18,7 +18,6 @@ add_executable(compiler-project
         src/parse/AST/Statement.h
         src/parse/AST/Expression.cpp
         src/parse/AST/Statement.cpp
-        src/parse/AST/Visitor.cpp
         src/parse/AST/Visitor.h
 )
 

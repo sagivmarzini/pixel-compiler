@@ -13,17 +13,27 @@ public:
 
 // Variable declaration: int x = 5;
 struct VariableDeclaration : Statement {
-    std::string type;
-    std::string name;
+    Type type;
+    Identifier name;
     std::unique_ptr<Expression> initializer; // Can be null
 
-    VariableDeclaration(std::string t, std::string n, std::unique_ptr<Expression> init = nullptr)
-        : type(std::move(t)), name(std::move(n)), initializer(std::move(init)) {
+    VariableDeclaration(const Type t, Identifier n, std::unique_ptr<Expression> init = nullptr)
+        : type(t), name(std::move(n)), initializer(std::move(init)) {
     }
 
     void accept(Visitor &visitor) override;
 };
 
+struct VariableAssignment : Statement {
+    Identifier name;
+    std::unique_ptr<Expression> newValue;
+
+    VariableAssignment(Identifier n, std::unique_ptr<Expression> value)
+        : name(std::move(n)), newValue(std::move(value)) {
+    }
+
+    void accept(Visitor &visitor) override;
+};
 
 // Return statement
 struct ReturnStatement : Statement {
@@ -74,17 +84,21 @@ struct IfStatement : Statement {
 // Function declaration
 struct FunctionDeclaration : ASTNode {
     struct Parameter {
-        std::string type;
-        std::string name;
+        Type type;
+        Identifier name;
+
+        Parameter(const Type t, Identifier n)
+            : type(t), name(std::move(n)) {
+        }
     };
 
-    std::string returnType;
-    std::string name;
+    Type returnType;
+    Identifier name;
     std::vector<Parameter> parameters;
     std::unique_ptr<ASTNode> body; // Usually a Block
-    FunctionDeclaration(std::string ret, std::string n,
+    FunctionDeclaration(const Type ret, Identifier n,
                         std::vector<Parameter> params, std::unique_ptr<ASTNode> b)
-        : returnType(std::move(ret)), name(std::move(n)), parameters(std::move(params)), body(std::move(b)) {
+        : returnType(ret), name(std::move(n)), parameters(std::move(params)), body(std::move(b)) {
     }
 
     void accept(Visitor &visitor) override;
@@ -94,7 +108,7 @@ struct FunctionDeclaration : ASTNode {
 struct Program : ASTNode {
     std::vector<std::unique_ptr<ASTNode> > declarations;
 
-    Program(std::vector<std::unique_ptr<ASTNode> > decls) : declarations(std::move(decls)) {
+    Program(std::vector<std::unique_ptr<ASTNode> > &decls) : declarations(std::move(decls)) {
     }
 
     void accept(Visitor &visitor) override;

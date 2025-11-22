@@ -4,6 +4,10 @@ void VariableDeclaration::accept(Visitor &visitor) {
     visitor.visit(*this);
 }
 
+void VariableAssignment::accept(Visitor &visitor) {
+    visitor.visit(*this);
+}
+
 void ReturnStatement::accept(Visitor &visitor) {
     visitor.visit(*this);
 }

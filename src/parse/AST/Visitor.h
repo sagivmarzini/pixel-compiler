@@ -8,6 +8,7 @@ struct IdentifierNode;
 struct CallExpression;
 
 struct VariableDeclaration;
+struct VariableAssignment;
 struct ReturnStatement;
 struct Block;
 struct WhileStatement;
@@ -31,6 +32,8 @@ public:
     virtual void visit(CallExpression &node) = 0;
 
     virtual void visit(VariableDeclaration &node) = 0;
+
+    virtual void visit(VariableAssignment &node) = 0;
 
     virtual void visit(ReturnStatement &node) = 0;
 

@@ -8,28 +8,25 @@ class Parser {
 public:
     Parser(std::vector<Token> tokens);
 
-    std::unique_ptr<ASTNode> parse();
+    Program parse();
 
 private:
     std::vector<Token> _tokens;
     size_t _position;
 
-    Token &current();
-
-    Token &peek(int offset = 1);
-
-    bool match(TokenType type);
-
-    Token expect(TokenType type); //expects and eats the token if it matches
-
-    bool isAtEnd();
+    Program parseProgram();
 
     // Recursive descent parsing methods
-    std::unique_ptr<ASTNode> parseFunctionDeclaration();
-
     std::unique_ptr<ASTNode> parseStatement();
 
     std::unique_ptr<ASTNode> parseBlock();
+
+    std::unique_ptr<ASTNode> parseFunctionDeclaration();
+
+    std::unique_ptr<ASTNode> parseVariableDeclaration();
+
+    //parses statements that begin with an identifier like function calls or variable assignments
+    std::unique_ptr<ASTNode> parseStatementIdentifier();
 
     std::unique_ptr<ASTNode> parseIfStatement();
 
@@ -46,6 +43,16 @@ private:
     std::unique_ptr<ASTNode> parseFactor();
 
     std::unique_ptr<ASTNode> parsePrimary();
+
+    Token &peek(int offset = 1);
+
+    template<typename T>
+    bool match();
+
+    template<typename T>
+    Token expect(); //expects and eats the token if it matches
+
+    bool isAtEnd();
 };
 
 

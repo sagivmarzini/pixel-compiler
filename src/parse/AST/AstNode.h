@@ -7,7 +7,7 @@ class ASTNode {
 public:
     virtual ~ASTNode() = default;
 
-    virtual void accept(ASTVisitor &visitor) = 0; // For visitor pattern
+    virtual void accept(Visitor &visitor) = 0; // For visitor pattern
     // TODO: Save original AST node location in source code
 };
 
