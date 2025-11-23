@@ -26,8 +26,7 @@ std::unique_ptr<Statement> Parser::parseStatement() {
             using T = std::decay_t<U>();
 
             if constexpr (std::is_same<T, Keyword>()) {
-                auto keyword = std::decay_t<Keyword>();
-                switch (keyword) {
+                switch (std::decay_t<Keyword>()) {
                     case Keyword::Func:
                         return parseFunctionDeclaration();
 
@@ -47,7 +46,12 @@ std::unique_ptr<Statement> Parser::parseStatement() {
                         throw std::runtime_error("Unexpected token '" + peek().lexeme + "'!");
                 }
             } else if constexpr (std::is_same<T, Identifier>()) {
-                //TODO: look ahead to see what needs to be parsed (assignment or call)
+                if (std::holds_alternative<LParen>(peek(1).type)) {
+                    //if the token after an Identifier is a ( then it is a function call
+                    return parseFunctionCall();
+                } else if (std::holds_alternative<Operator>(peek(1).type)) {
+                    return parseVariableAssignment();
+                }
             } else {
                 throw std::runtime_error("Unexpected token '" + peek().lexeme + "'");
             }
@@ -148,6 +152,43 @@ std::unique_ptr<Statement> Parser::parseFunctionCall() {
     return std::make_unique<FunctionCall>(name, std::move(arguments));
 }
 
+std::unique_ptr<Statement> Parser::parseIfStatement() {
+    expect<Keyword>();
+    expect<LBrace>();
+    auto condition = parseExpression();
+    expect<RBrace>();
+
+    auto block = parseBlock();
+
+    std::unique_ptr<Statement> elseBlock = nullptr;
+
+    auto keyword = std::get_if<Keyword>(&peek().type);
+    if (keyword && *keyword == Keyword::Else) {
+        expect<Keyword>();
+        elseBlock = parseBlock();
+    }
+    return std::make_unique<IfStatement>(std::move(condition), std::move(block), std::move(elseBlock));
+}
+
+std::unique_ptr<Statement> Parser::parseWhileStatement() {
+    expect<Keyword>();
+    expect<LParen>();
+    auto condition = parseExpression();
+    expect<RParen>();
+
+    auto block = parseBlock();
+
+    return std::make_unique<WhileStatement>(std::move(condition), std::move(block));
+}
+
+std::unique_ptr<Statement> Parser::parseReturnStatement() {
+    expect<Keyword>();
+    auto value = parseExpression();
+
+    return std::make_unique<ReturnStatement>(std::move(value));
+}
+
+
 Token &Parser::peek(int offset) {
     if (_tokens.size() <= _position + offset) {
         return _tokens.back(); //return last token if passed the end
@@ -156,16 +197,14 @@ Token &Parser::peek(int offset) {
 }
 
 template
-<
-    typename T>
+<typename T>
 
 bool Parser::match() {
     return std::holds_alternative<T>(peek().type);
 }
 
 template
-<
-    typename T>
+<typename T>
 T Parser::expect() {
     if (match<T>()) {
         Token token = _tokens[_position];

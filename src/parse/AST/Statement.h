@@ -60,9 +60,9 @@ struct Block : Statement {
 // While loop
 struct WhileStatement : Statement {
     std::unique_ptr<Expression> condition;
-    std::unique_ptr<Block> body;
+    std::unique_ptr<Statement> body;
 
-    WhileStatement(std::unique_ptr<Expression> cond, std::unique_ptr<Block> b)
+    WhileStatement(std::unique_ptr<Expression> cond, std::unique_ptr<Statement> b)
         : condition(std::move(cond)), body(std::move(b)) {
     }
 
@@ -72,11 +72,11 @@ struct WhileStatement : Statement {
 // If statement
 struct IfStatement : Statement {
     std::unique_ptr<Expression> condition;
-    std::unique_ptr<Block> thenBranch;
-    std::unique_ptr<Block> elseBranch; // Can be null
+    std::unique_ptr<Statement> thenBranch;
+    std::unique_ptr<Statement> elseBranch; // Can be null
 
-    IfStatement(std::unique_ptr<Expression> condition, std::unique_ptr<Block> then,
-                std::unique_ptr<Block> els = nullptr)
+    IfStatement(std::unique_ptr<Expression> condition, std::unique_ptr<Statement> then,
+                std::unique_ptr<Statement> els = nullptr)
         : condition(std::move(condition)), thenBranch(std::move(then)), elseBranch(std::move(els)) {
     }
 
