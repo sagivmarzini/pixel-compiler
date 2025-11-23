@@ -3,7 +3,9 @@
 
 struct IntegerLiteralNode;
 struct StringLiteralNode;
+struct BooleanLiteralNode;
 struct BinaryExpression;
+struct UnaryExpression;
 struct IdentifierNode;
 struct CallExpression;
 
@@ -26,7 +28,11 @@ public:
 
     virtual void visit(StringLiteralNode &node) = 0;
 
+    virtual void visit(BooleanLiteralNode &node) = 0;
+
     virtual void visit(BinaryExpression &node) = 0;
+
+    virtual void visit(UnaryExpression &node) = 0;
 
     virtual void visit(IdentifierNode &node) = 0;
 

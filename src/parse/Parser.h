@@ -37,18 +37,29 @@ private:
 
     std::unique_ptr<Expression> parseExpression();
 
-    std::unique_ptr<Expression> parseComparison();
+    std::unique_ptr<Expression> parseBooleanAndExpression();
 
-    std::unique_ptr<Expression> parseTerm();
+    std::unique_ptr<Expression> parseBooleanOrExpression();
 
-    std::unique_ptr<Expression> parseFactor();
+    std::unique_ptr<Expression> parseBooleanEqualityExpression();
+
+    std::unique_ptr<Expression> parseComparisonExpression();
+
+    std::unique_ptr<Expression> parseAdditiveExpression();
+
+    std::unique_ptr<Expression> parseMultiplicativeExpression();
+
+    std::unique_ptr<Expression> parseUnaryExpression();
 
     std::unique_ptr<Expression> parsePrimary();
 
     Token &peek(int offset = 1);
 
     template<typename T>
-    bool match();
+    bool match(int offset = 1);
+
+    template<typename T>
+    bool matchEnum(T type);
 
     template<typename T>
     T expect(); //expects and eats the token if it matches

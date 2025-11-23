@@ -25,6 +25,9 @@ void Compiler::compile() const {
     try {
         const auto tokens = lexer.lex();
         printTokens(tokens);
+
+        Parser parser(tokens);
+        parser.parse();
     } catch (const LexerException &e) {
         const auto [line, col] = e.location();
 

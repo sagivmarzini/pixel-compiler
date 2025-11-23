@@ -8,7 +8,15 @@ void StringLiteralNode::accept(Visitor &visitor) {
     visitor.visit(*this);
 }
 
+void BooleanLiteralNode::accept(Visitor &visitor) {
+    visitor.visit(*this);
+}
+
 void BinaryExpression::accept(Visitor &visitor) {
+    visitor.visit(*this);
+}
+
+void UnaryExpression::accept(Visitor &visitor) {
     visitor.visit(*this);
 }
 

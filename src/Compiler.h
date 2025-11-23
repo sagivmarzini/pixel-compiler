@@ -2,6 +2,7 @@
 #define COMPILER_PROJECT_COMPILER_H
 
 #include "lex/Lexer.h"
+#include "parse/Parser.h"
 
 
 class Compiler {

@@ -17,45 +17,36 @@ Program Parser::parseProgram() {
         declarations.push_back(parseStatement());
     }
 
-    return Program(declarations);
+    return {declarations};
 }
 
 std::unique_ptr<Statement> Parser::parseStatement() {
-    return std::visit(
-        [this]<typename U>(U &&arg) -> std::unique_ptr<Statement> {
-            using T = std::decay_t<U>();
+    if (matchEnum<Keyword>(Keyword::Func)) {
+        return parseFunctionDeclaration();
+    }
+    if (matchEnum(Keyword::Var)) {
+        return parseVariableDeclaration();
+    }
+    if (matchEnum(Keyword::Return)) {
+        return parseReturnStatement();
+    }
+    if (matchEnum(Keyword::If)) {
+        return parseIfStatement();
+    }
+    if (matchEnum(Keyword::While)) {
+        return parseWhileStatement();
+    }
+    if (match<Identifier>()) {
+        if (match<LParen>(2)) {
+            //if the token after an Identifier is a ( then it is a function call
+            return parseFunctionCall();
+        }
+        if (match<Operator>(2)) {
+            return parseVariableAssignment();
+        }
+    }
 
-            if constexpr (std::is_same<T, Keyword>()) {
-                switch (std::decay_t<Keyword>()) {
-                    case Keyword::Func:
-                        return parseFunctionDeclaration();
-
-                    case Keyword::Var:
-                        return parseVariableDeclaration();
-
-                    case Keyword::Return:
-                        return parseReturnStatement();
-
-                    case Keyword::If:
-                        return parseIfStatement();
-
-                    case Keyword::While:
-                        return parseWhileStatement();
-
-                    default:
-                        throw std::runtime_error("Unexpected token '" + peek().lexeme + "'!");
-                }
-            } else if constexpr (std::is_same<T, Identifier>()) {
-                if (std::holds_alternative<LParen>(peek(1).type)) {
-                    //if the token after an Identifier is a ( then it is a function call
-                    return parseFunctionCall();
-                } else if (std::holds_alternative<Operator>(peek(1).type)) {
-                    return parseVariableAssignment();
-                }
-            } else {
-                throw std::runtime_error("Unexpected token '" + peek().lexeme + "'");
-            }
-        }, peek().type);
+    throw std::runtime_error("Unexpected token '" + peek().lexeme + "'!");
 }
 
 std::unique_ptr<Statement> Parser::parseBlock() {
@@ -108,7 +99,7 @@ std::unique_ptr<Statement> Parser::parseVariableDeclaration() {
         type = expect<Type>();
     }
 
-    if (std::get<Operator>(peek().type) == Operator::Assignment) {
+    if (matchEnum(Operator::Assignment)) {
         expect<Operator>();
         value = parseExpression();
     }
@@ -124,7 +115,7 @@ std::unique_ptr<Statement> Parser::parseVariableDeclaration() {
 std::unique_ptr<Statement> Parser::parseVariableAssignment() {
     auto name = expect<Identifier>();
 
-    if (std::get<Operator>(peek().type) != Operator::Assignment) {
+    if (matchEnum(Operator::Assignment)) {
         throw std::runtime_error("Cannot use a variable without assignment!");
     }
 
@@ -162,8 +153,7 @@ std::unique_ptr<Statement> Parser::parseIfStatement() {
 
     std::unique_ptr<Statement> elseBlock = nullptr;
 
-    auto keyword = std::get_if<Keyword>(&peek().type);
-    if (keyword && *keyword == Keyword::Else) {
+    if (matchEnum(Keyword::Else)) {
         expect<Keyword>();
         elseBlock = parseBlock();
     }
@@ -188,6 +178,131 @@ std::unique_ptr<Statement> Parser::parseReturnStatement() {
     return std::make_unique<ReturnStatement>(std::move(value));
 }
 
+std::unique_ptr<Expression> Parser::parseExpression() {
+    return parseBooleanAndExpression();
+}
+
+std::unique_ptr<Expression> Parser::parseBooleanAndExpression() {
+    auto left = parseBooleanOrExpression();
+
+    while (matchEnum(Operator::And)) {
+        auto op = expect<Operator>();
+        auto right = parseBooleanOrExpression();
+
+        left = std::make_unique<BinaryExpression>(std::move(left), op, std::move(right));
+    }
+    return left;
+}
+
+std::unique_ptr<Expression> Parser::parseBooleanOrExpression() {
+    auto left = parseBooleanEqualityExpression();
+
+    while (matchEnum(Operator::Or)) {
+        auto op = expect<Operator>();
+        auto right = parseBooleanEqualityExpression();
+
+        left = std::make_unique<BinaryExpression>(std::move(left), op, std::move(right));
+    }
+    return left;
+}
+
+std::unique_ptr<Expression> Parser::parseBooleanEqualityExpression() {
+    auto left = parseComparisonExpression();
+
+    while (matchEnum(Operator::Equal) || matchEnum(Operator::NotEqual)) {
+        auto op = expect<Operator>();
+        auto right = parseComparisonExpression();
+
+        left = std::make_unique<BinaryExpression>(std::move(left), op, std::move(right));
+    }
+    return left;
+}
+
+std::unique_ptr<Expression> Parser::parseComparisonExpression() {
+    auto left = parseAdditiveExpression();
+
+    while (matchEnum(Operator::Less) || matchEnum(Operator::LessEqual)
+           || matchEnum(Operator::Greater) || matchEnum(Operator::GreaterEqual)) {
+        auto op = expect<Operator>();
+        auto right = parseAdditiveExpression();
+
+        left = std::make_unique<BinaryExpression>(std::move(left), op, std::move(right));
+    }
+    return left;
+}
+
+std::unique_ptr<Expression> Parser::parseAdditiveExpression() {
+    auto left = parseMultiplicativeExpression();
+
+    while (matchEnum(Operator::Plus) || matchEnum(Operator::Minus)) {
+        auto op = expect<Operator>();
+        auto right = parseMultiplicativeExpression();
+
+        left = std::make_unique<BinaryExpression>(std::move(left), op, std::move(right));
+    }
+    return left;
+}
+
+std::unique_ptr<Expression> Parser::parseMultiplicativeExpression() {
+    auto left = parseUnaryExpression();
+
+    while (matchEnum(Operator::Star) || matchEnum(Operator::Slash)) {
+        auto op = expect<Operator>();
+        auto right = parseUnaryExpression();
+
+        left = std::make_unique<BinaryExpression>(std::move(left), op, std::move(right));
+    }
+    return left;
+}
+
+std::unique_ptr<Expression> Parser::parseUnaryExpression() {
+    if (matchEnum(Operator::Plus) || matchEnum(Operator::Minus)
+        || matchEnum(Operator::Exclamation)) {
+        auto op = expect<Operator>();
+        auto operand = parsePrimary();
+
+        return std::make_unique<UnaryExpression>(std::move(operand), op);
+    }
+    return parsePrimary();
+}
+
+std::unique_ptr<Expression> Parser::parsePrimary() {
+    if (match<IntegerLiteral>()) {
+        auto value = expect<IntegerLiteral>().value;
+        return std::make_unique<IntegerLiteralNode>(value);
+    }
+    if (match<BooleanLiteral>()) {
+        auto value = expect<BooleanLiteral>().value;
+        return std::make_unique<BooleanLiteralNode>(value);
+    }
+    if (match<Identifier>()) {
+        auto name = expect<Identifier>();
+
+        if (match<LParen>()) {
+            expect<LParen>();
+            //parse arguments
+            auto arguments = std::vector<std::unique_ptr<Expression> >();
+            while (!match<RParen>()) {
+                auto arg = parseExpression();
+
+                arguments.emplace_back(std::move(arg));
+                if (!match<RParen>())
+                    expect<Comma>(); //if didn't read the end, get a comma seperator [foo(a, 5)]
+            }
+            expect<RParen>();
+            return std::make_unique<CallExpression>(name, std::move(arguments));
+        }
+        return std::make_unique<IdentifierNode>(name);
+    }
+    if (match<LParen>()) {
+        expect<LParen>();
+        auto expression = parseExpression();
+        expect<RParen>();
+        return expression;
+    }
+    throw std::runtime_error("Unexpected token '" + peek().lexeme + "'");
+}
+
 
 Token &Parser::peek(int offset) {
     if (_tokens.size() <= _position + offset) {
@@ -196,15 +311,21 @@ Token &Parser::peek(int offset) {
     return _tokens[_position + offset];
 }
 
-template
-<typename T>
-
-bool Parser::match() {
-    return std::holds_alternative<T>(peek().type);
+template<typename T>
+bool Parser::match(int offset) {
+    return std::holds_alternative<T>(peek(offset).type);
 }
 
-template
-<typename T>
+template<typename T>
+bool Parser::matchEnum(T type) {
+    if (!std::holds_alternative<T>(peek().type)) {
+        return false;
+    }
+
+    return std::get<T>(peek().type) == type;
+}
+
+template<typename T>
 T Parser::expect() {
     if (match<T>()) {
         Token token = _tokens[_position];
