@@ -34,6 +34,7 @@ std::vector<Token> Lexer::lex() {
         } else {
             eat(); // Consume the character
             switch (current) {
+                //TODO: add string literal token
                 case ';':
                     token = Token(Semicolon{}, _line, _col - 1, std::string{current});
                     break;

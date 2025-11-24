@@ -57,5 +57,7 @@ public:
     virtual void visit(Program &program) = 0;
 };
 
+inline Visitor::~Visitor() {
+}
 
 #endif //COMPILER_PROJECT_VISITOR_H
