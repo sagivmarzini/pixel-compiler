@@ -12,11 +12,6 @@ func main() -> int {
     x = x * 3;
     y = y / 4;
 
-    x++;
-    y--;
-    ++x;
-    --y;
-
     if (x == 42 && y != 0) {
         return 1;
     } else {
@@ -25,10 +20,6 @@ func main() -> int {
 
     while (x > 10 && x < 100) {
         x = x - 1;
-    }
-
-    for (x = 0..10) {
-        y = y + 1;
     }
 
     if (flag || !flag) {

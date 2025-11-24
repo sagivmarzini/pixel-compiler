@@ -21,7 +21,7 @@ Program Parser::parseProgram() {
 }
 
 std::unique_ptr<Statement> Parser::parseStatement() {
-    if (matchEnum<Keyword>(Keyword::Func)) {
+    if (matchEnum(Keyword::Func)) {
         return parseFunctionDeclaration();
     }
     if (matchEnum(Keyword::Var)) {
@@ -37,11 +37,11 @@ std::unique_ptr<Statement> Parser::parseStatement() {
         return parseWhileStatement();
     }
     if (match<Identifier>()) {
-        if (match<LParen>(2)) {
+        if (match<LParen>(1)) {
             //if the token after an Identifier is a ( then it is a function call
             return parseFunctionCall();
         }
-        if (match<Operator>(2)) {
+        if (match<Operator>(1)) {
             return parseVariableAssignment();
         }
     }
@@ -50,13 +50,13 @@ std::unique_ptr<Statement> Parser::parseStatement() {
 }
 
 std::unique_ptr<Statement> Parser::parseBlock() {
-    expect<RBrace>();
+    expect<LBrace>();
 
     Block block;
-    while (!match<LBrace>()) {
+    while (!match<RBrace>()) {
         block.statements.push_back(parseStatement());
     }
-    expect<LBrace>();
+    expect<RBrace>();
 
     return std::make_unique<Block>(std::move(block));
 }
@@ -115,11 +115,13 @@ std::unique_ptr<Statement> Parser::parseVariableDeclaration() {
 std::unique_ptr<Statement> Parser::parseVariableAssignment() {
     auto name = expect<Identifier>();
 
-    if (matchEnum(Operator::Assignment)) {
+    if (!matchEnum(Operator::Assignment)) {
         throw std::runtime_error("Cannot use a variable without assignment!");
     }
-
+    expect<Operator>();
     auto value = parseExpression();
+    expect<Semicolon>();
+
     return std::make_unique<VariableAssignment>(name, std::move(value));
 }
 
@@ -145,9 +147,9 @@ std::unique_ptr<Statement> Parser::parseFunctionCall() {
 
 std::unique_ptr<Statement> Parser::parseIfStatement() {
     expect<Keyword>();
-    expect<LBrace>();
+    expect<LParen>();
     auto condition = parseExpression();
-    expect<RBrace>();
+    expect<RParen>();
 
     auto block = parseBlock();
 
@@ -174,6 +176,7 @@ std::unique_ptr<Statement> Parser::parseWhileStatement() {
 std::unique_ptr<Statement> Parser::parseReturnStatement() {
     expect<Keyword>();
     auto value = parseExpression();
+    expect<Semicolon>();
 
     return std::make_unique<ReturnStatement>(std::move(value));
 }
@@ -318,11 +321,10 @@ bool Parser::match(int offset) {
 
 template<typename T>
 bool Parser::matchEnum(T type) {
-    if (!std::holds_alternative<T>(peek().type)) {
-        return false;
+    if (match<T>()) {
+        return std::get<T>(peek().type) == type;
     }
-
-    return std::get<T>(peek().type) == type;
+    return false;
 }
 
 template<typename T>

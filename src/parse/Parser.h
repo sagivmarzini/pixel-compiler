@@ -53,10 +53,10 @@ private:
 
     std::unique_ptr<Expression> parsePrimary();
 
-    Token &peek(int offset = 1);
+    Token &peek(int offset = 0);
 
     template<typename T>
-    bool match(int offset = 1);
+    bool match(int offset = 0);
 
     template<typename T>
     bool matchEnum(T type);
