@@ -9,10 +9,10 @@ public:
     Parser(std::vector<Token> tokens);
 
     Program parseProgram();
+
 private:
     std::vector<Token> _tokens;
     size_t _position;
-
 
 
     // Recursive descent parsing methods
@@ -58,7 +58,9 @@ private:
     bool match(int offset = 0);
 
     template<typename T>
-    bool matchEnum(T type);
+    bool matchValue(T type);
+
+    void eat();
 
     template<typename T>
     T expect(); //expects and eats the token if it matches

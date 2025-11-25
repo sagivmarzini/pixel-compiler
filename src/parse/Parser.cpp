@@ -17,19 +17,19 @@ Program Parser::parseProgram() {
 }
 
 std::unique_ptr<Statement> Parser::parseStatement() {
-    if (matchEnum(Keyword::Func)) {
+    if (matchValue(Keyword::Func)) {
         return parseFunctionDeclaration();
     }
-    if (matchEnum(Keyword::Var)) {
+    if (matchValue(Keyword::Var)) {
         return parseVariableDeclaration();
     }
-    if (matchEnum(Keyword::Return)) {
+    if (matchValue(Keyword::Return)) {
         return parseReturnStatement();
     }
-    if (matchEnum(Keyword::If)) {
+    if (matchValue(Keyword::If)) {
         return parseIfStatement();
     }
-    if (matchEnum(Keyword::While)) {
+    if (matchValue(Keyword::While)) {
         return parseWhileStatement();
     }
     if (match<Identifier>()) {
@@ -51,6 +51,9 @@ std::unique_ptr<Statement> Parser::parseBlock() {
     Block block;
     while (!match<RBrace>()) {
         block.statements.push_back(parseStatement());
+        if (isAtEnd()) {
+            throw std::runtime_error("Missing closing bracket '}'!");
+        }
     }
     expect<RBrace>();
 
@@ -63,7 +66,7 @@ std::unique_ptr<Statement> Parser::parseFunctionDeclaration() {
     expect<LParen>();
 
     //parse parameters
-    auto parameters = std::vector<FunctionDeclaration::Parameter>();
+    std::vector<FunctionDeclaration::Parameter> parameters;
     while (!match<RParen>()) {
         auto paramName = expect<Identifier>();
         expect<Colon>();
@@ -72,6 +75,10 @@ std::unique_ptr<Statement> Parser::parseFunctionDeclaration() {
         parameters.emplace_back(paramName.name, paramType);
         if (!match<RParen>())
             expect<Comma>(); //if didn't read the end, get a comma seperator [func foo(a:int, b:int)]
+
+        if (isAtEnd()) {
+            throw std::runtime_error("Missing closing brace ')'!");
+        }
     }
     expect<RParen>();
     expect<Arrow>();
@@ -91,11 +98,11 @@ std::unique_ptr<Statement> Parser::parseVariableDeclaration() {
     std::unique_ptr<Expression> value = nullptr;
     //if initializing with type get it
     if (match<Colon>()) {
-        expect<Colon>();
+        eat();
         type = expect<Type>();
     }
 
-    if (matchEnum(Operator::Assignment)) {
+    if (matchValue(Operator::Assignment)) {
         expect<Operator>();
         value = parseExpression();
     }
@@ -111,10 +118,10 @@ std::unique_ptr<Statement> Parser::parseVariableDeclaration() {
 std::unique_ptr<Statement> Parser::parseVariableAssignment() {
     auto name = expect<Identifier>();
 
-    if (!matchEnum(Operator::Assignment)) {
+    if (!matchValue(Operator::Assignment)) {
         throw std::runtime_error("Cannot use a variable without assignment!");
     }
-    expect<Operator>();
+    eat();
     auto value = parseExpression();
     expect<Semicolon>();
 
@@ -134,6 +141,10 @@ std::unique_ptr<Statement> Parser::parseFunctionCall() {
         arguments.emplace_back(std::move(arg));
         if (!match<RParen>())
             expect<Comma>(); //if didn't read the end, get a comma seperator [foo(a, 5)]
+
+        if (isAtEnd()) {
+            throw std::runtime_error("Missing closing bracket '}'!");
+        }
     }
     expect<RParen>();
     expect<Semicolon>();
@@ -151,7 +162,7 @@ std::unique_ptr<Statement> Parser::parseIfStatement() {
 
     std::unique_ptr<Statement> elseBlock = nullptr;
 
-    if (matchEnum(Keyword::Else)) {
+    if (matchValue(Keyword::Else)) {
         expect<Keyword>();
         elseBlock = parseBlock();
     }
@@ -184,7 +195,7 @@ std::unique_ptr<Expression> Parser::parseExpression() {
 std::unique_ptr<Expression> Parser::parseBooleanAndExpression() {
     auto left = parseBooleanOrExpression();
 
-    while (matchEnum(Operator::And)) {
+    while (matchValue(Operator::And)) {
         auto op = expect<Operator>();
         auto right = parseBooleanOrExpression();
 
@@ -196,7 +207,7 @@ std::unique_ptr<Expression> Parser::parseBooleanAndExpression() {
 std::unique_ptr<Expression> Parser::parseBooleanOrExpression() {
     auto left = parseBooleanEqualityExpression();
 
-    while (matchEnum(Operator::Or)) {
+    while (matchValue(Operator::Or)) {
         auto op = expect<Operator>();
         auto right = parseBooleanEqualityExpression();
 
@@ -208,7 +219,7 @@ std::unique_ptr<Expression> Parser::parseBooleanOrExpression() {
 std::unique_ptr<Expression> Parser::parseBooleanEqualityExpression() {
     auto left = parseComparisonExpression();
 
-    while (matchEnum(Operator::Equal) || matchEnum(Operator::NotEqual)) {
+    while (matchValue(Operator::Equal) || matchValue(Operator::NotEqual)) {
         auto op = expect<Operator>();
         auto right = parseComparisonExpression();
 
@@ -220,8 +231,8 @@ std::unique_ptr<Expression> Parser::parseBooleanEqualityExpression() {
 std::unique_ptr<Expression> Parser::parseComparisonExpression() {
     auto left = parseAdditiveExpression();
 
-    while (matchEnum(Operator::Less) || matchEnum(Operator::LessEqual)
-           || matchEnum(Operator::Greater) || matchEnum(Operator::GreaterEqual)) {
+    while (matchValue(Operator::Less) || matchValue(Operator::LessEqual)
+           || matchValue(Operator::Greater) || matchValue(Operator::GreaterEqual)) {
         auto op = expect<Operator>();
         auto right = parseAdditiveExpression();
 
@@ -233,7 +244,7 @@ std::unique_ptr<Expression> Parser::parseComparisonExpression() {
 std::unique_ptr<Expression> Parser::parseAdditiveExpression() {
     auto left = parseMultiplicativeExpression();
 
-    while (matchEnum(Operator::Plus) || matchEnum(Operator::Minus)) {
+    while (matchValue(Operator::Plus) || matchValue(Operator::Minus)) {
         auto op = expect<Operator>();
         auto right = parseMultiplicativeExpression();
 
@@ -245,7 +256,7 @@ std::unique_ptr<Expression> Parser::parseAdditiveExpression() {
 std::unique_ptr<Expression> Parser::parseMultiplicativeExpression() {
     auto left = parseUnaryExpression();
 
-    while (matchEnum(Operator::Star) || matchEnum(Operator::Slash)) {
+    while (matchValue(Operator::Star) || matchValue(Operator::Slash)) {
         auto op = expect<Operator>();
         auto right = parseUnaryExpression();
 
@@ -255,8 +266,8 @@ std::unique_ptr<Expression> Parser::parseMultiplicativeExpression() {
 }
 
 std::unique_ptr<Expression> Parser::parseUnaryExpression() {
-    if (matchEnum(Operator::Plus) || matchEnum(Operator::Minus)
-        || matchEnum(Operator::Exclamation)) {
+    if (matchValue(Operator::Plus) || matchValue(Operator::Minus)
+        || matchValue(Operator::Exclamation)) {
         auto op = expect<Operator>();
         auto operand = parsePrimary();
 
@@ -304,10 +315,11 @@ std::unique_ptr<Expression> Parser::parsePrimary() {
 
 
 Token &Parser::peek(int offset) {
-    if (_tokens.size() <= _position + offset) {
+    auto position = _position + offset;
+    if (position >= _tokens.size()) {
         return _tokens.back(); //return last token if passed the end
     }
-    return _tokens[_position + offset];
+    return _tokens[position];
 }
 
 template<typename T>
@@ -316,21 +328,22 @@ bool Parser::match(int offset) {
 }
 
 template<typename T>
-bool Parser::matchEnum(T type) {
-    if (match<T>()) {
-        return std::get<T>(peek().type) == type;
-    }
-    return false;
+bool Parser::matchValue(T type) {
+    return match<T>() && std::get<T>(peek().type) == type;
 }
 
 template<typename T>
 T Parser::expect() {
     if (match<T>()) {
-        Token token = _tokens[_position];
-        _position += 1;
+        Token &token = _tokens[_position];
+        _position++;
         return std::get<T>(token.type);
     }
     throw std::runtime_error("Unexpected Token! got '" + tokenToString(peek()) + "'");
+}
+
+void Parser::eat() {
+    _position++;
 }
 
 bool Parser::isAtEnd() {
