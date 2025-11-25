@@ -47,10 +47,9 @@ void ASTPrinter::visit(const IdentifierNode &node) const {
 void ASTPrinter::visit(const CallExpression &node) const {
     std::cout << node.functionName << '(';
     for (auto &arg: node.arguments) {
-        arg->accept(*this);
-        if (arg != *node.arguments.end()) {
-            std::cout << ", ";
-        }
+        std::cout << arg.name << ": ";
+        arg.value->accept(*this);
+        std::cout << ", ";
     }
     std::cout << ')';
 }
@@ -113,10 +112,9 @@ void ASTPrinter::visit(const FunctionDeclaration &node) const {
 void ASTPrinter::visit(const FunctionCall &node) const {
     std::cout << node.functionName << '(';
     for (auto &arg: node.arguments) {
-        arg->accept(*this);
-        if (arg != *node.arguments.end()) {
-            std::cout << ", ";
-        }
+        std::cout << arg.name << ": ";
+        arg.value->accept(*this);
+        std::cout << ", ";
     }
     std::cout << ")\n";
 }

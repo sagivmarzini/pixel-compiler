@@ -10,16 +10,17 @@ Program Parser::parseProgram() {
     std::vector<std::unique_ptr<ASTNode> > declarations;
 
     while (!isAtEnd()) {
-        declarations.push_back(parseStatement());
+        if (matchValue(Keyword::Func)) {
+            declarations.push_back(parseFunctionDeclaration());
+        } else {
+            declarations.push_back(parseStatement());
+        }
     }
 
     return {std::move(declarations)};
 }
 
 std::unique_ptr<Statement> Parser::parseStatement() {
-    if (matchValue(Keyword::Func)) {
-        return parseFunctionDeclaration();
-    }
     if (matchValue(Keyword::Var)) {
         return parseVariableDeclaration();
     }
@@ -60,13 +61,33 @@ std::unique_ptr<Statement> Parser::parseBlock() {
     return std::make_unique<Block>(std::move(block));
 }
 
-std::unique_ptr<Statement> Parser::parseFunctionDeclaration() {
+std::vector<FunctionArgument> Parser::parseFunctionArguments() {
+    std::vector<FunctionArgument> args;
+    while (!match<LParen>()) {
+        auto name = expect<Identifier>();
+        expect<Colon>();
+        auto value = parseExpression();
+
+        args.emplace_back(name.name, std::move(value));
+
+        if (match<RParen>()) {
+            expect<Comma>();
+        }
+
+        if (isAtEnd()) {
+            throw std::runtime_error("Missing closing paren ')'!");
+        }
+    }
+    return args;
+}
+
+std::unique_ptr<ASTNode> Parser::parseFunctionDeclaration() {
     expect<Keyword>();
     auto name = expect<Identifier>();
     expect<LParen>();
 
+    std::vector<FunctionDeclaration::FunctionParameter> parameters;
     //parse parameters
-    std::vector<FunctionDeclaration::Parameter> parameters;
     while (!match<RParen>()) {
         auto paramName = expect<Identifier>();
         expect<Colon>();
@@ -80,6 +101,7 @@ std::unique_ptr<Statement> Parser::parseFunctionDeclaration() {
             throw std::runtime_error("Missing closing brace ')'!");
         }
     }
+
     expect<RParen>();
     expect<Arrow>();
 
@@ -134,18 +156,8 @@ std::unique_ptr<Statement> Parser::parseFunctionCall() {
     expect<LParen>();
 
     //parse arguments
-    auto arguments = std::vector<std::unique_ptr<Expression> >();
-    while (!match<RParen>()) {
-        auto arg = parseExpression();
+    auto arguments = parseFunctionArguments();
 
-        arguments.emplace_back(std::move(arg));
-        if (!match<RParen>())
-            expect<Comma>(); //if didn't read the end, get a comma seperator [foo(a, 5)]
-
-        if (isAtEnd()) {
-            throw std::runtime_error("Missing closing bracket '}'!");
-        }
-    }
     expect<RParen>();
     expect<Semicolon>();
 
@@ -290,16 +302,7 @@ std::unique_ptr<Expression> Parser::parsePrimary() {
 
         if (match<LParen>()) {
             expect<LParen>();
-            //parse arguments
-            auto arguments = std::vector<std::unique_ptr<Expression> >();
-            while (!match<RParen>()) {
-                auto arg = parseExpression();
-
-                arguments.emplace_back(std::move(arg));
-                if (!match<RParen>())
-                    expect<Comma>(); //if didn't read the end, get a comma seperator [foo(a, 5)]
-            }
-            expect<RParen>();
+            auto arguments = parseFunctionArguments();
             return std::make_unique<CallExpression>(name.name, std::move(arguments));
         }
         return std::make_unique<IdentifierNode>(name.name);
@@ -335,9 +338,9 @@ bool Parser::matchValue(T type) {
 template<typename T>
 T Parser::expect() {
     if (match<T>()) {
-        Token &token = _tokens[_position];
+        auto tokenType = _tokens[_position].type;
         _position++;
-        return std::get<T>(token.type);
+        return std::get<T>(tokenType);
     }
     throw std::runtime_error("Unexpected Token! got '" + tokenToString(peek()) + "'");
 }

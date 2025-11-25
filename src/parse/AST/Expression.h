@@ -76,12 +76,21 @@ struct IdentifierNode : Expression {
     void accept(const Visitor &visitor) override;
 };
 
+struct FunctionArgument {
+    std::string name;
+    std::unique_ptr<Expression> value;
+
+    FunctionArgument(std::string name, std::unique_ptr<Expression> value)
+        : name(std::move(name)), value(std::move(value)) {
+    }
+};
+
 // Function call
 struct CallExpression : Expression {
     std::string functionName;
-    std::vector<std::unique_ptr<Expression> > arguments;
+    std::vector<FunctionArgument> arguments;
 
-    CallExpression(std::string name, std::vector<std::unique_ptr<Expression> > arguments)
+    CallExpression(std::string name, std::vector<FunctionArgument> arguments)
         : functionName(std::move(name)), arguments(std::move(arguments)) {
     }
 

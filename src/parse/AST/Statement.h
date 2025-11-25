@@ -80,24 +80,25 @@ struct IfStatement : Statement {
     void accept(const Visitor &visitor) override;
 };
 
+
 // Function declaration
-struct FunctionDeclaration : Statement {
-    struct Parameter {
+struct FunctionDeclaration : ASTNode {
+    struct FunctionParameter {
         std::string name;
         Type type;
 
-        Parameter(std::string name, const Type type)
+        FunctionParameter(std::string name, const Type type)
             : name(std::move(name)), type(type) {
         }
     };
 
-    Type returnType;
     std::string name;
-    std::vector<Parameter> parameters;
+    Type returnType;
+    std::vector<FunctionParameter> parameters;
     std::unique_ptr<Statement> body; //usually a block
 
     FunctionDeclaration(const Type returnType, std::string name,
-                        std::vector<Parameter> parameters, std::unique_ptr<Statement> body)
+                        std::vector<FunctionParameter> parameters, std::unique_ptr<Statement> body)
         : returnType(returnType), name(std::move(name)), parameters(std::move(parameters)), body(std::move(body)) {
     }
 
@@ -107,9 +108,9 @@ struct FunctionDeclaration : Statement {
 // Function call
 struct FunctionCall : Statement {
     std::string functionName;
-    std::vector<std::unique_ptr<Expression> > arguments;
+    std::vector<FunctionArgument> arguments;
 
-    FunctionCall(std::string name, std::vector<std::unique_ptr<Expression> > arguments)
+    FunctionCall(std::string name, std::vector<FunctionArgument> arguments)
         : functionName(std::move(name)), arguments(std::move(arguments)) {
     }
 
