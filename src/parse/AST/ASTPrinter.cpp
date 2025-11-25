@@ -4,35 +4,48 @@
 
 #include "Statement.h"
 
-void ASTPrinter::visit(IntegerLiteralNode &node) {
-    std::cout << node.value << ' ';
+
+ASTPrinter::ASTPrinter() {
+    currIndent = 0;
 }
 
-void ASTPrinter::visit(StringLiteralNode &node) {
-    std::cout << '\"' + node.value + "\" ";
+void ASTPrinter::visit(const Program &program) const {
+    std::cout << "program:\n";
+    for (auto &node: program.declarations) {
+        node->accept(*this);
+    }
 }
 
-void ASTPrinter::visit(BooleanLiteralNode &node) {
-    std::cout << (node.value ? "true" : "false") << ' ';
+void ASTPrinter::visit(const IntegerLiteralNode &node) const {
+    std::cout << node.value;
 }
 
-void ASTPrinter::visit(BinaryExpression &node) {
+void ASTPrinter::visit(const StringLiteralNode &node) const {
+    std::cout << '\"' + node.value + '\"';
+}
+
+void ASTPrinter::visit(const BooleanLiteralNode &node) const {
+    std::cout << (node.value ? "true" : "false");
+}
+
+void ASTPrinter::visit(const BinaryExpression &node) const {
+    std::cout << ' ';
     node.left->accept(*this);
-    std::cout << ' ' << Token{node.op, 0, 0, ""} << ' ';
+    std::cout << ' ' << operatorToString(node.op);
     node.right->accept(*this);
 }
 
-void ASTPrinter::visit(UnaryExpression &node) {
-    std::cout << Token{node.op, 0, 0, ""} << ' ';
+void ASTPrinter::visit(const UnaryExpression &node) const {
+    std::cout << ' ' << operatorToString(node.op) << ' ';
     node.operand->accept(*this);
 }
 
-void ASTPrinter::visit(IdentifierNode &node) {
-    std::cout << node.name.name << ' ';
+void ASTPrinter::visit(const IdentifierNode &node) const {
+    std::cout << node.name;
 }
 
-void ASTPrinter::visit(CallExpression &node) {
-    std::cout << node.functionName.name << '(';
+void ASTPrinter::visit(const CallExpression &node) const {
+    std::cout << node.functionName << '(';
     for (auto &arg: node.arguments) {
         arg->accept(*this);
         if (arg != *node.arguments.end()) {
@@ -42,28 +55,27 @@ void ASTPrinter::visit(CallExpression &node) {
     std::cout << ')';
 }
 
-void ASTPrinter::visit(VariableDeclaration &node) {
-    std::cout << node.name.name << " : " << Token{node.type, 0, 0, ""}
-            << " = ";
+void ASTPrinter::visit(const VariableDeclaration &node) const {
+    std::cout << node.name << " : " << typeToString(node.type) << " = ";
     if (node.initializer) {
         node.initializer->accept(*this);
     }
     std::cout << std::endl;
 }
 
-void ASTPrinter::visit(VariableAssignment &node) {
-    std::cout << node.name.name << " = ";
+void ASTPrinter::visit(const VariableAssignment &node) const {
+    std::cout << node.name << " = ";
     node.newValue->accept(*this);
     std::cout << std::endl;
 }
 
-void ASTPrinter::visit(ReturnStatement &node) {
+void ASTPrinter::visit(const ReturnStatement &node) const {
     std::cout << "return ";
     node.value->accept(*this);
     std::cout << std::endl;
 }
 
-void ASTPrinter::visit(Block &node) {
+void ASTPrinter::visit(const Block &node) const {
     std::cout << "{\n";
     for (auto &statement: node.statements) {
         statement->accept(*this);
@@ -71,14 +83,14 @@ void ASTPrinter::visit(Block &node) {
     std::cout << "}\n";
 }
 
-void ASTPrinter::visit(WhileStatement &node) {
+void ASTPrinter::visit(const WhileStatement &node) const {
     std::cout << "while (";
     node.condition->accept(*this);
     std::cout << ")\n";
     node.body->accept(*this);
 }
 
-void ASTPrinter::visit(IfStatement &node) {
+void ASTPrinter::visit(const IfStatement &node) const {
     std::cout << "if (";
     node.condition->accept(*this);
     std::cout << ")\n";
@@ -89,17 +101,17 @@ void ASTPrinter::visit(IfStatement &node) {
     }
 }
 
-void ASTPrinter::visit(FunctionDeclaration &node) {
-    std::cout << node.name.name << '(';
+void ASTPrinter::visit(const FunctionDeclaration &node) const {
+    std::cout << node.name << '(';
     for (auto &param: node.parameters) {
-        std::cout << param.name.name << ": " << Token{param.type, 0, 0, ""} << ", ";
+        std::cout << param.name << ": " << typeToString(param.type) << ", ";
     }
-    std::cout << ") -> " << Token{node.returnType, 0, 0, ""} << std::endl;
+    std::cout << ") -> " << typeToString(node.returnType) << std::endl;
     node.body->accept(*this);
 }
 
-void ASTPrinter::visit(FunctionCall &node) {
-    std::cout << node.functionName.name << '(';
+void ASTPrinter::visit(const FunctionCall &node) const {
+    std::cout << node.functionName << '(';
     for (auto &arg: node.arguments) {
         arg->accept(*this);
         if (arg != *node.arguments.end()) {
@@ -107,11 +119,4 @@ void ASTPrinter::visit(FunctionCall &node) {
         }
     }
     std::cout << ")\n";
-}
-
-void ASTPrinter::visit(Program &program) {
-    std::cout << "program:\n";
-    for (auto &node: program.declarations) {
-        node->accept(*this);
-    }
 }

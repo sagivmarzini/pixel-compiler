@@ -1,38 +1,38 @@
 #include "Statement.h"
 
-void VariableDeclaration::accept(Visitor &visitor) {
+void VariableDeclaration::accept(const Visitor &visitor) {
     visitor.visit(*this);
 }
 
-void VariableAssignment::accept(Visitor &visitor) {
+void VariableAssignment::accept(const Visitor &visitor) {
     visitor.visit(*this);
 }
 
-void ReturnStatement::accept(Visitor &visitor) {
+void ReturnStatement::accept(const Visitor &visitor) {
     visitor.visit(*this);
 }
 
-void Block::accept(Visitor &visitor) {
+void Block::accept(const Visitor &visitor) {
     visitor.visit(*this);
 }
 
-void WhileStatement::accept(Visitor &visitor) {
+void WhileStatement::accept(const Visitor &visitor) {
     visitor.visit(*this);
 }
 
-void IfStatement::accept(Visitor &visitor) {
+void IfStatement::accept(const Visitor &visitor) {
     visitor.visit(*this);
 }
 
-void FunctionDeclaration::accept(Visitor &visitor) {
+void FunctionDeclaration::accept(const Visitor &visitor) {
     visitor.visit(*this);
 }
 
-void FunctionCall::accept(Visitor &visitor) {
+void FunctionCall::accept(const Visitor &visitor) {
     visitor.visit(*this);
 }
 
-void Program::accept(Visitor &visitor) {
+void Program::accept(const Visitor &visitor) {
     visitor.visit(*this);
 }
 

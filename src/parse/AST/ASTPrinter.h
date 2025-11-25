@@ -2,43 +2,52 @@
 #define COMPILER_PROJECT_PRINTERVISITOR_H
 
 #include "Visitor.h"
+#include <string>
+
+#include "Statement.h"
 
 class ASTPrinter : public Visitor {
 public:
+    ASTPrinter();
+
     ~ASTPrinter() override = default;
 
-    void visit(Program &program) override;
+    void visit(const Program &program) const override;
 
 private:
-    void visit(IntegerLiteralNode &node) override;
+    int currIndent;
 
-    void visit(StringLiteralNode &node) override;
+    // void printLine(std::string line);
 
-    void visit(BooleanLiteralNode &node) override;
+    void visit(const IntegerLiteralNode &node) const override;
 
-    void visit(BinaryExpression &node) override;
+    void visit(const StringLiteralNode &node) const override;
 
-    void visit(UnaryExpression &node) override;
+    void visit(const BooleanLiteralNode &node) const override;
 
-    void visit(IdentifierNode &node) override;
+    void visit(const BinaryExpression &node) const override;
 
-    void visit(CallExpression &node) override;
+    void visit(const UnaryExpression &node) const override;
 
-    void visit(VariableDeclaration &node) override;
+    void visit(const IdentifierNode &node) const override;
 
-    void visit(VariableAssignment &node) override;
+    void visit(const CallExpression &node) const override;
 
-    void visit(ReturnStatement &node) override;
+    void visit(const VariableDeclaration &node) const override;
 
-    void visit(Block &node) override;
+    void visit(const VariableAssignment &node) const override;
 
-    void visit(WhileStatement &node) override;
+    void visit(const ReturnStatement &node) const override;
 
-    void visit(IfStatement &node) override;
+    void visit(const Block &node) const override;
 
-    void visit(FunctionDeclaration &node) override;
+    void visit(const WhileStatement &node) const override;
 
-    void visit(FunctionCall &node) override;
+    void visit(const IfStatement &node) const override;
+
+    void visit(const FunctionDeclaration &node) const override;
+
+    void visit(const FunctionCall &node) const override;
 };
 
 

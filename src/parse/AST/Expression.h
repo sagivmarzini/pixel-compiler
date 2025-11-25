@@ -18,28 +18,28 @@ public:
 struct IntegerLiteralNode : Expression {
     long value;
 
-    IntegerLiteralNode(const long val) : value(val) {
+    IntegerLiteralNode(const long value) : value(value) {
     }
 
-    void accept(Visitor &visitor) override;
+    void accept(const Visitor &visitor) override;
 };
 
 struct StringLiteralNode : Expression {
     std::string value;
 
-    StringLiteralNode(std::string val) : value(std::move(val)) {
+    StringLiteralNode(std::string value) : value(std::move(value)) {
     }
 
-    void accept(Visitor &visitor) override;
+    void accept(const Visitor &visitor) override;
 };
 
 struct BooleanLiteralNode : Expression {
     bool value;
 
-    BooleanLiteralNode(const bool val) : value(val) {
+    BooleanLiteralNode(const bool value) : value(value) {
     }
 
-    void accept(Visitor &visitor) override;
+    void accept(const Visitor &visitor) override;
 };
 
 // Binary operations (e.g., a + b, x * y)
@@ -48,44 +48,44 @@ struct BinaryExpression : Expression {
     Operator op;
     std::unique_ptr<Expression> right;
 
-    BinaryExpression(std::unique_ptr<Expression> l, const Operator o, std::unique_ptr<Expression> r)
-        : left(std::move(l)), op(o), right(std::move(r)) {
+    BinaryExpression(std::unique_ptr<Expression> left, const Operator op, std::unique_ptr<Expression> right)
+        : left(std::move(left)), op(op), right(std::move(right)) {
     }
 
-    void accept(Visitor &visitor) override;
+    void accept(const Visitor &visitor) override;
 };
 
 struct UnaryExpression : Expression {
     std::unique_ptr<Expression> operand;
     Operator op;
 
-    UnaryExpression(std::unique_ptr<Expression> operand, const Operator o)
-        : operand(std::move(operand)), op(o) {
+    UnaryExpression(std::unique_ptr<Expression> operand, const Operator op)
+        : operand(std::move(operand)), op(op) {
     }
 
-    void accept(Visitor &visitor) override;
+    void accept(const Visitor &visitor) override;
 };
 
 // Variable reference
 struct IdentifierNode : Expression {
-    Identifier name;
+    std::string name;
 
-    IdentifierNode(Identifier n) : name(std::move(n)) {
+    IdentifierNode(std::string name) : name(std::move(name)) {
     }
 
-    void accept(Visitor &visitor) override;
+    void accept(const Visitor &visitor) override;
 };
 
 // Function call
 struct CallExpression : Expression {
-    Identifier functionName;
+    std::string functionName;
     std::vector<std::unique_ptr<Expression> > arguments;
 
-    CallExpression(Identifier name, std::vector<std::unique_ptr<Expression> > args)
-        : functionName(std::move(name)), arguments(std::move(args)) {
+    CallExpression(std::string name, std::vector<std::unique_ptr<Expression> > arguments)
+        : functionName(std::move(name)), arguments(std::move(arguments)) {
     }
 
-    void accept(Visitor &visitor) override;
+    void accept(const Visitor &visitor) override;
 };
 
 #endif //COMPILER_PROJECT_EXPRESSION_H

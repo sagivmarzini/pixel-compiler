@@ -28,7 +28,7 @@ void Compiler::compile() const {
         printTokens(tokens);
 
         Parser parser(tokens);
-        auto AST = parser.parse();
+        auto AST = parser.parseProgram();
 
         ASTPrinter printer;
         AST.accept(printer);

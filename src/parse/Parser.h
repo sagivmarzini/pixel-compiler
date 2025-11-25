@@ -8,13 +8,12 @@ class Parser {
 public:
     Parser(std::vector<Token> tokens);
 
-    Program parse();
-
+    Program parseProgram();
 private:
     std::vector<Token> _tokens;
     size_t _position;
 
-    Program parseProgram();
+
 
     // Recursive descent parsing methods
     std::unique_ptr<Statement> parseStatement();

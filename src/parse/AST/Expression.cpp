@@ -1,29 +1,29 @@
 #include "Expression.h"
 
-void IntegerLiteralNode::accept(Visitor &visitor) {
+void IntegerLiteralNode::accept(const Visitor &visitor) {
     visitor.visit(*this);
 }
 
-void StringLiteralNode::accept(Visitor &visitor) {
+void StringLiteralNode::accept(const Visitor &visitor) {
     visitor.visit(*this);
 }
 
-void BooleanLiteralNode::accept(Visitor &visitor) {
+void BooleanLiteralNode::accept(const Visitor &visitor) {
     visitor.visit(*this);
 }
 
-void BinaryExpression::accept(Visitor &visitor) {
+void BinaryExpression::accept(const Visitor &visitor) {
     visitor.visit(*this);
 }
 
-void UnaryExpression::accept(Visitor &visitor) {
+void UnaryExpression::accept(const Visitor &visitor) {
     visitor.visit(*this);
 }
 
-void IdentifierNode::accept(Visitor &visitor) {
+void IdentifierNode::accept(const Visitor &visitor) {
     visitor.visit(*this);
 }
 
-void CallExpression::accept(Visitor &visitor) {
+void CallExpression::accept(const Visitor &visitor) {
     visitor.visit(*this);
 }

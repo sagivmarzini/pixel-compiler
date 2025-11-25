@@ -6,18 +6,14 @@ Parser::Parser(std::vector<Token> tokens)
     : _tokens(std::move(tokens)), _position(0) {
 }
 
-Program Parser::parse() {
-    return parseProgram();
-}
-
 Program Parser::parseProgram() {
-    std::vector<std::unique_ptr<ASTNode> > declarations = std::vector<std::unique_ptr<ASTNode> >();
+    std::vector<std::unique_ptr<ASTNode> > declarations;
 
     while (!isAtEnd()) {
         declarations.push_back(parseStatement());
     }
 
-    return {declarations};
+    return {std::move(declarations)};
 }
 
 std::unique_ptr<Statement> Parser::parseStatement() {
@@ -73,7 +69,7 @@ std::unique_ptr<Statement> Parser::parseFunctionDeclaration() {
         expect<Colon>();
         auto paramType = expect<Type>();
 
-        parameters.emplace_back(paramName, paramType);
+        parameters.emplace_back(paramName.name, paramType);
         if (!match<RParen>())
             expect<Comma>(); //if didn't read the end, get a comma seperator [func foo(a:int, b:int)]
     }
@@ -83,7 +79,7 @@ std::unique_ptr<Statement> Parser::parseFunctionDeclaration() {
     auto returnType = expect<Type>();
     auto block = parseBlock();
 
-    return std::make_unique<FunctionDeclaration>(returnType, name, parameters, std::move(block));
+    return std::make_unique<FunctionDeclaration>(returnType, name.name, parameters, std::move(block));
 }
 
 std::unique_ptr<Statement> Parser::parseVariableDeclaration() {
@@ -91,7 +87,7 @@ std::unique_ptr<Statement> Parser::parseVariableDeclaration() {
     auto name = expect<Identifier>();
 
     // if initializing with inferred type set it to undefined
-    Type type = Type::Undefined;
+    Type type = Type::Unspecified;
     std::unique_ptr<Expression> value = nullptr;
     //if initializing with type get it
     if (match<Colon>()) {
@@ -104,12 +100,12 @@ std::unique_ptr<Statement> Parser::parseVariableDeclaration() {
         value = parseExpression();
     }
 
-    if (!value && type == Type::Undefined) {
+    if (!value && type == Type::Unspecified) {
         throw std::runtime_error("Trying to initialize a variable without a type!");
     }
     expect<Semicolon>();
 
-    return std::make_unique<VariableDeclaration>(type, name, std::move(value));
+    return std::make_unique<VariableDeclaration>(type, name.name, std::move(value));
 }
 
 std::unique_ptr<Statement> Parser::parseVariableAssignment() {
@@ -122,7 +118,7 @@ std::unique_ptr<Statement> Parser::parseVariableAssignment() {
     auto value = parseExpression();
     expect<Semicolon>();
 
-    return std::make_unique<VariableAssignment>(name, std::move(value));
+    return std::make_unique<VariableAssignment>(name.name, std::move(value));
 }
 
 std::unique_ptr<Statement> Parser::parseFunctionCall() {
@@ -142,7 +138,7 @@ std::unique_ptr<Statement> Parser::parseFunctionCall() {
     expect<RParen>();
     expect<Semicolon>();
 
-    return std::make_unique<FunctionCall>(name, std::move(arguments));
+    return std::make_unique<FunctionCall>(name.name, std::move(arguments));
 }
 
 std::unique_ptr<Statement> Parser::parseIfStatement() {
@@ -293,9 +289,9 @@ std::unique_ptr<Expression> Parser::parsePrimary() {
                     expect<Comma>(); //if didn't read the end, get a comma seperator [foo(a, 5)]
             }
             expect<RParen>();
-            return std::make_unique<CallExpression>(name, std::move(arguments));
+            return std::make_unique<CallExpression>(name.name, std::move(arguments));
         }
-        return std::make_unique<IdentifierNode>(name);
+        return std::make_unique<IdentifierNode>(name.name);
     }
     if (match<LParen>()) {
         expect<LParen>();
