@@ -6,6 +6,7 @@
 #include <utility>
 
 #include "lex/LexerException.h"
+#include "parse/AST/ASTPrinter.h"
 
 Compiler::Compiler(std::string sourceFile) : _sourceFile(std::move(sourceFile)) {
     std::ifstream file(_sourceFile);
@@ -25,6 +26,12 @@ void Compiler::compile() const {
     try {
         const auto tokens = lexer.lex();
         printTokens(tokens);
+
+        Parser parser(tokens);
+        auto AST = parser.parseProgram();
+
+        ASTPrinter printer;
+        AST.accept(printer);
     } catch (const LexerException &e) {
         const auto [line, col] = e.location();
 

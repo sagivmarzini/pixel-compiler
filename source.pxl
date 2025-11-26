@@ -6,31 +6,22 @@ func main() -> int {
     var empty: void;
     var data: ptr;
     var rgb: color;
-    
+
     x = x + 1;
     y = y - 2;
     x = x * 3;
     y = y / 4;
-    
-    x++;
-    y--;
-    ++x;
-    --y;
-    
+
     if (x == 42 && y != 0) {
         return 1;
     } else {
         return 0;
     }
-    
+
     while (x > 10 && x < 100) {
         x = x - 1;
     }
-    
-    for (x = 0..10) {
-        y = y + 1;
-    }
-    
+
     if (flag || !flag) {
         if (x >= 5 && y <= 20) {
             var result: int = x + y;
