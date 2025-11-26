@@ -3,7 +3,7 @@
 #include "AST/Statement.h"
 
 Parser::Parser(std::vector<Token> tokens)
-    : _tokens(std::move(tokens)), _position(0), _endOfFile(_tokens.back()) {
+    : _tokens(std::move(tokens)), _position(0) {
 }
 
 Program Parser::parseProgram() {
