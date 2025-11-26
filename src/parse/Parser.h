@@ -13,7 +13,7 @@ public:
 private:
     std::vector<Token> _tokens;
     size_t _position;
-    const Token _endOfFile = Token(EndOfFile(), -1, -1, "EOF");
+    Token _endOfFile = Token(EndOfFile(), -1, -1, "EOF");
 
 
     // Recursive descent parsing methods
