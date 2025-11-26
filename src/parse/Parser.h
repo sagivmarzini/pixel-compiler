@@ -13,6 +13,7 @@ public:
 private:
     std::vector<Token> _tokens;
     size_t _position;
+    Token _endOfFile;
 
 
     // Recursive descent parsing methods

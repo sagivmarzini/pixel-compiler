@@ -5,10 +5,6 @@
 #include "Statement.h"
 
 
-ASTPrinter::ASTPrinter() {
-    currIndent = 0;
-}
-
 void ASTPrinter::visit(const Program &program) const {
     std::cout << "program:\n";
     for (auto &node: program.declarations) {
@@ -59,19 +55,19 @@ void ASTPrinter::visit(const VariableDeclaration &node) const {
     if (node.initializer) {
         node.initializer->accept(*this);
     }
-    std::cout << std::endl;
+    std::cout << '\n';
 }
 
 void ASTPrinter::visit(const VariableAssignment &node) const {
     std::cout << node.name << " = ";
     node.newValue->accept(*this);
-    std::cout << std::endl;
+    std::cout << '\n';
 }
 
 void ASTPrinter::visit(const ReturnStatement &node) const {
     std::cout << "return ";
     node.value->accept(*this);
-    std::cout << std::endl;
+    std::cout << '\n';
 }
 
 void ASTPrinter::visit(const Block &node) const {
@@ -105,7 +101,7 @@ void ASTPrinter::visit(const FunctionDeclaration &node) const {
     for (auto &param: node.parameters) {
         std::cout << param.name << ": " << typeToString(param.type) << ", ";
     }
-    std::cout << ") -> " << typeToString(node.returnType) << std::endl;
+    std::cout << ") -> " << typeToString(node.returnType) << '\n';
     node.body->accept(*this);
 }
 

@@ -3,7 +3,7 @@
 #include "AST/Statement.h"
 
 Parser::Parser(std::vector<Token> tokens)
-    : _tokens(std::move(tokens)), _position(0) {
+    : _tokens(std::move(tokens)), _position(0), _endOfFile(_tokens.back()) {
 }
 
 Program Parser::parseProgram() {
@@ -51,10 +51,10 @@ std::unique_ptr<Statement> Parser::parseBlock() {
 
     Block block;
     while (!match<RBrace>()) {
-        block.statements.push_back(parseStatement());
         if (isAtEnd()) {
             throw std::runtime_error("Missing closing bracket '}'!");
         }
+        block.statements.push_back(parseStatement());
     }
     expect<RBrace>();
 
@@ -64,6 +64,9 @@ std::unique_ptr<Statement> Parser::parseBlock() {
 std::vector<FunctionArgument> Parser::parseFunctionArguments() {
     std::vector<FunctionArgument> args;
     while (!match<LParen>()) {
+        if (isAtEnd()) {
+            throw std::runtime_error("Missing closing paren ')'!");
+        }
         auto name = expect<Identifier>();
         expect<Colon>();
         auto value = parseExpression();
@@ -72,10 +75,6 @@ std::vector<FunctionArgument> Parser::parseFunctionArguments() {
 
         if (match<RParen>()) {
             expect<Comma>();
-        }
-
-        if (isAtEnd()) {
-            throw std::runtime_error("Missing closing paren ')'!");
         }
     }
     return args;
@@ -89,6 +88,10 @@ std::unique_ptr<ASTNode> Parser::parseFunctionDeclaration() {
     std::vector<FunctionDeclaration::FunctionParameter> parameters;
     //parse parameters
     while (!match<RParen>()) {
+        if (isAtEnd()) {
+            throw std::runtime_error("Missing closing brace ')'!");
+        }
+
         auto paramName = expect<Identifier>();
         expect<Colon>();
         auto paramType = expect<Type>();
@@ -96,10 +99,6 @@ std::unique_ptr<ASTNode> Parser::parseFunctionDeclaration() {
         parameters.emplace_back(paramName.name, paramType);
         if (!match<RParen>())
             expect<Comma>(); //if didn't read the end, get a comma seperator [func foo(a:int, b:int)]
-
-        if (isAtEnd()) {
-            throw std::runtime_error("Missing closing brace ')'!");
-        }
     }
 
     expect<RParen>();
@@ -320,7 +319,7 @@ std::unique_ptr<Expression> Parser::parsePrimary() {
 Token &Parser::peek(int offset) {
     auto position = _position + offset;
     if (position >= _tokens.size()) {
-        return _tokens.back(); //return last token if passed the end
+        return _endOfFile; //return last token if passed the end
     }
     return _tokens[position];
 }

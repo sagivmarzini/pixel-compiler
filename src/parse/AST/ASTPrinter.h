@@ -8,17 +8,11 @@
 
 class ASTPrinter : public Visitor {
 public:
-    ASTPrinter();
-
     ~ASTPrinter() override = default;
 
     void visit(const Program &program) const override;
 
 private:
-    int currIndent;
-
-    // void printLine(std::string line);
-
     void visit(const IntegerLiteralNode &node) const override;
 
     void visit(const StringLiteralNode &node) const override;

@@ -164,48 +164,48 @@ struct Token {
 
 inline std::string typeToString(Type type) {
     switch (type) {
-        case Type::Int: return "Type(int)";
-        case Type::Float: return "Type(float)";
-        case Type::Bool: return "Type(bool)";
-        case Type::Ptr: return "Type(ptr)";
-        case Type::String: return "Type(string)";
-        case Type::Color: return "Type(color)";
-        case Type::Void: return "Type(void)";
+        case Type::Int: return "Int";
+        case Type::Float: return "Float";
+        case Type::Bool: return "Bool";
+        case Type::Ptr: return "Ptr";
+        case Type::String: return "String";
+        case Type::Color: return "Color";
+        case Type::Void: return "Void";
     }
     return "Unknown Type";
 }
 
 inline std::string operatorToString(Operator op) {
     switch (op) {
-        case Operator::Assignment: return "Operator(=)";
-        case Operator::Plus: return "Operator(+)";
-        case Operator::PlusPlus: return "Operator(++)";
-        case Operator::Minus: return "Operator(-)";
-        case Operator::MinusMinus: return "Operator(--)";
-        case Operator::Star: return "Operator(*)";
-        case Operator::Slash: return "Operator(/)";
-        case Operator::And: return "Operator(&&)";
-        case Operator::Or: return "Operator(||)";
-        case Operator::Equal: return "Operator(==)";
-        case Operator::NotEqual: return "Operator(!=)";
-        case Operator::Exclamation: return "Operator(!)";
-        case Operator::Less: return "Operator(<)";
-        case Operator::LessEqual: return "Operator(<=)";
-        case Operator::Greater: return "Operator(>)";
-        case Operator::GreaterEqual: return "Operator(>=)";
+        case Operator::Assignment: return "=";
+        case Operator::Plus: return "+";
+        case Operator::PlusPlus: return "++";
+        case Operator::Minus: return "-";
+        case Operator::MinusMinus: return "--";
+        case Operator::Star: return "*";
+        case Operator::Slash: return "/";
+        case Operator::And: return "&&";
+        case Operator::Or: return "||";
+        case Operator::Equal: return "==";
+        case Operator::NotEqual: return "!=";
+        case Operator::Exclamation: return "!";
+        case Operator::Less: return "<";
+        case Operator::LessEqual: return "<=";
+        case Operator::Greater: return ">";
+        case Operator::GreaterEqual: return ">=";
     }
     return "Unknown Operator";
 }
 
 inline std::string keywordToString(Keyword keyword) {
     switch (keyword) {
-        case Keyword::Func: return "Keyword(func)";
-        case Keyword::Var: return "Keyword(var)";
-        case Keyword::Return: return "Keyword(return)";
-        case Keyword::If: return "Keyword(if)";
-        case Keyword::Else: return "Keyword(else)";
-        case Keyword::While: return "Keyword(while)";
-        case Keyword::For: return "Keyword(for)";
+        case Keyword::Func: return "Func";
+        case Keyword::Var: return "Var";
+        case Keyword::Return: return "Return";
+        case Keyword::If: return "If";
+        case Keyword::Else: return "Else";
+        case Keyword::While: return "While";
+        case Keyword::For: return "For";
     }
     return "Unknown Keyword";
 }
