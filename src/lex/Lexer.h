@@ -6,6 +6,8 @@
 #include <regex>
 #include <unordered_map>
 
+#include "LexerError.h"
+
 class Lexer {
 public:
     explicit Lexer(std::string sourceCode);
@@ -20,6 +22,7 @@ private:
     size_t _position;
     int _line;
     int _col;
+    std::vector<LexerError> _errors;
 
     [[nodiscard]] char peek() const;
 

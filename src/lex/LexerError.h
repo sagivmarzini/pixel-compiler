@@ -5,10 +5,11 @@
 #ifndef COMPILER_PROJECT_LEXEREXCEPTION_H
 #define COMPILER_PROJECT_LEXEREXCEPTION_H
 
-#include "CompilerException.h"
 #include "Token.h"
 
-enum class LexerError {
+#include <string>
+
+enum class LexerErrorType {
     UnexpectedChar,
     UnterminatedString,
     UnterminatedComment,
@@ -16,16 +17,17 @@ enum class LexerError {
 };
 
 
-class LexerException : public CompilerException {
+class LexerError {
 public:
-    LexerException(const LexerError &type, int line, int col, std::string lexeme);
+    LexerError(const LexerErrorType &type, int line, int col, std::string lexeme);
 
-    [[nodiscard]] const char *what() const noexcept override;
+    [[nodiscard]] std::string message() const;
 
     [[nodiscard]] TokenLocation location() const;
 
 private:
-    LexerError _type;
+    std::string _msg;
+    LexerErrorType _type;
     TokenLocation _location{};
     std::string _lexeme;
 };
