@@ -9,8 +9,8 @@ add_executable(compiler-project
         src/lex/Lexer.cpp
         src/CompilerException.cpp
         src/CompilerException.h
-        src/lex/LexerException.cpp
-        src/lex/LexerException.h
+        src/lex/LexerError.cpp
+        src/lex/LexerError.h
         src/parse/Parser.cpp
         src/parse/Parser.h
         src/parse/AST/Expression.h

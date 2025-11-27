@@ -14,14 +14,16 @@ int main(int argc, char **argv) {
 
     const std::string inputFilePath = argv[1];
 
-
     try {
         const Compiler compiler(inputFilePath);
         compiler.compile();
 
         return EXIT_SUCCESS;
     } catch (const CompilerException &e) {
-        std::cerr << "Error during compilation: " << e.what() << '\n';
+        std::cerr << "Error during compilation:\n";
+        for (const auto &error: e.errors()) {
+            std::cerr << std::format("{}:{}", inputFilePath, error);
+        }
         return EXIT_FAILURE;
     } catch (const std::exception &e) {
         std::cerr << "Compiler error: " << e.what() << '\n';

@@ -5,7 +5,7 @@
 #include <sstream>
 #include <utility>
 
-#include "lex/LexerException.h"
+#include "lex/LexerError.h"
 #include "parse/AST/ASTPrinter.h"
 
 Compiler::Compiler(std::string sourceFile) : _sourceFile(std::move(sourceFile)) {
@@ -23,20 +23,14 @@ Compiler::Compiler(std::string sourceFile) : _sourceFile(std::move(sourceFile)) 
 void Compiler::compile() const {
     Lexer lexer(_sourceCode);
 
-    try {
-        const auto tokens = lexer.lex();
-        printTokens(tokens);
+    const auto tokens = lexer.lex();
+    printTokens(tokens);
 
-        Parser parser(tokens);
-        auto AST = parser.parseProgram();
+    Parser parser(tokens);
+    auto AST = parser.parseProgram();
 
-        ASTPrinter printer;
-        AST.accept(printer);
-    } catch (const LexerException &e) {
-        const auto [line, col] = e.location();
-
-        throw CompilerException(std::format("{}:{}:{}: {}", _sourceFile, line, col, e.what()));
-    }
+    ASTPrinter printer;
+    AST.accept(printer);
 }
 
 void Compiler::printTokens(const std::vector<Token> &tokens) {

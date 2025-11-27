@@ -3,10 +3,11 @@
 #include <utility>
 #include <vector>
 
-#include "LexerException.h"
+#include "CompilerException.h"
+#include "LexerError.h"
 
 Lexer::Lexer(std::string sourceCode)
-    : _sourceCode(std::move(sourceCode)), _position(0), _line(1), _col(1) {
+    : _sourceCode(std::move(sourceCode)), _position(0), _line(1), _col(1), _errors() {
 }
 
 std::vector<Token> Lexer::lex() {
@@ -61,7 +62,7 @@ std::vector<Token> Lexer::lex() {
                         eat();
                         token = Token(DoubleDot{}, _line, _col - 1, std::string{current});
                     } else {
-                        throw LexerException(LexerError::UnexpectedChar, _line, _col - 1, std::string{current});
+                        _errors.emplace_back(LexerErrorType::UnexpectedChar, _line, _col - 1, std::string{current});
                     }
                     break;
                 case '-':
@@ -126,7 +127,7 @@ std::vector<Token> Lexer::lex() {
                         eat();
                         token = Token(Operator::And, _line, _col - 1, std::string{current});
                     } else {
-                        throw LexerException(LexerError::UnexpectedChar, _line, _col - 1, std::string{current});
+                        _errors.emplace_back(LexerErrorType::UnexpectedChar, _line, _col - 1, std::string{current});
                     }
                     break;
                 case '|':
@@ -134,18 +135,21 @@ std::vector<Token> Lexer::lex() {
                         eat();
                         token = Token(Operator::Or, _line, _col - 1, std::string{current});
                     } else {
-                        throw LexerException(LexerError::UnexpectedChar, _line, _col - 1, std::string{current});
+                        _errors.emplace_back(LexerErrorType::UnexpectedChar, _line, _col - 1, std::string{current});
                     }
                     break;
                 default:
-                    throw LexerException(LexerError::UnexpectedChar, _line, _col - 1, std::string{current});
+                    _errors.emplace_back(LexerErrorType::UnexpectedChar, _line, _col - 1, std::string{current});
             }
         }
 
         tokens.push_back(token);
     }
 
-    tokens.push_back(Token(EndOfFile{}, _line, _col - 1, "EOF"));
+    if (!_errors.empty())
+        throw CompilerException(_errors);
+
+    tokens.emplace_back(EndOfFile{}, _line, _col - 1, "EOF");
     return tokens;
 }
 
@@ -167,12 +171,12 @@ Token Lexer::parseNumber() {
         numberStr.push_back(eat());
     }
 
-    if (numberStr.empty()) throw std::runtime_error("There was no number to parse.");
+    if (numberStr.empty()) _errors.emplace_back(LexerErrorType::InvalidNumber, _line, _col - 1, numberStr);
 
     try {
         number = std::stoi(numberStr);
     } catch (const std::out_of_range &) {
-        throw LexerException(LexerError::InvalidNumber, _line, _col - 1, numberStr);
+        _errors.emplace_back(LexerErrorType::InvalidNumber, _line, _col - 1, numberStr);
     }
 
     return Token(IntegerLiteral{number}, _line, _col - 1, numberStr);
@@ -182,7 +186,7 @@ Token Lexer::parseIdentifierOrKeyword() {
     std::string text;
 
     // Identifiers and keywords must start with a letter
-    if (!isalpha(peek())) throw std::runtime_error("There was no identifier or keyword to parse.");
+    if (!isalpha(peek())) _errors.emplace_back(LexerErrorType::UnexpectedChar, _line, _col - 1, std::string{peek()});
     text.push_back(eat());
 
     while (isalnum(peek()) || peek() == '_') {
@@ -191,10 +195,9 @@ Token Lexer::parseIdentifierOrKeyword() {
 
     // Look up in keyword map
     if (const auto it = keywords.find(text); it != keywords.end()) {
-        return Token(it->second, _line, _col - 1, text);
+        return {it->second, _line, _col - 1, text};
     }
 
     // Default to identifier
     return Token(Identifier{text}, _line, _col - 1, text);
 }
-

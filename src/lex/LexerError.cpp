@@ -1,21 +1,21 @@
-#include "LexerException.h"
+#include "LexerError.h"
 
 #include <format>
 #include <utility>
 
-LexerException::LexerException(const LexerError &type, int line, int col, std::string lexeme)
+LexerError::LexerError(const LexerErrorType &type, int line, int col, std::string lexeme)
     : _type(type), _location(line, col), _lexeme(std::move(lexeme)) {
     switch (_type) {
-        case LexerError::UnexpectedChar:
+        case LexerErrorType::UnexpectedChar:
             _msg = std::format("Unexpected token '{}'", _lexeme);
             break;
-        case LexerError::UnterminatedString:
+        case LexerErrorType::UnterminatedString:
             _msg = std::format("Unterminated string '{}'", _lexeme);
             break;
-        case LexerError::UnterminatedComment:
+        case LexerErrorType::UnterminatedComment:
             _msg = std::format("Unterminated comment '{}'", _lexeme);
             break;
-        case LexerError::InvalidNumber:
+        case LexerErrorType::InvalidNumber:
             _msg = std::format("Invalid number '{}'", _lexeme);
             break;
         default:
@@ -23,10 +23,10 @@ LexerException::LexerException(const LexerError &type, int line, int col, std::s
     }
 }
 
-const char *LexerException::what() const noexcept {
-    return _msg.c_str();
+std::string LexerError::message() const {
+    return _msg;
 }
 
-TokenLocation LexerException::location() const {
+TokenLocation LexerError::location() const {
     return _location;
 }

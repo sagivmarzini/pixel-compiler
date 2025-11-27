@@ -4,10 +4,16 @@
 
 #include "CompilerException.h"
 
-CompilerException::CompilerException(std::string msg)
-    : _msg(std::move(msg)) {
+#include <format>
+
+CompilerException::CompilerException(const std::vector<LexerError> &errors) {
+    for (const auto &error: errors) {
+        const auto &[line, col] = error.location();
+        _errors.push_back(std::format("{}:{}: error: {}", line, col, error.message()) + '\n');
+    }
 }
 
-const char *CompilerException::what() const noexcept {
-    return _msg.c_str();
+std::vector<std::string> CompilerException::errors() const noexcept {
+    return _errors;
 }
+

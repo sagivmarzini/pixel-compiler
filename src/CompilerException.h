@@ -7,18 +7,19 @@
 
 #include <exception>
 #include <string>
+#include <vector>
 
-// Generic compiler exception class. Exceptions in specific parts of the compiler inherit from this.
+#include "lex/LexerError.h"
+
+// Generic compiler error class. Errors in specific parts of the compiler inherit from this.
 class CompilerException : public std::exception {
 public:
-    CompilerException() = default;
+    CompilerException(const std::vector<LexerError> &errors);
 
-    CompilerException(std::string msg);
+    [[nodiscard]] std::vector<std::string> errors() const noexcept;
 
-    [[nodiscard]] const char *what() const noexcept override;
-
-protected:
-    std::string _msg;
+private:
+    std::vector<std::string> _errors;
 };
 
 
