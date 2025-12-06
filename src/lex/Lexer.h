@@ -31,6 +31,10 @@ private:
     Token parseNumber();
 
     Token parseIdentifierOrKeyword();
+
+    Token parseSingleLineComment();
+
+    Token parseStringLiteral();
 };
 
 const std::unordered_map<std::string, Keyword> Keywords = {

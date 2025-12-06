@@ -35,7 +35,10 @@ std::vector<Token> Lexer::lex() {
         } else {
             eat(); // Consume the character
             switch (current) {
-                //TODO: add string literal token
+                case '"':
+                    eat();
+                    token = parseStringLiteral();
+                    break;
                 case ';':
                     token = Token(Semicolon{}, _line, _col - 1, std::string{current});
                     break;
@@ -88,7 +91,10 @@ std::vector<Token> Lexer::lex() {
                     token = Token(Operator::Star, _line, _col - 1, std::string{current});
                     break;
                 case '/':
-                    token = Token(Operator::Slash, _line, _col - 1, std::string{current});
+                    if (peek() == '/') {
+                        eat();
+                        token = parseSingleLineComment();
+                    } else { token = Token(Operator::Slash, _line, _col - 1, std::string{current}); }
                     break;
                 case '=':
                     if (peek() == '=') {
@@ -159,9 +165,11 @@ char Lexer::peek() const {
 }
 
 char Lexer::eat() {
+    if (_position >= _sourceCode.size()) return '\0';
     _col++;
     return _sourceCode[_position++];
 }
+
 
 Token Lexer::parseNumber() {
     std::string numberStr;
@@ -175,7 +183,7 @@ Token Lexer::parseNumber() {
 
     try {
         number = std::stoi(numberStr);
-    } catch (const std::out_of_range &) {
+    } catch (const std::out_of_range&) {
         _errors.emplace_back(LexerErrorType::InvalidNumber, _line, _col - 1, numberStr);
     }
 
@@ -200,4 +208,30 @@ Token Lexer::parseIdentifierOrKeyword() {
 
     // Default to identifier
     return Token(Identifier{text}, _line, _col - 1, text);
+}
+
+Token Lexer::parseSingleLineComment() {
+    std::string comment;
+
+    while (peek() != '\n') {
+        comment += eat();
+    }
+
+    return Token(SingleLineComment{comment}, _line, _col - 1, comment);
+}
+
+Token Lexer::parseStringLiteral() {
+    std::string string;
+
+    while (peek() != '"') {
+        if (!peek()) {
+            _errors.emplace_back(LexerErrorType::UnterminatedString, _line, _col, string);
+            return Token{};
+        }
+
+        string += eat();
+    }
+    eat(); // eat closing quotes
+
+    return Token(StringLiteral{string}, _line, _col - 1, string);
 }

@@ -47,23 +47,31 @@ struct BooleanLiteral {
 enum class Operator {
     Assignment, // =
 
-    Plus, // +
-    PlusPlus, // ++
-    Minus, // -
+    Plus,       // +
+    PlusPlus,   // ++
+    Minus,      // -
     MinusMinus, // --
-    Star, // *
-    Slash, // /
+    Star,       // *
+    Slash,      // /
 
-    And, // &&
-    Or, // ||
-    Equal, // ==
-    NotEqual, // !=
+    And,         // &&
+    Or,          // ||
+    Equal,       // ==
+    NotEqual,    // !=
     Exclamation, // !
 
-    Less, // <
-    LessEqual, // <=
-    Greater, // >
+    Less,         // <
+    LessEqual,    // <=
+    Greater,      // >
     GreaterEqual, // >=
+};
+
+struct SingleLineComment {
+    std::string comment;
+};
+
+struct MultiLineComment {
+    std::string comment;
 };
 
 struct Semicolon {
@@ -118,6 +126,8 @@ using TokenType = std::variant<
     BooleanLiteral,
     Type,
     Identifier,
+    SingleLineComment,
+    MultiLineComment,
 
     // EOF
     EndOfFile
@@ -156,7 +166,7 @@ struct Token {
 
     Token() = default;
 
-    Token(const TokenType &type, int line, int col, const std::string &lexeme)
+    Token(const TokenType& type, int line, int col, const std::string& lexeme)
         : type(type), location(line, col), lexeme(lexeme) {
     }
 };
@@ -210,8 +220,8 @@ inline std::string keywordToString(Keyword keyword) {
     return "Unknown Keyword";
 }
 
-inline std::string tokenToString(const Token &token) {
-    return std::visit([]<typename U>(U &&arg) -> std::string {
+inline std::string tokenToString(const Token& token) {
+    return std::visit([]<typename U>(U&& arg) -> std::string {
         using T = std::decay_t<U>;
 
         if constexpr (std::is_same_v<T, Semicolon>) return "Semicolon";
@@ -243,7 +253,7 @@ inline std::string tokenToString(const Token &token) {
     }, token.type);
 }
 
-inline std::ostream &operator<<(std::ostream &os, const Token &token) {
+inline std::ostream& operator<<(std::ostream& os, const Token& token) {
     os << tokenToString(token);
     return os;
 }
