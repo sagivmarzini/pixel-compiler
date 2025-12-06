@@ -67,10 +67,6 @@ enum class Operator {
     GreaterEqual, // >=
 };
 
-struct Comment {
-    std::string comment;
-};
-
 struct Semicolon {
 };
 
@@ -123,7 +119,6 @@ using TokenType = std::variant<
     BooleanLiteral,
     Type,
     Identifier,
-    Comment,
 
     // EOF
     EndOfFile

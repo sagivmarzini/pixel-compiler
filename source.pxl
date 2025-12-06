@@ -8,7 +8,7 @@
 // Variables
 var score: int = 0;
 var playerName = "Alex";   // inferred
-//const pi = 3.14159;
+const pi = 3.14159;
 var x = 50;
 var y = 50;
 var isGameOver: bool = false;

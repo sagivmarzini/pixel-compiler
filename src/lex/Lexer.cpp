@@ -33,118 +33,152 @@ std::vector<Token> Lexer::lex() {
         } else if (isalpha(current)) {
             token = parseIdentifierOrKeyword();
         } else {
-            eat(); // Consume the character
             switch (current) {
                 case '"':
-                    eat();
                     token = parseStringLiteral();
                     break;
                 case ';':
+                    eat();
                     token = Token(Semicolon{}, _line, _col - 1, std::string{current});
                     break;
                 case ':':
+                    eat();
                     token = Token(Colon{}, _line, _col - 1, std::string{current});
                     break;
                 case ',':
+                    eat();
                     token = Token(Comma{}, _line, _col - 1, std::string{current});
                     break;
                 case '{':
+                    eat();
                     token = Token(LBrace{}, _line, _col - 1, std::string{current});
                     break;
                 case '}':
+                    eat();
                     token = Token(RBrace{}, _line, _col - 1, std::string{current});
                     break;
                 case '(':
+                    eat();
                     token = Token(LParen{}, _line, _col - 1, std::string{current});
                     break;
                 case ')':
+                    eat();
                     token = Token(RParen{}, _line, _col - 1, std::string{current});
                     break;
                 case '.':
-                    if (peek() == '.') {
+                    if (peekNext() == '.') {
+                        eat();
                         eat();
                         token = Token(DoubleDot{}, _line, _col - 1, std::string{current});
                     } else {
+                        eat();
                         _errors.emplace_back(LexerErrorType::UnexpectedChar, _line, _col - 1, std::string{current});
                     }
                     break;
                 case '-':
-                    if (peek() == '>') {
+                    if (peekNext() == '>') {
+                        eat();
                         eat();
                         token = Token(Arrow{}, _line, _col - 1, std::string{current});
-                    } else if (peek() == '-') {
+                    } else if (peekNext() == '-') {
+                        eat();
                         eat();
                         token = Token(Operator::MinusMinus, _line, _col - 1, std::string{current});
                     } else {
+                        eat();
                         token = Token(Operator::Minus, _line, _col - 1, std::string{current});
                     }
                     break;
                 case '+':
-                    if (peek() == '+') {
+                    if (peekNext() == '+') {
+                        eat();
                         eat();
                         token = Token(Operator::PlusPlus, _line, _col - 1, std::string{current});
                     } else {
+                        eat();
                         token = Token(Operator::Plus, _line, _col - 1, std::string{current});
                     }
                     break;
                 case '*':
+                    eat();
                     token = Token(Operator::Star, _line, _col - 1, std::string{current});
                     break;
                 case '/':
-                    if (peek() == '/') {
-                        eat();
-                        token = parseSingleLineComment();
-                    } else { token = Token(Operator::Slash, _line, _col - 1, std::string{current}); }
+                    if (peekNext() == '/') {
+                        skipSingleLineComment();
+                        continue;
+                    }
+                    if (peekNext() == '*') {
+                        skipMultiLineComment();
+                        continue;
+                    }
+
+                    eat();
+                    token = Token(Operator::Slash, _line, _col - 1, std::string{current});
+
                     break;
                 case '=':
-                    if (peek() == '=') {
+                    if (peekNext() == '=') {
+                        eat();
                         eat();
                         token = Token(Operator::Equal, _line, _col - 1, std::string{current});
                     } else {
+                        eat();
                         token = Token(Operator::Assignment, _line, _col - 1, std::string{current});
                     }
                     break;
                 case '!':
-                    if (peek() == '=') {
+                    if (peekNext() == '=') {
+                        eat();
                         eat();
                         token = Token(Operator::NotEqual, _line, _col - 1, std::string{current});
                     } else {
+                        eat();
                         token = Token(Operator::Exclamation, _line, _col - 1, std::string{current});
                     }
                     break;
                 case '<':
-                    if (peek() == '=') {
+                    if (peekNext() == '=') {
+                        eat();
                         eat();
                         token = Token(Operator::LessEqual, _line, _col - 1, std::string{current});
                     } else {
+                        eat();
                         token = Token(Operator::Less, _line, _col - 1, std::string{current});
                     }
                     break;
                 case '>':
-                    if (peek() == '=') {
+                    if (peekNext() == '=') {
+                        eat();
                         eat();
                         token = Token(Operator::GreaterEqual, _line, _col - 1, std::string{current});
                     } else {
+                        eat();
                         token = Token(Operator::Greater, _line, _col - 1, std::string{current});
                     }
                     break;
                 case '&':
-                    if (peek() == '&') {
+                    if (peekNext() == '&') {
+                        eat();
                         eat();
                         token = Token(Operator::And, _line, _col - 1, std::string{current});
                     } else {
+                        eat();
                         _errors.emplace_back(LexerErrorType::UnexpectedChar, _line, _col - 1, std::string{current});
                     }
                     break;
                 case '|':
-                    if (peek() == '|') {
+                    if (peekNext() == '|') {
+                        eat();
                         eat();
                         token = Token(Operator::Or, _line, _col - 1, std::string{current});
                     } else {
+                        eat();
                         _errors.emplace_back(LexerErrorType::UnexpectedChar, _line, _col - 1, std::string{current});
                     }
                     break;
                 default:
+                    eat();
                     _errors.emplace_back(LexerErrorType::UnexpectedChar, _line, _col - 1, std::string{current});
             }
         }
@@ -162,6 +196,11 @@ std::vector<Token> Lexer::lex() {
 char Lexer::peek() const {
     if (_position >= _sourceCode.size()) return '\0';
     return _sourceCode[_position];
+}
+
+char Lexer::peekNext() const {
+    if (_position + 1 >= _sourceCode.size()) return '\0';
+    return _sourceCode[_position + 1];
 }
 
 char Lexer::eat() {
@@ -210,19 +249,38 @@ Token Lexer::parseIdentifierOrKeyword() {
     return Token(Identifier{text}, _line, _col - 1, text);
 }
 
-Token Lexer::parseSingleLineComment() {
+void Lexer::skipSingleLineComment() {
+    while (peek() && peek() != '\n')
+        eat();
+}
+
+void Lexer::skipMultiLineComment() {
     std::string comment;
 
-    while (peek() != '\n') {
+    while (true) {
+        const char currentChar = peek();
+
+        if (!currentChar) {
+            _errors.emplace_back(LexerErrorType::UnterminatedComment, _line, _col, comment);
+            return;
+        }
+
+        if (currentChar == '*' && peekNext() == '/') {
+            eat(); // '*'
+            eat(); // '/'
+            break;
+        }
+
+        if (currentChar == '\n') _line++;
+
         comment += eat();
     }
-
-    return Token(Comment{comment}, _line, _col - 1, comment);
 }
 
 Token Lexer::parseStringLiteral() {
     std::string string;
 
+    eat(); // eat opening quotes
     while (peek() != '"') {
         if (!peek()) {
             _errors.emplace_back(LexerErrorType::UnterminatedString, _line, _col, string);

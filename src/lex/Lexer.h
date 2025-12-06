@@ -26,13 +26,17 @@ private:
 
     [[nodiscard]] char peek() const;
 
+    [[nodiscard]] char peekNext() const;
+
     char eat();
 
     Token parseNumber();
 
     Token parseIdentifierOrKeyword();
 
-    Token parseSingleLineComment();
+    void skipSingleLineComment();
+
+    void skipMultiLineComment();
 
     Token parseStringLiteral();
 };

@@ -56,6 +56,7 @@ std::string tokenToString(const Token& token) {
         using T = std::decay_t<U>;
 
         if constexpr (std::is_same_v<T, Semicolon>) return "Semicolon";
+        else if constexpr (std::is_same_v<T, Comma>) return "Comma";
         else if constexpr (std::is_same_v<T, Colon>) return "Colon";
         else if constexpr (std::is_same_v<T, LBrace>) return "LBrace";
         else if constexpr (std::is_same_v<T, RBrace>) return "RBrace";
@@ -78,8 +79,6 @@ std::string tokenToString(const Token& token) {
             return "StringLiteral(\"" + arg.value + "\")";
         } else if constexpr (std::is_same_v<T, BooleanLiteral>) {
             return arg.value ? "BooleanLiteral(true)" : "BooleanLiteral(false)";
-        } else if constexpr (std::is_same_v<T, Comment>) {
-            return "Comment(" + arg.comment + ")";
         }
 
         return "Unknown";
