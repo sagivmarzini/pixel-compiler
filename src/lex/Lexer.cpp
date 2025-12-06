@@ -217,7 +217,7 @@ Token Lexer::parseSingleLineComment() {
         comment += eat();
     }
 
-    return Token(SingleLineComment{comment}, _line, _col - 1, comment);
+    return Token(Comment{comment}, _line, _col - 1, comment);
 }
 
 Token Lexer::parseStringLiteral() {
