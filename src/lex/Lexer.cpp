@@ -212,21 +212,60 @@ char Lexer::eat() {
 
 Token Lexer::parseNumber() {
     std::string numberStr;
-    int number = 0;
+    bool isFloat = false;
 
-    while (isdigit(peek())) {
+    // Position tracking for error messages
+    const int startCol = _col;
+
+    while (isdigit(peek()) || peek() == '.') {
+        const char current = peek();
+
+        if (current == '.') {
+            // Check for the ".." range operator. If found, stop consuming the number here.
+            if (peekNext() == '.') {
+                break;
+            }
+            if (isFloat) {
+                // Error: Found a second dot within the number (e.g., 1.2.3)
+                _errors.emplace_back(LexerErrorType::InvalidNumber, _line, _col + 1, numberStr + '.');
+                eat(); // Consume the offending second dot to advance past the error
+                break;
+            }
+
+            isFloat = true;
+        }
+
         numberStr.push_back(eat());
     }
 
-    if (numberStr.empty()) _errors.emplace_back(LexerErrorType::InvalidNumber, _line, _col - 1, numberStr);
-
-    try {
-        number = std::stoi(numberStr);
-    } catch (const std::out_of_range&) {
-        _errors.emplace_back(LexerErrorType::InvalidNumber, _line, _col - 1, numberStr);
+    if (numberStr.empty() || (numberStr.length() == 1 && numberStr[0] == '.')) {
+        _errors.emplace_back(LexerErrorType::InvalidNumber, _line, startCol, numberStr);
+        return Token(IntegerLiteral{0}, _line, startCol, "");
     }
 
-    return Token(IntegerLiteral{number}, _line, _col - 1, numberStr);
+    if (isFloat) {
+        // Ensure numbers don't start or end with a bare dot (e.g., .123 or 123.)
+        if (numberStr.front() == '.' || numberStr.back() == '.') {
+            _errors.emplace_back(LexerErrorType::InvalidNumber, _line, startCol, numberStr);
+            return Token(FloatLiteral{0.0f}, _line, startCol, numberStr);
+        }
+
+        try {
+            float floatValue = std::stof(numberStr);
+            return Token(FloatLiteral{floatValue}, _line, startCol, numberStr);
+        } catch (const std::out_of_range&) {
+            _errors.emplace_back(LexerErrorType::InvalidNumber, _line, startCol, numberStr);
+            return Token(FloatLiteral{0.0f}, _line, startCol, numberStr);
+        }
+    } else {
+        try {
+            int intValue = std::stoi(numberStr);
+            return Token(IntegerLiteral{intValue}, _line, startCol, numberStr);
+        } catch (const std::out_of_range&) {
+            _errors.emplace_back(LexerErrorType::InvalidNumber, _line, startCol, numberStr);
+            return Token(IntegerLiteral{0}, _line, startCol, numberStr);
+        }
+    }
 }
 
 Token Lexer::parseIdentifierOrKeyword() {

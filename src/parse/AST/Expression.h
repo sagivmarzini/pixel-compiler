@@ -16,12 +16,12 @@ public:
 };
 
 struct IntegerLiteralNode : Expression {
-    long value;
+    int value;
 
-    IntegerLiteralNode(const long value) : value(value) {
+    IntegerLiteralNode(const int value) : value(value) {
     }
 
-    void accept(const Visitor &visitor) override;
+    void accept(const Visitor& visitor) override;
 };
 
 struct StringLiteralNode : Expression {
@@ -30,7 +30,7 @@ struct StringLiteralNode : Expression {
     StringLiteralNode(std::string value) : value(std::move(value)) {
     }
 
-    void accept(const Visitor &visitor) override;
+    void accept(const Visitor& visitor) override;
 };
 
 struct BooleanLiteralNode : Expression {
@@ -39,7 +39,7 @@ struct BooleanLiteralNode : Expression {
     BooleanLiteralNode(const bool value) : value(value) {
     }
 
-    void accept(const Visitor &visitor) override;
+    void accept(const Visitor& visitor) override;
 };
 
 // Binary operations (e.g., a + b, x * y)
@@ -52,7 +52,7 @@ struct BinaryExpression : Expression {
         : left(std::move(left)), op(op), right(std::move(right)) {
     }
 
-    void accept(const Visitor &visitor) override;
+    void accept(const Visitor& visitor) override;
 };
 
 struct UnaryExpression : Expression {
@@ -63,7 +63,7 @@ struct UnaryExpression : Expression {
         : operand(std::move(operand)), op(op) {
     }
 
-    void accept(const Visitor &visitor) override;
+    void accept(const Visitor& visitor) override;
 };
 
 // Variable reference
@@ -73,7 +73,7 @@ struct IdentifierNode : Expression {
     IdentifierNode(std::string name) : name(std::move(name)) {
     }
 
-    void accept(const Visitor &visitor) override;
+    void accept(const Visitor& visitor) override;
 };
 
 struct FunctionArgument {
@@ -94,7 +94,7 @@ struct CallExpression : Expression {
         : functionName(std::move(name)), arguments(std::move(arguments)) {
     }
 
-    void accept(const Visitor &visitor) override;
+    void accept(const Visitor& visitor) override;
 };
 
 #endif //COMPILER_PROJECT_EXPRESSION_H

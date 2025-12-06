@@ -75,6 +75,8 @@ std::string tokenToString(const Token& token) {
             return "Identifier(" + arg.name + ")";
         } else if constexpr (std::is_same_v<T, IntegerLiteral>) {
             return "IntegerLiteral(" + std::to_string(arg.value) + ")";
+        } else if constexpr (std::is_same_v<T, FloatLiteral>) {
+            return "FloatLiteral(" + std::to_string(arg.value) + ")";
         } else if constexpr (std::is_same_v<T, StringLiteral>) {
             return "StringLiteral(\"" + arg.value + "\")";
         } else if constexpr (std::is_same_v<T, BooleanLiteral>) {

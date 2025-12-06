@@ -37,6 +37,10 @@ struct IntegerLiteral {
     int value;
 };
 
+struct FloatLiteral {
+    float value;
+};
+
 struct StringLiteral {
     std::string value;
 };
@@ -115,6 +119,7 @@ using TokenType = std::variant<
 
     Keyword,
     IntegerLiteral,
+    FloatLiteral,
     StringLiteral,
     BooleanLiteral,
     Type,
