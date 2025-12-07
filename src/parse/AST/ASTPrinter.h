@@ -35,7 +35,7 @@ private:
 
     void visit(const Block &node) const override;
 
-    void visit(const WhileStatement &node) const override;
+    void visit(const WhileLoop &node) const override;
 
     void visit(const IfStatement &node) const override;
 

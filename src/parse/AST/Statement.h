@@ -18,7 +18,7 @@ struct VariableDeclaration : Statement {
         : type(type), name(std::move(name)), initializer(std::move(init)) {
     }
 
-    void accept(const Visitor &visitor) override;
+    void accept(const Visitor& visitor) override;
 };
 
 struct VariableAssignment : Statement {
@@ -29,7 +29,7 @@ struct VariableAssignment : Statement {
         : name(std::move(name)), newValue(std::move(value)) {
     }
 
-    void accept(const Visitor &visitor) override;
+    void accept(const Visitor& visitor) override;
 };
 
 // Return statement
@@ -39,7 +39,7 @@ struct ReturnStatement : Statement {
     ReturnStatement(std::unique_ptr<Expression> val = nullptr) : value(std::move(val)) {
     }
 
-    void accept(const Visitor &visitor) override;
+    void accept(const Visitor& visitor) override;
 };
 
 // Block (compound statement)
@@ -51,32 +51,32 @@ struct Block : Statement {
     Block(std::vector<std::unique_ptr<Statement> > stmts) : statements(std::move(stmts)) {
     }
 
-    void accept(const Visitor &visitor) override;
+    void accept(const Visitor& visitor) override;
 };
 
 // While loop
-struct WhileStatement : Statement {
+struct WhileLoop : Statement {
     std::unique_ptr<Expression> condition;
     std::unique_ptr<Statement> body;
 
-    WhileStatement(std::unique_ptr<Expression> condition, std::unique_ptr<Statement> body)
+    WhileLoop(std::unique_ptr<Expression> condition, std::unique_ptr<Statement> body)
         : condition(std::move(condition)), body(std::move(body)) {
     }
 
-    void accept(const Visitor &visitor) override;
+    void accept(const Visitor& visitor) override;
 };
 
-struct ForStatement : Statement {
+struct ForLoop : Statement {
     std::unique_ptr<Expression> init;
     std::unique_ptr<Expression> condition;
     std::unique_ptr<Expression> step;
 
-    ForStatement(std::unique_ptr<Expression> init, std::unique_ptr<Expression> condition,
-                 std::unique_ptr<Expression> step)
+    ForLoop(std::unique_ptr<Expression> init, std::unique_ptr<Expression> condition,
+            std::unique_ptr<Expression> step)
         : init(std::move(init)), condition(std::move(condition)), step(std::move(step)) {
     }
 
-    void accept(const Visitor &visitor) override;
+    void accept(const Visitor& visitor) override;
 };
 
 // If statement
@@ -90,7 +90,7 @@ struct IfStatement : Statement {
         : condition(std::move(condition)), thenBranch(std::move(thenBranch)), elseBranch(std::move(elseBranch)) {
     }
 
-    void accept(const Visitor &visitor) override;
+    void accept(const Visitor& visitor) override;
 };
 
 
@@ -115,7 +115,7 @@ struct FunctionDeclaration : ASTNode {
         : returnType(returnType), name(std::move(name)), parameters(std::move(parameters)), body(std::move(body)) {
     }
 
-    void accept(const Visitor &visitor) override;
+    void accept(const Visitor& visitor) override;
 };
 
 // Function call
@@ -127,7 +127,7 @@ struct FunctionCall : Statement {
         : functionName(std::move(name)), arguments(std::move(arguments)) {
     }
 
-    void accept(const Visitor &visitor) override;
+    void accept(const Visitor& visitor) override;
 };
 
 // Program root
@@ -137,7 +137,7 @@ struct Program : ASTNode {
     Program(std::vector<std::unique_ptr<ASTNode> > declarations) : declarations(std::move(declarations)) {
     }
 
-    void accept(const Visitor &visitor) override;
+    void accept(const Visitor& visitor) override;
 };
 
 

@@ -188,7 +188,7 @@ std::unique_ptr<Statement> Parser::parseWhileStatement() {
 
     auto block = parseBlock();
 
-    return std::make_unique<WhileStatement>(std::move(condition), std::move(block));
+    return std::make_unique<WhileLoop>(std::move(condition), std::move(block));
 }
 
 std::unique_ptr<Statement> Parser::parseForStatement() {
@@ -323,7 +323,7 @@ std::unique_ptr<Expression> Parser::parsePrimary() {
 }
 
 
-Token &Parser::peek(int offset) {
+Token& Parser::peek(int offset) {
     auto position = _position + offset;
     if (position >= _tokens.size()) {
         return _endOfFile; //return last token if passed the end

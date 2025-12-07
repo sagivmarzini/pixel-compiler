@@ -13,7 +13,7 @@ struct VariableDeclaration;
 struct VariableAssignment;
 struct ReturnStatement;
 struct Block;
-struct WhileStatement;
+struct WhileLoop;
 struct IfStatement;
 struct FunctionDeclaration;
 struct FunctionCall;
@@ -46,7 +46,7 @@ public:
 
     virtual void visit(const Block &node) const = 0;
 
-    virtual void visit(const WhileStatement &node) const = 0;
+    virtual void visit(const WhileLoop &node) const = 0;
 
     virtual void visit(const ForStatement &node) const = 0;
 

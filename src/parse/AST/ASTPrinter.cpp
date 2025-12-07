@@ -78,7 +78,7 @@ void ASTPrinter::visit(const Block &node) const {
     std::cout << "}\n";
 }
 
-void ASTPrinter::visit(const WhileStatement &node) const {
+void ASTPrinter::visit(const WhileLoop &node) const {
     std::cout << "while (";
     node.condition->accept(*this);
     std::cout << ")\n";

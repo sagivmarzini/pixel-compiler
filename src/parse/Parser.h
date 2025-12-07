@@ -15,8 +15,6 @@ private:
     size_t _position;
     Token _endOfFile = Token(EndOfFile(), -1, -1, "EOF");
 
-
-    // Recursive descent parsing methods
     std::unique_ptr<Statement> parseStatement();
 
     std::unique_ptr<Statement> parseBlock();
@@ -57,7 +55,7 @@ private:
 
     std::unique_ptr<Expression> parsePrimary();
 
-    Token &peek(int offset = 0);
+    Token& peek(int offset = 0);
 
     template<typename T>
     bool match(int offset = 0);

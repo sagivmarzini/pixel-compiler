@@ -16,11 +16,11 @@ void Block::accept(const Visitor &visitor) {
     visitor.visit(*this);
 }
 
-void WhileStatement::accept(const Visitor &visitor) {
+void WhileLoop::accept(const Visitor &visitor) {
     visitor.visit(*this);
 }
 
-void ForStatement::accept(const Visitor &visitor) {
+void ForLoop::accept(const Visitor &visitor) {
     visitor.visit(*this);
 }
 
