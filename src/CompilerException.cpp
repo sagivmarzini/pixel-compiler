@@ -8,7 +8,7 @@
 
 CompilerException::CompilerException(const std::vector<LexerError> &errors) {
     for (const auto &error: errors) {
-        const auto &[line, col] = error.location();
+        const auto &[line, col] = error.getMetadata();
         _errors.push_back(std::format("{}:{}: error: {}", line, col, error.message()) + '\n');
     }
 }

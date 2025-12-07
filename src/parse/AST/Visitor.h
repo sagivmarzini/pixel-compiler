@@ -48,13 +48,15 @@ public:
 
     virtual void visit(const WhileStatement &node) const = 0;
 
+    virtual void visit(const ForStatement &node) const = 0;
+
     virtual void visit(const IfStatement &node) const = 0;
 
     virtual void visit(const FunctionDeclaration &node) const = 0;
 
     virtual void visit(const FunctionCall &node) const = 0;
 
-    virtual void visit(const Program &program) const = 0;
+    virtual void visit(const Program &node) const = 0;
 };
 
 #endif //COMPILER_PROJECT_VISITOR_H

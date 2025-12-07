@@ -20,6 +20,10 @@ void WhileStatement::accept(const Visitor &visitor) {
     visitor.visit(*this);
 }
 
+void ForStatement::accept(const Visitor &visitor) {
+    visitor.visit(*this);
+}
+
 void IfStatement::accept(const Visitor &visitor) {
     visitor.visit(*this);
 }

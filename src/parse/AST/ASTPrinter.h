@@ -10,7 +10,7 @@ class ASTPrinter : public Visitor {
 public:
     ~ASTPrinter() override = default;
 
-    void visit(const Program &program) const override;
+    void visit(const Program &node) const override;
 
 private:
     void visit(const IntegerLiteralNode &node) const override;

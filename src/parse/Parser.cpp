@@ -43,7 +43,7 @@ std::unique_ptr<Statement> Parser::parseStatement() {
         }
     }
 
-    throw std::runtime_error("Unexpected token '" + peek().lexeme + "'!");
+    throw std::runtime_error("Unexpected token '" + peek().metadata.lexeme + "'!");
 }
 
 std::unique_ptr<Statement> Parser::parseBlock() {
@@ -191,6 +191,11 @@ std::unique_ptr<Statement> Parser::parseWhileStatement() {
     return std::make_unique<WhileStatement>(std::move(condition), std::move(block));
 }
 
+std::unique_ptr<Statement> Parser::parseForStatement() {
+    expect<Keyword>();
+    expect<LParen>();
+}
+
 std::unique_ptr<Statement> Parser::parseReturnStatement() {
     expect<Keyword>();
     auto value = parseExpression();
@@ -200,25 +205,26 @@ std::unique_ptr<Statement> Parser::parseReturnStatement() {
 }
 
 std::unique_ptr<Expression> Parser::parseExpression() {
-    return parseBooleanAndExpression();
+    return parseBooleanOrExpression();
 }
 
-std::unique_ptr<Expression> Parser::parseBooleanAndExpression() {
-    auto left = parseBooleanOrExpression();
 
-    while (matchValue(Operator::And)) {
+std::unique_ptr<Expression> Parser::parseBooleanOrExpression() {
+    auto left = parseBooleanAndExpression();
+
+    while (matchValue(Operator::Or)) {
         auto op = expect<Operator>();
-        auto right = parseBooleanOrExpression();
+        auto right = parseBooleanAndExpression();
 
         left = std::make_unique<BinaryExpression>(std::move(left), op, std::move(right));
     }
     return left;
 }
 
-std::unique_ptr<Expression> Parser::parseBooleanOrExpression() {
+std::unique_ptr<Expression> Parser::parseBooleanAndExpression() {
     auto left = parseBooleanEqualityExpression();
 
-    while (matchValue(Operator::Or)) {
+    while (matchValue(Operator::And)) {
         auto op = expect<Operator>();
         auto right = parseBooleanEqualityExpression();
 
@@ -226,6 +232,7 @@ std::unique_ptr<Expression> Parser::parseBooleanOrExpression() {
     }
     return left;
 }
+
 
 std::unique_ptr<Expression> Parser::parseBooleanEqualityExpression() {
     auto left = parseComparisonExpression();
@@ -312,7 +319,7 @@ std::unique_ptr<Expression> Parser::parsePrimary() {
         expect<RParen>();
         return expression;
     }
-    throw std::runtime_error("Unexpected token '" + peek().lexeme + "'");
+    throw std::runtime_error("Unexpected token '" + peek().metadata.lexeme + "'");
 }
 
 

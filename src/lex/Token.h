@@ -17,7 +17,7 @@ enum class Keyword {
 };
 
 enum class Type {
-    Unspecified, //if initializing with inferred type set it to unspecified (like var x = 5;)
+    Unspecified, // Inferred type is initially set to `unspecified`
 
     Int,
     Float,
@@ -52,22 +52,22 @@ struct BooleanLiteral {
 enum class Operator {
     Assignment, // =
 
-    Plus,       // +
-    PlusPlus,   // ++
-    Minus,      // -
+    Plus, // +
+    PlusPlus, // ++
+    Minus, // -
     MinusMinus, // --
-    Star,       // *
-    Slash,      // /
+    Star, // *
+    Slash, // /
 
-    And,         // &&
-    Or,          // ||
-    Equal,       // ==
-    NotEqual,    // !=
+    And, // &&
+    Or, // ||
+    Equal, // ==
+    NotEqual, // !=
     Exclamation, // !
 
-    Less,         // <
-    LessEqual,    // <=
-    Greater,      // >
+    Less, // <
+    LessEqual, // <=
+    Greater, // >
     GreaterEqual, // >=
 };
 
@@ -150,20 +150,20 @@ static const std::unordered_map<std::string, TokenType> keywords = {
     {"false", BooleanLiteral{false}},
 };
 
-struct TokenLocation {
+struct TokenMetadata {
     int line;
     int col;
+    std::string lexeme;
 };
 
 struct Token {
     TokenType type;
-    TokenLocation location{};
-    std::string lexeme;
+    TokenMetadata metadata{};
 
     Token() = default;
 
     Token(TokenType type, int line, int col, std::string lexeme)
-        : type(std::move(type)), location(line, col), lexeme(std::move(lexeme)) {
+        : type(std::move(type)), metadata(line, col, std::move(lexeme)) {
     }
 };
 
@@ -174,8 +174,8 @@ std::string operatorToString(Operator op);
 
 std::string keywordToString(Keyword keyword);
 
-std::string tokenToString(const Token& token);
+std::string tokenToString(const Token &token);
 
-std::ostream& operator<<(std::ostream& os, const Token& token);
+std::ostream &operator<<(std::ostream &os, const Token &token);
 
 #endif // COMPILER_PROJECT_TOKEN_H

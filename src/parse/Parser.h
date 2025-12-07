@@ -35,13 +35,15 @@ private:
 
     std::unique_ptr<Statement> parseWhileStatement();
 
+    std::unique_ptr<Statement> parseForStatement();
+
     std::unique_ptr<Statement> parseReturnStatement();
 
     std::unique_ptr<Expression> parseExpression();
 
-    std::unique_ptr<Expression> parseBooleanAndExpression();
-
     std::unique_ptr<Expression> parseBooleanOrExpression();
+
+    std::unique_ptr<Expression> parseBooleanAndExpression();
 
     std::unique_ptr<Expression> parseBooleanEqualityExpression();
 

@@ -66,6 +66,19 @@ struct WhileStatement : Statement {
     void accept(const Visitor &visitor) override;
 };
 
+struct ForStatement : Statement {
+    std::unique_ptr<Expression> init;
+    std::unique_ptr<Expression> condition;
+    std::unique_ptr<Expression> step;
+
+    ForStatement(std::unique_ptr<Expression> init, std::unique_ptr<Expression> condition,
+                 std::unique_ptr<Expression> step)
+        : init(std::move(init)), condition(std::move(condition)), step(std::move(step)) {
+    }
+
+    void accept(const Visitor &visitor) override;
+};
+
 // If statement
 struct IfStatement : Statement {
     std::unique_ptr<Expression> condition;
