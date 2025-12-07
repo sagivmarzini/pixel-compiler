@@ -1,34 +1,80 @@
-func main() -> int {
-    var x: int = 42;
-    var y: float = 3;
-    var flag: bool = true;
-    var name: string = hello;
-    var empty: void;
-    var data: ptr;
-    var rgb: color;
+// This is a demo program covering all features
 
-    x = x + 1;
-    y = y - 2;
-    x = x * 3;
-    y = y / 4;
+/*
+  Multi-line comment:
+  Drawing shapes, using variables, loops, functions, and transforms
+*/
 
-    if (x == 42 && y != 0) {
-        return 1;
-    } else {
-        return 0;
-    }
+// Variables
+var score: int = 0;
+var playerName = "Alex";   // inferred
+const pi = 3.14159;
+var x = 50;
+var y = 50;
+var isGameOver: bool = false;
 
-    while (x > 10 && x < 100) {
-        x = x - 1;
-    }
+// Custom Color type
+var myColor: Color = Color(r: 255, g: 100, b: 50);
 
-    if (flag || !flag) {
-        if (x >= 5 && y <= 20) {
-            var result: int = x + y;
-        }
-    }
+
+// Functions
+func greet(name: String) -> Void {
+  print("Hello, " + name);
 }
 
-func helper(a: int) -> bool {
-    return a > b;
+func add(a: Int, b: Int) -> Int {
+  return a + b;
+}
+
+func drawPlayer(x: Int, y: Int, size: Int) -> Void {
+  push();
+  translate(x: x, y: y);
+  rotate(angle: 45);
+  setColor(r: 0, g: 0, b: 255);
+  circle(x: 0, y: 0, radius: size);
+  pop();
+}
+
+// Control Flow
+func updateScore() -> Void {
+  if score > 10
+{
+    print("You're doing great!");
+  } else {
+    print("Keep going...");
+  }
+}
+
+// Setup & Draw
+func setup() -> Void {
+  setCanvas(width: 800, height: 600);
+  greet(playerName);
+}
+
+func draw() -> Void {
+  // Clear background
+  background(r: 255, g: 255, b: 255);
+
+  // Draw some shapes
+  setColor(r: 255, g: 0, b: 0);
+  rect(x: 100, y: 100, width: 200, height: 100);
+
+  setColor(r: 0, g: 255, b: 0);
+  line(fromX: 0, fromY: 0, toX: 800, toY: 600);
+
+  // Draw player using function
+  drawPlayer(x: x, y: y, size: 50);
+
+  // Update score
+  updateScore();
+
+  // Loops
+  for i in 0..5 {
+    setColor(r: i * 40, g: 100, b: 200);
+    circle(x: i * 100, y: 500, radius: 20);
+  }
+
+  while x < 300 {
+    x = x + 1;
+  }
 }

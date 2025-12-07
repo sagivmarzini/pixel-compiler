@@ -26,11 +26,19 @@ private:
 
     [[nodiscard]] char peek() const;
 
+    [[nodiscard]] char peekNext() const;
+
     char eat();
 
     Token parseNumber();
 
     Token parseIdentifierOrKeyword();
+
+    void skipSingleLineComment();
+
+    void skipMultiLineComment();
+
+    Token parseStringLiteral();
 };
 
 const std::unordered_map<std::string, Keyword> Keywords = {

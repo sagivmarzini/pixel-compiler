@@ -21,6 +21,7 @@ add_executable(compiler-project
         src/parse/AST/Visitor.h
         src/parse/AST/ASTPrinter.cpp
         src/parse/AST/ASTPrinter.h
+        src/lex/Token.cpp
 )
 
 target_include_directories(compiler-project
