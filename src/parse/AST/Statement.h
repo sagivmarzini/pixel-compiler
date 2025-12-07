@@ -118,23 +118,10 @@ struct FunctionDeclaration : ASTNode {
     void accept(const Visitor& visitor) override;
 };
 
-// Function call
-struct FunctionCall : Statement {
-    std::string functionName;
-    std::vector<FunctionArgument> arguments;
+struct ExpressionStatement : Statement {
+    std::unique_ptr<Expression> expression;
 
-    FunctionCall(std::string name, std::vector<FunctionArgument> arguments)
-        : functionName(std::move(name)), arguments(std::move(arguments)) {
-    }
-
-    void accept(const Visitor& visitor) override;
-};
-
-// Program root
-struct Program : ASTNode {
-    std::vector<std::unique_ptr<ASTNode> > declarations;
-
-    Program(std::vector<std::unique_ptr<ASTNode> > declarations) : declarations(std::move(declarations)) {
+    explicit ExpressionStatement(std::unique_ptr<Expression> expression) : expression(std::move(expression)) {
     }
 
     void accept(const Visitor& visitor) override;

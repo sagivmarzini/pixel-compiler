@@ -13,7 +13,7 @@ public:
 private:
     std::vector<Token> _tokens;
     size_t _position;
-    Token _endOfFile = Token(EndOfFile(), -1, -1, "EOF");
+    Token _endOfFileToken = Token(EndOfFile(), -1, -1, "EOF");
 
     std::unique_ptr<Statement> parseStatement();
 
@@ -27,13 +27,13 @@ private:
 
     std::unique_ptr<Statement> parseVariableAssignment();
 
-    std::unique_ptr<Statement> parseFunctionCall();
+    std::unique_ptr<Expression> parseFunctionCall();
 
     std::unique_ptr<Statement> parseIfStatement();
 
-    std::unique_ptr<Statement> parseWhileStatement();
+    std::unique_ptr<Statement> parseWhileLoop();
 
-    std::unique_ptr<Statement> parseForStatement();
+    std::unique_ptr<Statement> parseForLoop();
 
     std::unique_ptr<Statement> parseReturnStatement();
 
@@ -55,13 +55,21 @@ private:
 
     std::unique_ptr<Expression> parsePrimary();
 
-    Token& peek(int offset = 0);
+    Token& peek();
+
+    Token& peekNext();
 
     template<typename T>
-    bool match(int offset = 0);
+    bool match();
+
+    template<typename T>
+    bool matchNext();
 
     template<typename T>
     bool matchValue(T type);
+
+    template<typename T>
+    bool matchNextValue(T type);
 
     void eat();
 

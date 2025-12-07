@@ -52,22 +52,22 @@ struct BooleanLiteral {
 enum class Operator {
     Assignment, // =
 
-    Plus, // +
-    PlusPlus, // ++
-    Minus, // -
+    Plus,       // +
+    PlusPlus,   // ++
+    Minus,      // -
     MinusMinus, // --
-    Star, // *
-    Slash, // /
+    Star,       // *
+    Slash,      // /
 
-    And, // &&
-    Or, // ||
-    Equal, // ==
-    NotEqual, // !=
+    And,         // &&
+    Or,          // ||
+    Equal,       // ==
+    NotEqual,    // !=
     Exclamation, // !
 
-    Less, // <
-    LessEqual, // <=
-    Greater, // >
+    Less,         // <
+    LessEqual,    // <=
+    Greater,      // >
     GreaterEqual, // >=
 };
 
@@ -129,6 +129,7 @@ using TokenType = std::variant<
     EndOfFile
 >;
 
+// TODO: add "in" keyword
 static const std::unordered_map<std::string, TokenType> keywords = {
     {"func", Keyword::Func},
     {"var", Keyword::Var},
@@ -174,8 +175,8 @@ std::string operatorToString(Operator op);
 
 std::string keywordToString(Keyword keyword);
 
-std::string tokenToString(const Token &token);
+std::string tokenToString(const Token& token);
 
-std::ostream &operator<<(std::ostream &os, const Token &token);
+std::ostream& operator<<(std::ostream& os, const Token& token);
 
 #endif // COMPILER_PROJECT_TOKEN_H

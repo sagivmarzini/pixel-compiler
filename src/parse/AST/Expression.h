@@ -86,11 +86,11 @@ struct FunctionArgument {
 };
 
 // Function call
-struct CallExpression : Expression {
+struct FunctionCall : Expression {
     std::string functionName;
     std::vector<FunctionArgument> arguments;
 
-    CallExpression(std::string name, std::vector<FunctionArgument> arguments)
+    FunctionCall(std::string name, std::vector<FunctionArgument> arguments)
         : functionName(std::move(name)), arguments(std::move(arguments)) {
     }
 
