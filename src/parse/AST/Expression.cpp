@@ -28,3 +28,7 @@ void IdentifierNode::accept(const Visitor& visitor) {
 void FunctionCall::accept(const Visitor& visitor) {
     visitor.visit(*this);
 }
+
+void RangeExpression::accept(const Visitor& visitor) {
+    visitor.visit(*this);
+}

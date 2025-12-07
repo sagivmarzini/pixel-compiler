@@ -10,10 +10,9 @@ enum class Keyword {
     Func,
     Var,
     Return,
-    If,
-    Else,
+    If, Else,
     While,
-    For
+    For, In, Step
 };
 
 enum class Type {
@@ -129,7 +128,6 @@ using TokenType = std::variant<
     EndOfFile
 >;
 
-// TODO: add "in" keyword
 static const std::unordered_map<std::string, TokenType> keywords = {
     {"func", Keyword::Func},
     {"var", Keyword::Var},
@@ -138,6 +136,8 @@ static const std::unordered_map<std::string, TokenType> keywords = {
     {"else", Keyword::Else},
     {"while", Keyword::While},
     {"for", Keyword::For},
+    {"in", Keyword::In},
+    {"step", Keyword::Step},
 
     {"int", Type::Int},
     {"float", Type::Float},

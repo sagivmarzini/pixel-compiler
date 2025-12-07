@@ -74,6 +74,11 @@ func draw() -> Void {
     circle(x: i * 100, y: 500, radius: 20);
   }
 
+  for i in 0..10 step 2 {
+      setColor(r: i * 40, g: 100, b: 200);
+      circle(x: i * 100, y: 500, radius: 20);
+    }
+
   while x < 300 {
     x = x + 1;
   }

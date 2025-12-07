@@ -1,5 +1,7 @@
 #include "Parser.h"
 
+#include <cmath>
+
 #include "AST/Statement.h"
 
 Parser::Parser(std::vector<Token> tokens)
@@ -189,7 +191,19 @@ std::unique_ptr<Statement> Parser::parseWhileLoop() {
 
 std::unique_ptr<Statement> Parser::parseForLoop() {
     expect<Keyword>();
-    expect<LParen>();
+    auto identifier = expect<Identifier>();
+    expectValue(Keyword::In);
+    auto range = parseRangeExpression();
+
+    std::unique_ptr<Expression> step;
+    if (matchValue(Keyword::Step)) {
+        eat();
+        step = parseExpression();
+    }
+
+    auto body = parseBlock();
+
+    return std::make_unique<ForLoop>(identifier.name, std::move(range), std::move(step), std::move(body));
 }
 
 std::unique_ptr<Statement> Parser::parseReturnStatement() {
@@ -345,13 +359,13 @@ bool Parser::matchNext() {
 }
 
 template<typename T>
-bool Parser::matchValue(T type) {
-    return match<T>() && std::get<T>(peek().type) == type;
+bool Parser::matchValue(T value) {
+    return match<T>() && std::get<T>(peek().type) == value;
 }
 
 template<typename T>
-bool Parser::matchNextValue(T type) {
-    return match<T>() && std::get<T>(peekNext().type) == type;
+bool Parser::matchNextValue(T value) {
+    return matchNext<T>() && std::get<T>(peekNext().type) == value;
 }
 
 template<typename T>
@@ -362,6 +376,16 @@ T Parser::expect() {
         return std::get<T>(tokenType);
     }
     throw std::runtime_error("Unexpected Token! got '" + tokenToString(peek()) + "'");
+}
+
+template<typename T>
+T Parser::expectValue(T value) {
+    if (!matchValue(value)) {
+        throw std::runtime_error("Unexpected Token! got '" + tokenToString(peek()) + "'");
+    }
+    T v = std::get<T>(peek().type);
+    eat();
+    return v;
 }
 
 void Parser::eat() {

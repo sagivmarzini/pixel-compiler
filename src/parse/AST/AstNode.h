@@ -8,12 +8,19 @@ class Visitor;
 
 class ASTNode {
 public:
+    // TODO: enforce metadata writing on AST nodes
+    ASTNode() = default;
+
+    ASTNode(const int line, const int col, std::string lexeme)
+        : _metadata{line, col, std::move(lexeme)} {
+    }
+
     virtual ~ASTNode() = default;
 
     virtual void accept(const Visitor& visitor) = 0; // For visitor pattern
 
 protected:
-    TokenMetadata _metadata{};
+    TokenMetadata _metadata;
 };
 
 // Program root

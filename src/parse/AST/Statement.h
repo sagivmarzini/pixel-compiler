@@ -67,13 +67,14 @@ struct WhileLoop : Statement {
 };
 
 struct ForLoop : Statement {
-    std::unique_ptr<Expression> init;
-    std::unique_ptr<Expression> condition;
-    std::unique_ptr<Expression> step;
+    std::string identifier;
+    std::unique_ptr<RangeExpression> range;
+    std::unique_ptr<Expression> step; // Optional (can be nullptr), defaults to 1
+    std::unique_ptr<Statement> body;
 
-    ForLoop(std::unique_ptr<Expression> init, std::unique_ptr<Expression> condition,
-            std::unique_ptr<Expression> step)
-        : init(std::move(init)), condition(std::move(condition)), step(std::move(step)) {
+    ForLoop(std::string identifier, std::unique_ptr<RangeExpression> range,
+            std::unique_ptr<Expression> step, std::unique_ptr<Statement> body)
+        : identifier(std::move(identifier)), range(std::move(range)), step(std::move(step)), body(std::move(body)) {
     }
 
     void accept(const Visitor& visitor) override;

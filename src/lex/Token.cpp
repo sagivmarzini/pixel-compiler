@@ -47,7 +47,9 @@ std::string keywordToString(Keyword keyword) {
         case Keyword::Else: return "Else";
         case Keyword::While: return "While";
         case Keyword::For: return "For";
-        default: return "unknown keyword";
+        case Keyword::In: return "In";
+        case Keyword::Step: return "Step";
+        default: throw std::runtime_error("Print function not implemented for this keyword");
     }
 }
 
@@ -83,7 +85,7 @@ std::string tokenToString(const Token& token) {
             return arg.value ? "BooleanLiteral(true)" : "BooleanLiteral(false)";
         }
 
-        return "Unknown";
+        throw std::runtime_error("Print not implemented for this token");
     }, token.type);
 }
 

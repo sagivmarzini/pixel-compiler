@@ -33,6 +33,8 @@ private:
 
     std::unique_ptr<Statement> parseWhileLoop();
 
+    std::unique_ptr<Expression> parseRangeExpression();
+
     std::unique_ptr<Statement> parseForLoop();
 
     std::unique_ptr<Statement> parseReturnStatement();
@@ -66,15 +68,17 @@ private:
     bool matchNext();
 
     template<typename T>
-    bool matchValue(T type);
+    bool matchValue(T value);
 
     template<typename T>
-    bool matchNextValue(T type);
+    bool matchNextValue(T value);
 
     void eat();
 
     template<typename T>
-    T expect(); //expects and eats the token if it matches
+    T expect(); // expects and eats the token if it matches
+    template<typename T>
+    T expectValue(T value);
 
     bool isAtEnd();
 };

@@ -97,4 +97,15 @@ struct FunctionCall : Expression {
     void accept(const Visitor& visitor) override;
 };
 
+struct RangeExpression : Expression {
+    std::unique_ptr<Expression> start;
+    std::unique_ptr<Expression> end;
+
+    RangeExpression(std::unique_ptr<Expression> start, std::unique_ptr<Expression> end)
+        : start(std::move(start)), end(std::move(end)) {
+    }
+
+    void accept(const Visitor& visitor) override;
+};
+
 #endif //COMPILER_PROJECT_EXPRESSION_H

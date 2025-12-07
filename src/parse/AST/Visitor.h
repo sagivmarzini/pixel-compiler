@@ -57,6 +57,8 @@ public:
     virtual void visit(const Program& node) const = 0;
 
     virtual void visit(const ExpressionStatement& node) const = 0;
+
+    virtual void visit(const RangeExpression& node) const = 0;
 };
 
 #endif //COMPILER_PROJECT_VISITOR_H
