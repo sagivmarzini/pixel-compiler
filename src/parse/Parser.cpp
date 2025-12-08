@@ -9,11 +9,7 @@ Program Parser::parseProgram() {
     std::vector<std::unique_ptr<AstNode> > declarations;
 
     while (!isAtEnd()) {
-        if (checkValue(Keyword::Func)) {
-            declarations.push_back(parseFunctionDeclaration());
-        } else {
-            declarations.push_back(parseStatement());
-        }
+        declarations.push_back(parseStatement());
     }
 
     return {std::move(declarations)};
@@ -25,6 +21,9 @@ std::unique_ptr<Statement> Parser::parseStatement() {
     }
     if (checkValue(Keyword::Var) || checkValue(Keyword::Const)) {
         return parseVariableDeclaration();
+    }
+    if (checkValue(Keyword::Func)) {
+        return parseFunctionDeclaration();
     }
     if (checkValue(Keyword::Return)) {
         return parseReturnStatement();
@@ -83,7 +82,7 @@ std::vector<FunctionCall::FunctionArgument> Parser::parseFunctionArguments() {
     return args;
 }
 
-std::unique_ptr<AstNode> Parser::parseFunctionDeclaration() {
+std::unique_ptr<Statement> Parser::parseFunctionDeclaration() {
     expect<Keyword>();
     auto name = expect<Identifier>();
     expect<LParen>();
@@ -101,7 +100,7 @@ std::unique_ptr<AstNode> Parser::parseFunctionDeclaration() {
 
         parameters.emplace_back(paramName.name, paramType);
         if (!check<RParen>())
-            expect<Comma>(); //if didn't read the end, get a comma seperator [func foo(a:int, b:int)]
+            expect<Comma>(); // if didn't read the end, get a comma seperator [func foo(a:int, b:int)]
     }
 
     expect<RParen>();

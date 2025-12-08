@@ -21,7 +21,7 @@ private:
 
     std::vector<FunctionCall::FunctionArgument> parseFunctionArguments();
 
-    std::unique_ptr<AstNode> parseFunctionDeclaration();
+    std::unique_ptr<Statement> parseFunctionDeclaration();
 
     std::unique_ptr<Statement> parseVariableDeclaration();
 

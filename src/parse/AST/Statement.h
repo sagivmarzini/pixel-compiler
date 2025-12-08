@@ -97,7 +97,7 @@ struct IfStatement : Statement {
 
 
 // Function declaration
-struct FunctionDeclaration : AstNode {
+struct FunctionDeclaration : Statement {
     struct FunctionParameter {
         std::string name;
         Type type;
