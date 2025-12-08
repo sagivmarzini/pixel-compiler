@@ -123,8 +123,7 @@ std::unique_ptr<Statement> Parser::parseVariableDeclaration() {
     Type type = Type::Unspecified;
     std::unique_ptr<Expression> value = nullptr;
     // if initializing with type get it
-    if (check<Colon>()) {
-        eat();
+    if (match<Colon>()) {
         type = expect<Type>();
     }
 
@@ -144,10 +143,8 @@ std::unique_ptr<Statement> Parser::parseVariableDeclaration() {
 std::unique_ptr<Statement> Parser::parseVariableAssignment() {
     auto name = expect<Identifier>();
 
-    if (!checkValue(Operator::Assignment)) {
-        throw std::runtime_error("Cannot use a variable without assignment!");
-    }
-    eat();
+    expectValue(Operator::Assignment);
+
     auto value = parseExpression();
     expect<Semicolon>();
 
@@ -172,8 +169,7 @@ std::unique_ptr<Statement> Parser::parseIfStatement() {
 
     std::unique_ptr<Statement> elseBranch = nullptr;
 
-    if (checkValue(Keyword::Else)) {
-        eat();
+    if (matchValue(Keyword::Else)) {
         if (checkValue(Keyword::If)) {
             elseBranch = parseIfStatement(); // nested if
         } else {
@@ -207,8 +203,7 @@ std::unique_ptr<Statement> Parser::parseForLoop() {
     auto range = parseRangeExpression();
 
     std::unique_ptr<Expression> step;
-    if (checkValue(Keyword::Step)) {
-        eat();
+    if (matchValue(Keyword::Step)) {
         step = parseExpression();
     }
 
@@ -361,6 +356,20 @@ Token &Parser::peekNext() {
 template<typename T>
 bool Parser::check() {
     return std::holds_alternative<T>(peek().type);
+}
+
+template<typename T>
+bool Parser::match() {
+    const bool match = check<T>();
+    if (match) eat();
+    return match;
+}
+
+template<typename T>
+bool Parser::matchValue(T value) {
+    const bool match = checkValue(value);
+    if (match) eat();
+    return match;
 }
 
 template<typename T>

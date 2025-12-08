@@ -64,10 +64,15 @@ private:
     template<typename T>
     bool check();
 
-    // TODO: add match method that also eats
 
     template<typename T>
     bool checkNext();
+
+    template<typename T>
+    bool match(); // Check token type and eat if matches
+
+    template<typename T>
+    bool matchValue(T value); // Check and eat if matches
 
     template<typename T>
     bool checkValue(T value);
