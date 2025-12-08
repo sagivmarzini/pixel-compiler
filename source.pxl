@@ -13,17 +13,16 @@ var x = 50;
 var y = 50;
 var isGameOver: bool = false;
 
-
 // Functions
 func greet(name: string) -> void {
-  print("Hello, " + name);
+  const print = "Hello, " + name;
 }
 
-func add(a: Int, b: Int) -> Int {
+func add(a: int, b: int) -> int {
   return a + b;
 }
 
-func drawPlayer(x: Int, y: Int, size: Int) -> Void {
+func drawPlayer(x: int, y: int, size: int) -> void {
   push();
   translate(x: x, y: y);
   rotate(angle: 45);
@@ -33,48 +32,41 @@ func drawPlayer(x: Int, y: Int, size: Int) -> Void {
 }
 
 // Control Flow
-func updateScore() -> Void {
-  if score > 10
-{
-    print("You're doing great!");
+func updateScore() -> void {
+  if score > 10 {
+    const print = "You're doing great!";
   } else {
-    print("Keep going...");
+    const print = "Keep going...";
   }
 }
 
 // Setup & Draw
 func setup() -> void {
   setCanvas(width: 800, height: 600);
-  greet(playerName);
+  greet(name: playerName);
 }
 
 func draw() -> void {
-  // Clear background
   background(r: 255, g: 255, b: 255);
 
-  // Draw some shapes
+  // Draw shapes
   setColor(r: 255, g: 0, b: 0);
   rect(x: 100, y: 100, width: 200, height: 100);
 
   setColor(r: 0, g: 255, b: 0);
   line(fromX: 0, fromY: 0, toX: 800, toY: 600);
 
-  // Draw player using function
+  // Draw player
   drawPlayer(x: x, y: y, size: 50);
 
   // Update score
   updateScore();
 
-  // Loops
+  // Loop
   for i in 0..5 {
     setColor(r: i * 40, g: 100, b: 200);
     circle(x: i * 100, y: 500, radius: 20);
   }
-
-  for i in 0..10 step 2 {
-      setColor(r: i * 40, g: 100, b: 200);
-      circle(x: i * 100, y: 500, radius: 20);
-    }
 
   while x < 300 {
     x = x + 1;

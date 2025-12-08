@@ -19,7 +19,7 @@ private:
 
     std::unique_ptr<Statement> parseBlock();
 
-    std::vector<FunctionArgument> parseFunctionArguments();
+    std::vector<FunctionCall::FunctionArgument> parseFunctionArguments();
 
     std::unique_ptr<ASTNode> parseFunctionDeclaration();
 

@@ -32,13 +32,19 @@ std::unique_ptr<Statement> Parser::parseStatement() {
     if (matchValue(Keyword::While)) {
         return parseWhileLoop();
     }
+    if (matchValue(Keyword::For)) {
+        return parseForLoop();
+    }
     if (match<Identifier>()) {
         if (matchNext<Operator>()) {
             return parseVariableAssignment();
         }
     }
 
-    throw std::runtime_error("Unexpected token '" + peek().metadata.lexeme + "'!");
+    // Otherwise parse expression statement
+    auto expression = parseExpression();
+    expect<Semicolon>();
+    return std::make_unique<ExpressionStatement>(std::move(expression));
 }
 
 std::unique_ptr<Statement> Parser::parseBlock() {
@@ -56,22 +62,21 @@ std::unique_ptr<Statement> Parser::parseBlock() {
     return std::make_unique<Block>(std::move(block));
 }
 
-std::vector<FunctionArgument> Parser::parseFunctionArguments() {
-    std::vector<FunctionArgument> args;
-    while (!match<LParen>()) {
-        if (isAtEnd()) {
-            throw std::runtime_error("Missing closing paren ')'!");
-        }
+std::vector<FunctionCall::FunctionArgument> Parser::parseFunctionArguments() {
+    std::vector<FunctionCall::FunctionArgument> args;
+    while (!match<RParen>()) {
+        if (isAtEnd()) throw std::runtime_error("Missing closing paren ')'!");
+
         auto name = expect<Identifier>();
         expect<Colon>();
         auto value = parseExpression();
 
         args.emplace_back(name.name, std::move(value));
 
-        if (match<RParen>()) {
+        if (!match<RParen>())
             expect<Comma>();
-        }
     }
+
     return args;
 }
 
@@ -109,7 +114,7 @@ std::unique_ptr<Statement> Parser::parseVariableDeclaration() {
     const bool isConst = matchValue(Keyword::Const) ? true : false;
     expect<Keyword>();
 
-    auto name = expect<Identifier>();
+    auto [name] = expect<Identifier>();
 
     // if initializing with inferred type set it to undefined
     Type type = Type::Unspecified;
@@ -130,7 +135,7 @@ std::unique_ptr<Statement> Parser::parseVariableDeclaration() {
     }
     expect<Semicolon>();
 
-    return std::make_unique<VariableDeclaration>(isConst, type, name.name, std::move(value));
+    return std::make_unique<VariableDeclaration>(isConst, type, name, std::move(value));
 }
 
 std::unique_ptr<Statement> Parser::parseVariableAssignment() {
@@ -150,26 +155,21 @@ std::unique_ptr<Expression> Parser::parseFunctionCall() {
     auto [name] = expect<Identifier>();
 
     expect<LParen>();
-
-    //parse arguments
     auto arguments = parseFunctionArguments();
-
     expect<RParen>();
-    expect<Semicolon>();
 
     return std::make_unique<FunctionCall>(name, std::move(arguments));
 }
 
 std::unique_ptr<Statement> Parser::parseIfStatement() {
     expect<Keyword>();
-    expect<LParen>();
     auto condition = parseExpression();
-    expect<RParen>();
 
     auto block = parseBlock();
 
     std::unique_ptr<Statement> elseBlock = nullptr;
 
+    // TODO: parse else if block
     if (matchValue(Keyword::Else)) {
         expect<Keyword>();
         elseBlock = parseBlock();
@@ -179,9 +179,7 @@ std::unique_ptr<Statement> Parser::parseIfStatement() {
 
 std::unique_ptr<Statement> Parser::parseWhileLoop() {
     expect<Keyword>();
-    expect<LParen>();
     auto condition = parseExpression();
-    expect<RParen>();
 
     auto block = parseBlock();
 
@@ -325,14 +323,9 @@ std::unique_ptr<Expression> Parser::parsePrimary() {
         return std::make_unique<StringLiteralNode>(expect<StringLiteral>().value);
     }
     if (match<Identifier>()) {
-        auto identifier = expect<Identifier>();
+        if (matchNext<LParen>()) return parseFunctionCall();
 
-        if (match<LParen>()) {
-            expect<LParen>();
-            auto arguments = parseFunctionArguments();
-            return std::make_unique<FunctionCall>(identifier.name, std::move(arguments));
-        }
-        return std::make_unique<IdentifierNode>(identifier.name);
+        return std::make_unique<IdentifierNode>(expect<Identifier>().name);
     }
     if (match<LParen>()) {
         expect<LParen>();
@@ -386,7 +379,8 @@ T Parser::expect() {
         _position++;
         return std::get<T>(tokenType);
     }
-    throw std::runtime_error("Unexpected Token! got '" + tokenToString(peek()) + "'");
+    throw std::runtime_error(
+        "Unexpected token! expected " + std::string{typeid(T).name()} + ", got '" + tokenToString(peek()) + "'");
 }
 
 template<typename T>
