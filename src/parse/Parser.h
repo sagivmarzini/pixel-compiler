@@ -21,7 +21,7 @@ private:
 
     std::vector<FunctionCall::FunctionArgument> parseFunctionArguments();
 
-    std::unique_ptr<ASTNode> parseFunctionDeclaration();
+    std::unique_ptr<AstNode> parseFunctionDeclaration();
 
     std::unique_ptr<Statement> parseVariableDeclaration();
 
@@ -57,13 +57,12 @@ private:
 
     std::unique_ptr<Expression> parsePrimary();
 
-    Token &peek();
+    Token& peek();
 
-    Token &peekNext();
+    Token& peekNext();
 
     template<typename T>
     bool check();
-
 
     template<typename T>
     bool checkNext();

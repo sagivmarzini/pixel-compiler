@@ -6,16 +6,15 @@
 
 class Visitor;
 
-class ASTNode {
+class AstNode {
 public:
-    // TODO: enforce metadata writing on AST nodes
-    ASTNode() = default;
+    AstNode() = default;
 
-    ASTNode(const int line, const int col, std::string lexeme)
+    AstNode(const int line, const int col, std::string lexeme)
         : _metadata{line, col, std::move(lexeme)} {
     }
 
-    virtual ~ASTNode() = default;
+    virtual ~AstNode() = default;
 
     virtual void accept(const Visitor& visitor) = 0; // For visitor pattern
 
@@ -24,10 +23,10 @@ protected:
 };
 
 // Program root
-struct Program final : ASTNode {
-    std::vector<std::unique_ptr<ASTNode> > declarations;
+struct Program final : AstNode {
+    std::vector<std::unique_ptr<AstNode> > declarations;
 
-    Program(std::vector<std::unique_ptr<ASTNode> > declarations) : declarations(std::move(declarations)) {
+    Program(std::vector<std::unique_ptr<AstNode> > declarations) : declarations(std::move(declarations)) {
     }
 
     void accept(const Visitor& visitor) override;

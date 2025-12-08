@@ -6,7 +6,7 @@ Parser::Parser(std::vector<Token> tokens)
 }
 
 Program Parser::parseProgram() {
-    std::vector<std::unique_ptr<ASTNode> > declarations;
+    std::vector<std::unique_ptr<AstNode> > declarations;
 
     while (!isAtEnd()) {
         if (checkValue(Keyword::Func)) {
@@ -83,7 +83,7 @@ std::vector<FunctionCall::FunctionArgument> Parser::parseFunctionArguments() {
     return args;
 }
 
-std::unique_ptr<ASTNode> Parser::parseFunctionDeclaration() {
+std::unique_ptr<AstNode> Parser::parseFunctionDeclaration() {
     expect<Keyword>();
     auto name = expect<Identifier>();
     expect<LParen>();
@@ -202,7 +202,7 @@ std::unique_ptr<Statement> Parser::parseForLoop() {
     expectValue(Keyword::In);
     auto range = parseRangeExpression();
 
-    std::unique_ptr<Expression> step;
+    std::unique_ptr<Expression> step = std::make_unique<IntegerLiteralNode>(1);
     if (matchValue(Keyword::Step)) {
         step = parseExpression();
     }
@@ -338,14 +338,14 @@ std::unique_ptr<Expression> Parser::parsePrimary() {
 }
 
 
-Token &Parser::peek() {
+Token& Parser::peek() {
     if (_position >= _tokens.size()) {
         return _endOfFileToken;
     }
     return _tokens[_position];
 }
 
-Token &Parser::peekNext() {
+Token& Parser::peekNext() {
     auto position = _position + 1;
     if (position >= _tokens.size()) {
         return _endOfFileToken;
