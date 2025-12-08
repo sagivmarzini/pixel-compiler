@@ -2,8 +2,8 @@
 // Created by Sagiv Marzini on 21/11/2025.
 //
 
-#ifndef COMPILER_PROJECT_LEXEREXCEPTION_H
-#define COMPILER_PROJECT_LEXEREXCEPTION_H
+#ifndef COMPILER_PROJECT_LEXERERROR_H
+#define COMPILER_PROJECT_LEXERERROR_H
 
 #include "Token.h"
 
@@ -23,14 +23,13 @@ public:
 
     [[nodiscard]] std::string message() const;
 
-    [[nodiscard]] TokenLocation location() const;
+    [[nodiscard]] TokenMetadata getMetadata() const;
 
 private:
     std::string _msg;
     LexerErrorType _type;
-    TokenLocation _location{};
-    std::string _lexeme;
+    TokenMetadata _metadata;
 };
 
 
-#endif //COMPILER_PROJECT_LEXEREXCEPTION_H
+#endif //COMPILER_PROJECT_LEXERERROR_H

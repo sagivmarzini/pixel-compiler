@@ -3,6 +3,8 @@
 //
 #include "Token.h"
 
+#include <stdexcept>
+
 std::string typeToString(const Type type) {
     switch (type) {
         case Type::Int: return "Int";
@@ -42,17 +44,20 @@ std::string keywordToString(Keyword keyword) {
     switch (keyword) {
         case Keyword::Func: return "Func";
         case Keyword::Var: return "Var";
+        case Keyword::Const: return "Const";
         case Keyword::Return: return "Return";
         case Keyword::If: return "If";
         case Keyword::Else: return "Else";
         case Keyword::While: return "While";
         case Keyword::For: return "For";
-        default: return "unknown keyword";
+        case Keyword::In: return "In";
+        case Keyword::Step: return "Step";
+        default: throw std::runtime_error("Print function not implemented for this keyword");
     }
 }
 
-std::string tokenToString(const Token& token) {
-    return std::visit([]<typename U>(U&& arg) -> std::string {
+std::string tokenToString(const Token &token) {
+    return std::visit([]<typename U>(U &&arg) -> std::string {
         using T = std::decay_t<U>;
 
         if constexpr (std::is_same_v<T, Semicolon>) return "Semicolon";
@@ -83,11 +88,11 @@ std::string tokenToString(const Token& token) {
             return arg.value ? "BooleanLiteral(true)" : "BooleanLiteral(false)";
         }
 
-        return "Unknown";
+        throw std::runtime_error("Print not implemented for this token");
     }, token.type);
 }
 
-std::ostream& operator<<(std::ostream& os, const Token& token) {
+std::ostream &operator<<(std::ostream &os, const Token &token) {
     os << tokenToString(token);
     return os;
 }

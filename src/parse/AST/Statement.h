@@ -3,22 +3,23 @@
 
 #include "Expression.h"
 
-class Statement : public ASTNode {
+class Statement : public AstNode {
 public:
     ~Statement() override = default;
 };
 
 // Variable declaration: int x = 5;
 struct VariableDeclaration : Statement {
+    bool isConst;
     Type type;
     std::string name;
     std::unique_ptr<Expression> initializer; // Can be null
 
-    VariableDeclaration(const Type type, std::string name, std::unique_ptr<Expression> init = nullptr)
-        : type(type), name(std::move(name)), initializer(std::move(init)) {
+    VariableDeclaration(bool isConst, const Type type, std::string name, std::unique_ptr<Expression> init = nullptr)
+        : isConst(isConst), type(type), name(std::move(name)), initializer(std::move(init)) {
     }
 
-    void accept(const Visitor &visitor) override;
+    void accept(const Visitor& visitor) override;
 };
 
 struct VariableAssignment : Statement {
@@ -29,7 +30,7 @@ struct VariableAssignment : Statement {
         : name(std::move(name)), newValue(std::move(value)) {
     }
 
-    void accept(const Visitor &visitor) override;
+    void accept(const Visitor& visitor) override;
 };
 
 // Return statement
@@ -39,7 +40,7 @@ struct ReturnStatement : Statement {
     ReturnStatement(std::unique_ptr<Expression> val = nullptr) : value(std::move(val)) {
     }
 
-    void accept(const Visitor &visitor) override;
+    void accept(const Visitor& visitor) override;
 };
 
 // Block (compound statement)
@@ -51,19 +52,33 @@ struct Block : Statement {
     Block(std::vector<std::unique_ptr<Statement> > stmts) : statements(std::move(stmts)) {
     }
 
-    void accept(const Visitor &visitor) override;
+    void accept(const Visitor& visitor) override;
 };
 
 // While loop
-struct WhileStatement : Statement {
+struct WhileLoop : Statement {
     std::unique_ptr<Expression> condition;
     std::unique_ptr<Statement> body;
 
-    WhileStatement(std::unique_ptr<Expression> condition, std::unique_ptr<Statement> body)
+    WhileLoop(std::unique_ptr<Expression> condition, std::unique_ptr<Statement> body)
         : condition(std::move(condition)), body(std::move(body)) {
     }
 
-    void accept(const Visitor &visitor) override;
+    void accept(const Visitor& visitor) override;
+};
+
+struct ForLoop : Statement {
+    std::string identifier;
+    std::unique_ptr<RangeExpression> range;
+    std::unique_ptr<Expression> step; // Optional (can be nullptr), defaults to 1
+    std::unique_ptr<Statement> body;
+
+    ForLoop(std::string identifier, std::unique_ptr<RangeExpression> range,
+            std::unique_ptr<Expression> step, std::unique_ptr<Statement> body)
+        : identifier(std::move(identifier)), range(std::move(range)), step(std::move(step)), body(std::move(body)) {
+    }
+
+    void accept(const Visitor& visitor) override;
 };
 
 // If statement
@@ -77,12 +92,12 @@ struct IfStatement : Statement {
         : condition(std::move(condition)), thenBranch(std::move(thenBranch)), elseBranch(std::move(elseBranch)) {
     }
 
-    void accept(const Visitor &visitor) override;
+    void accept(const Visitor& visitor) override;
 };
 
 
 // Function declaration
-struct FunctionDeclaration : ASTNode {
+struct FunctionDeclaration : Statement {
     struct FunctionParameter {
         std::string name;
         Type type;
@@ -102,29 +117,16 @@ struct FunctionDeclaration : ASTNode {
         : returnType(returnType), name(std::move(name)), parameters(std::move(parameters)), body(std::move(body)) {
     }
 
-    void accept(const Visitor &visitor) override;
+    void accept(const Visitor& visitor) override;
 };
 
-// Function call
-struct FunctionCall : Statement {
-    std::string functionName;
-    std::vector<FunctionArgument> arguments;
+struct ExpressionStatement : Statement {
+    std::unique_ptr<Expression> expression;
 
-    FunctionCall(std::string name, std::vector<FunctionArgument> arguments)
-        : functionName(std::move(name)), arguments(std::move(arguments)) {
+    explicit ExpressionStatement(std::unique_ptr<Expression> expression) : expression(std::move(expression)) {
     }
 
-    void accept(const Visitor &visitor) override;
-};
-
-// Program root
-struct Program : ASTNode {
-    std::vector<std::unique_ptr<ASTNode> > declarations;
-
-    Program(std::vector<std::unique_ptr<ASTNode> > declarations) : declarations(std::move(declarations)) {
-    }
-
-    void accept(const Visitor &visitor) override;
+    void accept(const Visitor& visitor) override;
 };
 
 

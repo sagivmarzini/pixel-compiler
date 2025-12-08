@@ -1,6 +1,11 @@
 #include "Expression.h"
+#include "Visitor.h"
 
 void IntegerLiteralNode::accept(const Visitor &visitor) {
+    visitor.visit(*this);
+}
+
+void FloatLiteralNode::accept(const Visitor &visitor) {
     visitor.visit(*this);
 }
 
@@ -24,6 +29,10 @@ void IdentifierNode::accept(const Visitor &visitor) {
     visitor.visit(*this);
 }
 
-void CallExpression::accept(const Visitor &visitor) {
+void FunctionCall::accept(const Visitor &visitor) {
+    visitor.visit(*this);
+}
+
+void RangeExpression::accept(const Visitor &visitor) {
     visitor.visit(*this);
 }

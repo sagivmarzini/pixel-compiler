@@ -10,7 +10,7 @@
 class Visitor;
 
 // Base expression class
-class Expression : public ASTNode {
+class Expression : public AstNode {
 public:
     ~Expression() override = default;
 };
@@ -19,6 +19,15 @@ struct IntegerLiteralNode : Expression {
     int value;
 
     IntegerLiteralNode(const int value) : value(value) {
+    }
+
+    void accept(const Visitor& visitor) override;
+};
+
+struct FloatLiteralNode : Expression {
+    float value;
+
+    FloatLiteralNode(const float value) : value(value) {
     }
 
     void accept(const Visitor& visitor) override;
@@ -76,22 +85,33 @@ struct IdentifierNode : Expression {
     void accept(const Visitor& visitor) override;
 };
 
-struct FunctionArgument {
-    std::string name;
-    std::unique_ptr<Expression> value;
-
-    FunctionArgument(std::string name, std::unique_ptr<Expression> value)
-        : name(std::move(name)), value(std::move(value)) {
-    }
-};
-
 // Function call
-struct CallExpression : Expression {
+struct FunctionCall : Expression {
+    struct FunctionArgument {
+        std::string name;
+        std::unique_ptr<Expression> value;
+
+        FunctionArgument(std::string name, std::unique_ptr<Expression> value)
+            : name(std::move(name)), value(std::move(value)) {
+        }
+    };
+
     std::string functionName;
     std::vector<FunctionArgument> arguments;
 
-    CallExpression(std::string name, std::vector<FunctionArgument> arguments)
+    FunctionCall(std::string name, std::vector<FunctionArgument> arguments)
         : functionName(std::move(name)), arguments(std::move(arguments)) {
+    }
+
+    void accept(const Visitor& visitor) override;
+};
+
+struct RangeExpression : Expression {
+    std::unique_ptr<Expression> start;
+    std::unique_ptr<Expression> end;
+
+    RangeExpression(std::unique_ptr<Expression> start, std::unique_ptr<Expression> end)
+        : start(std::move(start)), end(std::move(end)) {
     }
 
     void accept(const Visitor& visitor) override;

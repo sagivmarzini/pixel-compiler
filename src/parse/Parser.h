@@ -13,35 +13,37 @@ public:
 private:
     std::vector<Token> _tokens;
     size_t _position;
-    Token _endOfFile = Token(EndOfFile(), -1, -1, "EOF");
+    Token _endOfFileToken = Token(EndOfFile(), -1, -1, "EOF");
 
-
-    // Recursive descent parsing methods
     std::unique_ptr<Statement> parseStatement();
 
     std::unique_ptr<Statement> parseBlock();
 
-    std::vector<FunctionArgument> parseFunctionArguments();
+    std::vector<FunctionCall::FunctionArgument> parseFunctionArguments();
 
-    std::unique_ptr<ASTNode> parseFunctionDeclaration();
+    std::unique_ptr<Statement> parseFunctionDeclaration();
 
     std::unique_ptr<Statement> parseVariableDeclaration();
 
     std::unique_ptr<Statement> parseVariableAssignment();
 
-    std::unique_ptr<Statement> parseFunctionCall();
+    std::unique_ptr<Expression> parseFunctionCall();
 
     std::unique_ptr<Statement> parseIfStatement();
 
-    std::unique_ptr<Statement> parseWhileStatement();
+    std::unique_ptr<Statement> parseWhileLoop();
+
+    std::unique_ptr<RangeExpression> parseRangeExpression();
+
+    std::unique_ptr<Statement> parseForLoop();
 
     std::unique_ptr<Statement> parseReturnStatement();
 
     std::unique_ptr<Expression> parseExpression();
 
-    std::unique_ptr<Expression> parseBooleanAndExpression();
-
     std::unique_ptr<Expression> parseBooleanOrExpression();
+
+    std::unique_ptr<Expression> parseBooleanAndExpression();
 
     std::unique_ptr<Expression> parseBooleanEqualityExpression();
 
@@ -55,18 +57,34 @@ private:
 
     std::unique_ptr<Expression> parsePrimary();
 
-    Token &peek(int offset = 0);
+    Token& peek();
+
+    Token& peekNext();
 
     template<typename T>
-    bool match(int offset = 0);
+    bool check();
 
     template<typename T>
-    bool matchValue(T type);
+    bool checkNext();
+
+    template<typename T>
+    bool match(); // Check token type and eat if matches
+
+    template<typename T>
+    bool matchValue(T value); // Check and eat if matches
+
+    template<typename T>
+    bool checkValue(T value);
+
+    template<typename T>
+    bool checkNextValue(T value);
 
     void eat();
 
     template<typename T>
-    T expect(); //expects and eats the token if it matches
+    T expect(); // expects and eats the token if it matches
+    template<typename T>
+    T expectValue(T value);
 
     bool isAtEnd();
 };

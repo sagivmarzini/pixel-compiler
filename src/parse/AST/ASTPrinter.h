@@ -10,10 +10,12 @@ class ASTPrinter : public Visitor {
 public:
     ~ASTPrinter() override = default;
 
-    void visit(const Program &program) const override;
+    void visit(const Program &node) const override;
 
 private:
     void visit(const IntegerLiteralNode &node) const override;
+
+    void visit(const FloatLiteralNode &node) const override;
 
     void visit(const StringLiteralNode &node) const override;
 
@@ -25,7 +27,7 @@ private:
 
     void visit(const IdentifierNode &node) const override;
 
-    void visit(const CallExpression &node) const override;
+    void visit(const FunctionCall &node) const override;
 
     void visit(const VariableDeclaration &node) const override;
 
@@ -35,13 +37,17 @@ private:
 
     void visit(const Block &node) const override;
 
-    void visit(const WhileStatement &node) const override;
+    void visit(const WhileLoop &node) const override;
 
     void visit(const IfStatement &node) const override;
 
     void visit(const FunctionDeclaration &node) const override;
 
-    void visit(const FunctionCall &node) const override;
+    void visit(const ForLoop &node) const override;
+
+    void visit(const ExpressionStatement &node) const override;
+
+    void visit(const RangeExpression &node) const override;
 };
 
 

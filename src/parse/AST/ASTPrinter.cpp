@@ -16,6 +16,10 @@ void ASTPrinter::visit(const IntegerLiteralNode &node) const {
     std::cout << node.value;
 }
 
+void ASTPrinter::visit(const FloatLiteralNode &node) const {
+    std::cout << node.value;
+}
+
 void ASTPrinter::visit(const StringLiteralNode &node) const {
     std::cout << '\"' + node.value + '\"';
 }
@@ -40,7 +44,7 @@ void ASTPrinter::visit(const IdentifierNode &node) const {
     std::cout << node.name;
 }
 
-void ASTPrinter::visit(const CallExpression &node) const {
+void ASTPrinter::visit(const FunctionCall &node) const {
     std::cout << node.functionName << '(';
     for (auto &arg: node.arguments) {
         std::cout << arg.name << ": ";
@@ -78,7 +82,7 @@ void ASTPrinter::visit(const Block &node) const {
     std::cout << "}\n";
 }
 
-void ASTPrinter::visit(const WhileStatement &node) const {
+void ASTPrinter::visit(const WhileLoop &node) const {
     std::cout << "while (";
     node.condition->accept(*this);
     std::cout << ")\n";
@@ -105,12 +109,13 @@ void ASTPrinter::visit(const FunctionDeclaration &node) const {
     node.body->accept(*this);
 }
 
-void ASTPrinter::visit(const FunctionCall &node) const {
-    std::cout << node.functionName << '(';
-    for (auto &arg: node.arguments) {
-        std::cout << arg.name << ": ";
-        arg.value->accept(*this);
-        std::cout << ", ";
-    }
-    std::cout << ")\n";
+void ASTPrinter::visit(const ForLoop &node) const {
+    std::cout << "it's a for loop...";
+}
+
+void ASTPrinter::visit(const ExpressionStatement &node) const {
+    node.expression->accept(*this);
+}
+
+void ASTPrinter::visit(const RangeExpression &node) const {
 }
