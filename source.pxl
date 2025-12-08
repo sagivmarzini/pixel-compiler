@@ -13,12 +13,9 @@ var x = 50;
 var y = 50;
 var isGameOver: bool = false;
 
-// Custom Color type
-var myColor: Color = Color(r: 255, g: 100, b: 50);
-
 
 // Functions
-func greet(name: String) -> Void {
+func greet(name: string) -> void {
   print("Hello, " + name);
 }
 
@@ -46,12 +43,12 @@ func updateScore() -> Void {
 }
 
 // Setup & Draw
-func setup() -> Void {
+func setup() -> void {
   setCanvas(width: 800, height: 600);
   greet(playerName);
 }
 
-func draw() -> Void {
+func draw() -> void {
   // Clear background
   background(r: 255, g: 255, b: 255);
 

@@ -33,7 +33,7 @@ private:
 
     std::unique_ptr<Statement> parseWhileLoop();
 
-    std::unique_ptr<Expression> parseRangeExpression();
+    std::unique_ptr<RangeExpression> parseRangeExpression();
 
     std::unique_ptr<Statement> parseForLoop();
 
@@ -57,9 +57,9 @@ private:
 
     std::unique_ptr<Expression> parsePrimary();
 
-    Token& peek();
+    Token &peek();
 
-    Token& peekNext();
+    Token &peekNext();
 
     template<typename T>
     bool match();

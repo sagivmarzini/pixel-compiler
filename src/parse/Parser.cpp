@@ -1,7 +1,4 @@
 #include "Parser.h"
-
-#include <cmath>
-
 #include "AST/Statement.h"
 
 Parser::Parser(std::vector<Token> tokens)
@@ -23,7 +20,7 @@ Program Parser::parseProgram() {
 }
 
 std::unique_ptr<Statement> Parser::parseStatement() {
-    if (matchValue(Keyword::Var)) {
+    if (matchValue(Keyword::Var) || matchValue(Keyword::Const)) {
         return parseVariableDeclaration();
     }
     if (matchValue(Keyword::Return)) {
@@ -109,13 +106,15 @@ std::unique_ptr<ASTNode> Parser::parseFunctionDeclaration() {
 }
 
 std::unique_ptr<Statement> Parser::parseVariableDeclaration() {
+    const bool isConst = matchValue(Keyword::Const) ? true : false;
     expect<Keyword>();
+
     auto name = expect<Identifier>();
 
     // if initializing with inferred type set it to undefined
     Type type = Type::Unspecified;
     std::unique_ptr<Expression> value = nullptr;
-    //if initializing with type get it
+    // if initializing with type get it
     if (match<Colon>()) {
         eat();
         type = expect<Type>();
@@ -131,7 +130,7 @@ std::unique_ptr<Statement> Parser::parseVariableDeclaration() {
     }
     expect<Semicolon>();
 
-    return std::make_unique<VariableDeclaration>(type, name.name, std::move(value));
+    return std::make_unique<VariableDeclaration>(isConst, type, name.name, std::move(value));
 }
 
 std::unique_ptr<Statement> Parser::parseVariableAssignment() {
@@ -187,6 +186,14 @@ std::unique_ptr<Statement> Parser::parseWhileLoop() {
     auto block = parseBlock();
 
     return std::make_unique<WhileLoop>(std::move(condition), std::move(block));
+}
+
+std::unique_ptr<RangeExpression> Parser::parseRangeExpression() {
+    auto start = parseExpression();
+    expect<DoubleDot>();
+    auto end = parseExpression();
+
+    return std::make_unique<RangeExpression>(std::move(start), std::move(end));
 }
 
 std::unique_ptr<Statement> Parser::parseForLoop() {
@@ -306,12 +313,16 @@ std::unique_ptr<Expression> Parser::parseUnaryExpression() {
 
 std::unique_ptr<Expression> Parser::parsePrimary() {
     if (match<IntegerLiteral>()) {
-        auto value = expect<IntegerLiteral>().value;
-        return std::make_unique<IntegerLiteralNode>(value);
+        return std::make_unique<IntegerLiteralNode>(expect<IntegerLiteral>().value);
+    }
+    if (match<FloatLiteral>()) {
+        return std::make_unique<FloatLiteralNode>(expect<FloatLiteral>().value);
     }
     if (match<BooleanLiteral>()) {
-        auto value = expect<BooleanLiteral>().value;
-        return std::make_unique<BooleanLiteralNode>(value);
+        return std::make_unique<BooleanLiteralNode>(expect<BooleanLiteral>().value);
+    }
+    if (match<StringLiteral>()) {
+        return std::make_unique<StringLiteralNode>(expect<StringLiteral>().value);
     }
     if (match<Identifier>()) {
         auto identifier = expect<Identifier>();
@@ -333,14 +344,14 @@ std::unique_ptr<Expression> Parser::parsePrimary() {
 }
 
 
-Token& Parser::peek() {
+Token &Parser::peek() {
     if (_position >= _tokens.size()) {
         return _endOfFileToken;
     }
     return _tokens[_position];
 }
 
-Token& Parser::peekNext() {
+Token &Parser::peekNext() {
     auto position = _position + 1;
     if (position >= _tokens.size()) {
         return _endOfFileToken;

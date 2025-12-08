@@ -3,6 +3,8 @@
 //
 #include "Token.h"
 
+#include <stdexcept>
+
 std::string typeToString(const Type type) {
     switch (type) {
         case Type::Int: return "Int";
@@ -42,6 +44,7 @@ std::string keywordToString(Keyword keyword) {
     switch (keyword) {
         case Keyword::Func: return "Func";
         case Keyword::Var: return "Var";
+        case Keyword::Const: return "Const";
         case Keyword::Return: return "Return";
         case Keyword::If: return "If";
         case Keyword::Else: return "Else";
@@ -53,8 +56,8 @@ std::string keywordToString(Keyword keyword) {
     }
 }
 
-std::string tokenToString(const Token& token) {
-    return std::visit([]<typename U>(U&& arg) -> std::string {
+std::string tokenToString(const Token &token) {
+    return std::visit([]<typename U>(U &&arg) -> std::string {
         using T = std::decay_t<U>;
 
         if constexpr (std::is_same_v<T, Semicolon>) return "Semicolon";
@@ -89,7 +92,7 @@ std::string tokenToString(const Token& token) {
     }, token.type);
 }
 
-std::ostream& operator<<(std::ostream& os, const Token& token) {
+std::ostream &operator<<(std::ostream &os, const Token &token) {
     os << tokenToString(token);
     return os;
 }

@@ -8,7 +8,7 @@
 
 enum class Keyword {
     Func,
-    Var,
+    Var, Const,
     Return,
     If, Else,
     While,
@@ -51,22 +51,22 @@ struct BooleanLiteral {
 enum class Operator {
     Assignment, // =
 
-    Plus,       // +
-    PlusPlus,   // ++
-    Minus,      // -
+    Plus, // +
+    PlusPlus, // ++
+    Minus, // -
     MinusMinus, // --
-    Star,       // *
-    Slash,      // /
+    Star, // *
+    Slash, // /
 
-    And,         // &&
-    Or,          // ||
-    Equal,       // ==
-    NotEqual,    // !=
+    And, // &&
+    Or, // ||
+    Equal, // ==
+    NotEqual, // !=
     Exclamation, // !
 
-    Less,         // <
-    LessEqual,    // <=
-    Greater,      // >
+    Less, // <
+    LessEqual, // <=
+    Greater, // >
     GreaterEqual, // >=
 };
 
@@ -131,6 +131,7 @@ using TokenType = std::variant<
 static const std::unordered_map<std::string, TokenType> keywords = {
     {"func", Keyword::Func},
     {"var", Keyword::Var},
+    {"const", Keyword::Const},
     {"return", Keyword::Return},
     {"if", Keyword::If},
     {"else", Keyword::Else},
@@ -144,7 +145,7 @@ static const std::unordered_map<std::string, TokenType> keywords = {
     {"bool", Type::Bool},
     {"ptr", Type::Ptr},
     {"string", Type::String},
-    {"color", Type::Color},
+    {"Color", Type::Color},
     {"void", Type::Void},
 
     {"true", BooleanLiteral{true}},
@@ -175,8 +176,8 @@ std::string operatorToString(Operator op);
 
 std::string keywordToString(Keyword keyword);
 
-std::string tokenToString(const Token& token);
+std::string tokenToString(const Token &token);
 
-std::ostream& operator<<(std::ostream& os, const Token& token);
+std::ostream &operator<<(std::ostream &os, const Token &token);
 
 #endif // COMPILER_PROJECT_TOKEN_H

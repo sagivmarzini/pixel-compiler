@@ -10,40 +10,44 @@ class ASTPrinter : public Visitor {
 public:
     ~ASTPrinter() override = default;
 
-    void visit(const Program& node) const override;
+    void visit(const Program &node) const override;
 
 private:
-    void visit(const IntegerLiteralNode& node) const override;
+    void visit(const IntegerLiteralNode &node) const override;
 
-    void visit(const StringLiteralNode& node) const override;
+    void visit(const FloatLiteralNode &node) const override;
 
-    void visit(const BooleanLiteralNode& node) const override;
+    void visit(const StringLiteralNode &node) const override;
 
-    void visit(const BinaryExpression& node) const override;
+    void visit(const BooleanLiteralNode &node) const override;
 
-    void visit(const UnaryExpression& node) const override;
+    void visit(const BinaryExpression &node) const override;
 
-    void visit(const IdentifierNode& node) const override;
+    void visit(const UnaryExpression &node) const override;
 
-    void visit(const FunctionCall& node) const override;
+    void visit(const IdentifierNode &node) const override;
 
-    void visit(const VariableDeclaration& node) const override;
+    void visit(const FunctionCall &node) const override;
 
-    void visit(const VariableAssignment& node) const override;
+    void visit(const VariableDeclaration &node) const override;
 
-    void visit(const ReturnStatement& node) const override;
+    void visit(const VariableAssignment &node) const override;
 
-    void visit(const Block& node) const override;
+    void visit(const ReturnStatement &node) const override;
 
-    void visit(const WhileLoop& node) const override;
+    void visit(const Block &node) const override;
 
-    void visit(const IfStatement& node) const override;
+    void visit(const WhileLoop &node) const override;
 
-    void visit(const FunctionDeclaration& node) const override;
+    void visit(const IfStatement &node) const override;
 
-    void visit(const ForLoop& node) const override;
+    void visit(const FunctionDeclaration &node) const override;
 
-    void visit(const ExpressionStatement& node) const override;
+    void visit(const ForLoop &node) const override;
+
+    void visit(const ExpressionStatement &node) const override;
+
+    void visit(const RangeExpression &node) const override;
 };
 
 
