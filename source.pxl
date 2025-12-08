@@ -35,6 +35,8 @@ func drawPlayer(x: int, y: int, size: int) -> void {
 func updateScore() -> void {
   if score > 10 {
     const print = "You're doing great!";
+  } else if score > 9 {
+    const print = "Almost there...";
   } else {
     const print = "Keep going...";
   }

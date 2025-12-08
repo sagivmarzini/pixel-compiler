@@ -62,16 +62,18 @@ private:
     Token &peekNext();
 
     template<typename T>
-    bool match();
+    bool check();
+
+    // TODO: add match method that also eats
 
     template<typename T>
-    bool matchNext();
+    bool checkNext();
 
     template<typename T>
-    bool matchValue(T value);
+    bool checkValue(T value);
 
     template<typename T>
-    bool matchNextValue(T value);
+    bool checkNextValue(T value);
 
     void eat();
 
