@@ -6,7 +6,9 @@
 #include <utility>
 
 #include "lex/LexerError.h"
-#include "parse/AST/ASTPrinter.h"
+#include "parse/AST/AstPrinter.h"
+#include "semantic/DeclarationPassVisitor.h"
+#include "semantic/SymbolPool.h"
 
 Compiler::Compiler(std::string sourceFile) : _sourceFile(std::move(sourceFile)) {
     std::ifstream file(_sourceFile);
@@ -21,20 +23,27 @@ Compiler::Compiler(std::string sourceFile) : _sourceFile(std::move(sourceFile)) 
 }
 
 void Compiler::compile() const {
+    // Lexing
     Lexer lexer(_sourceCode);
 
     const auto tokens = lexer.lex();
-    printTokens(tokens);
+    // printTokens(tokens);
 
+    // Parsing
     Parser parser(tokens);
-    auto AST = parser.parseProgram();
+    auto ast = parser.parseProgram();
 
-    ASTPrinter printer;
-    AST.accept(printer);
+    AstPrinter printer;
+
+    // Semantic analyzing
+    SymbolPool symbols;
+    DeclarationPassVisitor declPass(symbols);
+    declPass.run(ast);
+    printer.print(ast);
 }
 
-void Compiler::printTokens(const std::vector<Token> &tokens) {
-    for (const auto &token: tokens) {
+void Compiler::printTokens(const std::vector<Token>& tokens) {
+    for (const auto& token: tokens) {
         std::cout << token << '\n';
     }
 }

@@ -7,7 +7,7 @@
 #include "LexerError.h"
 
 Lexer::Lexer(std::string sourceCode)
-    : _sourceCode(std::move(sourceCode)), _position(0), _line(1), _col(1), _errors() {
+    : _sourceCode(std::move(sourceCode)), _position(0), _line(1), _col(1) {
 }
 
 std::vector<Token> Lexer::lex() {

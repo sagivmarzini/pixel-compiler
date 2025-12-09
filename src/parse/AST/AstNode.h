@@ -4,7 +4,7 @@
 #include "lex/Token.h"
 
 
-class Visitor;
+class AstVisitor;
 
 class AstNode {
 public:
@@ -16,7 +16,7 @@ public:
 
     virtual ~AstNode() = default;
 
-    virtual void accept(const Visitor& visitor) = 0; // For visitor pattern
+    virtual void accept(AstVisitor& visitor) = 0; // For visitor pattern
 
 protected:
     TokenMetadata _metadata;
@@ -24,12 +24,12 @@ protected:
 
 // Program root
 struct Program final : AstNode {
-    std::vector<std::unique_ptr<AstNode> > declarations;
+    std::vector<std::unique_ptr<AstNode> > statements;
 
-    Program(std::vector<std::unique_ptr<AstNode> > declarations) : declarations(std::move(declarations)) {
+    Program(std::vector<std::unique_ptr<AstNode> > declarations) : statements(std::move(declarations)) {
     }
 
-    void accept(const Visitor& visitor) override;
+    void accept(AstVisitor& visitor) override;
 };
 
 #endif //COMPILER_PROJECT_ASTNODE_H
