@@ -18,9 +18,18 @@ add_executable(compiler-project
         src/parse/AST/Statement.h
         src/parse/AST/Expression.cpp
         src/parse/AST/Statement.cpp
-        src/parse/AST/Visitor.h
-        src/parse/AST/ASTPrinter.cpp
-        src/parse/AST/ASTPrinter.h
+        src/parse/AST/AstVisitor.h
+        src/semantic/SemanticVisitor.cpp
+        src/semantic/SemanticVisitor.h
+        src/semantic/Symbol.h
+        src/semantic/Scope.cpp
+        src/semantic/Scope.h
+        src/semantic/SymbolPool.cpp
+        src/semantic/SymbolPool.h
+        src/semantic/DeclarationPassVisitor.cpp
+        src/semantic/DeclarationPassVisitor.h
+        src/parse/AST/AstPrinter.cpp
+        src/parse/AST/AstPrinter.h
         src/lex/Token.cpp
 )
 
