@@ -3,18 +3,16 @@
 //
 
 #include "SemanticVisitor.h"
+#include "SymbolTable.h"
 
-SemanticVisitor::SemanticVisitor(SymbolPool& symbolPool)
-    : _pool(symbolPool), _currentScope(nullptr) {
+SemanticVisitor::SemanticVisitor(SymbolTable& symbolTable)
+    : _symbolTable(symbolTable) {
 }
 
-void SemanticVisitor::pushScope() {
-    auto scope = std::make_unique<Scope>(_currentScope);
-    _scopes.push_back(std::move(scope));
-
-    _currentScope = _scopes.back().get();
+void SemanticVisitor::enterScope() const {
+    _symbolTable.enterScope();
 }
 
-void SemanticVisitor::popScope() {
-    _currentScope = _currentScope->getParent();
+void SemanticVisitor::exitScope() const {
+    _symbolTable.exitScope();
 }

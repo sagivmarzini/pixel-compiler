@@ -4,24 +4,24 @@
 
 #ifndef COMPILER_PROJECT_SCOPE_H
 #define COMPILER_PROJECT_SCOPE_H
+
 #include <unordered_map>
+#include <string>
 
-#include "Symbol.h"
-
+class Symbol;
 
 class Scope {
 public:
     explicit Scope(Scope* parent = nullptr);
 
+    Symbol* addSymbol(Symbol& symbol);
 
-    bool declare(Symbol& symbol);
-
-    Symbol* lookup(const std::string& name);
+    Symbol* findSymbol(const std::string& name);
 
     [[nodiscard]] Scope* getParent() const;
 
 private:
-    Scope* _parent;
+    Scope*                                   _parent;
     std::unordered_map<std::string, Symbol*> symbols;
 };
 

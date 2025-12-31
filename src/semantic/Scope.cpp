@@ -3,17 +3,18 @@
 //
 
 #include "Scope.h"
+#include "Symbol.h"
 
 Scope::Scope(Scope* parent)
     : _parent(parent) {
 }
 
-bool Scope::declare(Symbol& symbol) {
+Symbol* Scope::addSymbol(Symbol& symbol) {
     auto [it, inserted] = symbols.try_emplace(symbol.name, &symbol);
-    return inserted;
+    return it->second;
 }
 
-Symbol* Scope::lookup(const std::string& name) {
+Symbol* Scope::findSymbol(const std::string& name) {
     for (Scope* scope = this; scope; scope = scope->_parent) {
         if (auto it = scope->symbols.find(name); it != scope->symbols.end())
             return it->second;

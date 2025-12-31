@@ -2,8 +2,8 @@
 // Created by Sagiv Marzini on 05/12/2025.
 //
 
-#ifndef COMPILER_PROJECT_SYMBOLTABLE_H
-#define COMPILER_PROJECT_SYMBOLTABLE_H
+#ifndef COMPILER_PROJECT_SYMBOLPOOL_H
+#define COMPILER_PROJECT_SYMBOLPOOL_H
 #include <memory>
 #include <vector>
 
@@ -14,11 +14,11 @@ enum class Type;
 
 class SymbolPool {
 public:
-    Symbol& createSymbol(const std::string& name, Symbol::SymbolKind kind, Type type, Scope* scope);
+    Symbol &createSymbol(const std::string &name, Symbol::SymbolKind kind, Type type, Scope *scope, bool isConst);
 
 private:
-    std::vector<std::unique_ptr<Symbol> > _pool;
+    std::vector<std::unique_ptr<Symbol> > _symbols;
 };
 
 
-#endif //COMPILER_PROJECT_SYMBOLTABLE_H
+#endif //COMPILER_PROJECT_SYMBOLPOOL_H

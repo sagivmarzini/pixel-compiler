@@ -5,6 +5,7 @@
 #include <utility>
 #include <variant>
 #include <unordered_map>
+#include <iostream>
 
 enum class Keyword {
     Func,
@@ -15,17 +16,23 @@ enum class Keyword {
     For, In, Step
 };
 
+std::ostream &operator<<(std::ostream &os, const Keyword &keyword);
+
+
 enum class Type {
-    Unspecified, // Inferred type is initially set to `unspecified`
+    Unspecified,
 
     Int,
     Float,
-    Bool,
+    Boolean,
     Ptr,
     String,
     Color,
     Void,
 };
+
+std::ostream &operator<<(std::ostream &os, const Type &type);
+
 
 // Token payload structs
 struct Identifier {
@@ -64,11 +71,13 @@ enum class Operator {
     NotEqual, // !=
     Exclamation, // !
 
-    Less, // <
+    LessThan, // <
     LessEqual, // <=
-    Greater, // >
+    GreaterThan, // >
     GreaterEqual, // >=
 };
+
+std::ostream &operator<<(std::ostream &os, const Operator &op);
 
 struct Semicolon {
 };
@@ -142,7 +151,7 @@ static const std::unordered_map<std::string, TokenType> keywords = {
 
     {"int", Type::Int},
     {"float", Type::Float},
-    {"bool", Type::Bool},
+    {"bool", Type::Boolean},
     {"ptr", Type::Ptr},
     {"string", Type::String},
     {"Color", Type::Color},
@@ -169,6 +178,7 @@ struct Token {
     }
 };
 
+std::ostream &operator<<(std::ostream &os, const Token &token);
 
 std::string typeToString(Type type);
 
@@ -178,6 +188,5 @@ std::string keywordToString(Keyword keyword);
 
 std::string tokenToString(const Token &token);
 
-std::ostream &operator<<(std::ostream &os, const Token &token);
 
 #endif // COMPILER_PROJECT_TOKEN_H

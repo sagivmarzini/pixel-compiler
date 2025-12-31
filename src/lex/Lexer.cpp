@@ -144,7 +144,7 @@ std::vector<Token> Lexer::lex() {
                         token = Token(Operator::LessEqual, _line, _col - 1, std::string{current});
                     } else {
                         eat();
-                        token = Token(Operator::Less, _line, _col - 1, std::string{current});
+                        token = Token(Operator::LessThan, _line, _col - 1, std::string{current});
                     }
                     break;
                 case '>':
@@ -154,7 +154,7 @@ std::vector<Token> Lexer::lex() {
                         token = Token(Operator::GreaterEqual, _line, _col - 1, std::string{current});
                     } else {
                         eat();
-                        token = Token(Operator::Greater, _line, _col - 1, std::string{current});
+                        token = Token(Operator::GreaterThan, _line, _col - 1, std::string{current});
                     }
                     break;
                 case '&':

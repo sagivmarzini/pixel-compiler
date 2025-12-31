@@ -9,8 +9,8 @@
 #include <vector>
 
 #include "lex/Token.h"
+#include "parse/AST/Statement.h"
 
-class SymbolPool;
 class Scope;
 
 struct Symbol {
@@ -26,7 +26,19 @@ struct Symbol {
     SymbolKind kind;
     Type type;
     Scope* scope;
-    std::vector<Type> paramTypes;
+    bool isConst;
+    std::vector<FunctionDeclaration::FunctionParameter> params; // empty unless it's a function
+
+    std::optional<FunctionDeclaration::FunctionParameter> getParameterByName(const std::string& name) {
+        const auto it = std::find_if(params.begin(), params.end(),
+                                     [name](const FunctionDeclaration::FunctionParameter& param) {
+                                         return param.name == name;
+                                     });
+
+        if (it == params.end()) return std::nullopt;
+
+        return *it;
+    }
 };
 
 

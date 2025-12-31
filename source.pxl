@@ -1,76 +1,49 @@
-// This is a demo program covering all features
+func calculate_gravity(planet_type: int) -> float {
+    var gravity: float = 9.81;
 
-/*
-  Multi-line comment:
-  Drawing shapes, using variables, loops, functions, and transforms
-*/
-
-// Variables
-var score: int = 0;
-var playerName = "Alex";   // inferred
-const pi = 3.14159;
-var x = 50;
-var y = 50;
-var isGameOver: bool = false;
-
-// Functions
-func greet(name: string) -> void {
-  const print = "Hello, " + name;
+    if planet_type == 1 {
+        gravity = 3.71; // Mars
+    } else if planet_type == 2 {
+        gravity = 24.79; // Jupiter
+    }
+    
+    return gravity;
 }
 
-func add(a: int, b: int) -> int {
-  return a + b;
+func is_within_range(val: float, target: float, error: float) -> bool {
+    return (val >= target - error) && (val <= target + error);
 }
 
-func drawPlayer(x: int, y: int, size: int) -> void {
-  push();
-  translate(x: x, y: y);
-  rotate(angle: 45);
-  setColor(r: 0, g: 0, b: 255);
-  circle(x: 0, y: 0, radius: size);
-  pop();
+// Main logic starts here
+const planet = 1;
+var velocity = 50.0;
+var angle_rad = 0.785; // ~45 degrees
+var g = calculate_gravity(planet_type: planet);
+
+const target_dist: float = 120.0;
+var hit_detected: bool = false;
+
+// Testing for-loops with range and step
+for time in 0..10 step 1 {
+    var x: float = velocity * time; 
+    
+    // Using complex binary expressions and unary operators
+    var y: float = (velocity * time) - (0.5 * g * (time * time));
+    
+    if y < 0.0 {
+        y = 0.0;
+    }
+
+    if is_within_range(val: x, target: target_dist, error: 5.0) {
+        hit_detected = true;
+    }
 }
 
-// Control Flow
-func updateScore() -> void {
-  if score > 10 {
-    const print = "You're doing great!";
-  } else if score > 9 {
-    const print = "Almost there...";
-  } else {
-    const print = "Keep going...";
-  }
+// Testing while loop
+var countdown: int = 3;
+while countdown > 0 {
+    countdown = countdown - 1;
 }
 
-// Setup & Draw
-func setup() -> void {
-  setCanvas(width: 800, height: 600);
-  greet(name: playerName);
-}
-
-func draw() -> void {
-  background(r: 255, g: 255, b: 255);
-
-  // Draw shapes
-  setColor(r: 255, g: 0, b: 0);
-  rect(x: 100, y: 100, width: 200, height: 100);
-
-  setColor(r: 0, g: 255, b: 0);
-  line(fromX: 0, fromY: 0, toX: 800, toY: 600);
-
-  // Draw player
-  drawPlayer(x: x, y: y, size: 50);
-
-  // Update score
-  updateScore();
-
-  // Loop
-  for i in 0..5 {
-    setColor(r: i * 40, g: 100, b: 200);
-    circle(x: i * 100, y: 500, radius: 20);
-  }
-
-  while x < 300 {
-    x = x + 1;
-  }
-}
+const final_status: string = "Simulation Complete";
+return hit_detected;

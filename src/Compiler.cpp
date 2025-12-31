@@ -1,14 +1,15 @@
 #include "Compiler.h"
 
+#include "semantic/SymbolPool.h"
+#include "semantic/SymbolTable.h"
 #include <fstream>
 #include <iostream>
 #include <sstream>
 #include <utility>
 
-#include "lex/LexerError.h"
 #include "parse/AST/AstPrinter.h"
 #include "semantic/DeclarationPassVisitor.h"
-#include "semantic/SymbolPool.h"
+#include "semantic/TypeCheckerVisitor.h"
 
 Compiler::Compiler(std::string sourceFile) : _sourceFile(std::move(sourceFile)) {
     std::ifstream file(_sourceFile);
@@ -37,8 +38,15 @@ void Compiler::compile() const {
 
     // Semantic analyzing
     SymbolPool symbols;
-    DeclarationPassVisitor declPass(symbols);
+    SymbolTable symbolTable(symbols);
+
+    DeclarationPassVisitor declPass(symbolTable);
     declPass.run(ast);
+    // printer.print(ast);
+    // std::cout << "================================\n\n";
+
+    TypeCheckerVisitor typeChecker(symbolTable);
+    typeChecker.run(ast);
     printer.print(ast);
 }
 

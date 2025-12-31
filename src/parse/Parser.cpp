@@ -38,7 +38,7 @@ std::unique_ptr<Statement> Parser::parseStatement() {
         return parseForLoop();
     }
     if (check<Identifier>()) {
-        if (checkNext<Operator>()) {
+        if (checkNextValue(Operator::Assignment)) {
             return parseVariableAssignment();
         }
     }
@@ -107,7 +107,7 @@ std::unique_ptr<Statement> Parser::parseFunctionDeclaration() {
     expect<Arrow>();
 
     auto returnType = expect<Type>();
-    auto block = parseBlock();
+    auto block      = parseBlock();
 
     return std::make_unique<FunctionDeclaration>(returnType, name.name, parameters, std::move(block));
 }
@@ -119,7 +119,7 @@ std::unique_ptr<Statement> Parser::parseVariableDeclaration() {
     auto [name] = expect<Identifier>();
 
     // if initializing with inferred type set it to undefined
-    Type type = Type::Unspecified;
+    Type                        type  = Type::Unspecified;
     std::unique_ptr<Expression> value = nullptr;
     // if initializing with type get it
     if (match<Colon>()) {
@@ -228,7 +228,7 @@ std::unique_ptr<Expression> Parser::parseBooleanOrExpression() {
     auto left = parseBooleanAndExpression();
 
     while (checkValue(Operator::Or)) {
-        auto op = expect<Operator>();
+        auto op    = expect<Operator>();
         auto right = parseBooleanAndExpression();
 
         left = std::make_unique<BinaryExpression>(std::move(left), op, std::move(right));
@@ -240,7 +240,7 @@ std::unique_ptr<Expression> Parser::parseBooleanAndExpression() {
     auto left = parseBooleanEqualityExpression();
 
     while (checkValue(Operator::And)) {
-        auto op = expect<Operator>();
+        auto op    = expect<Operator>();
         auto right = parseBooleanEqualityExpression();
 
         left = std::make_unique<BinaryExpression>(std::move(left), op, std::move(right));
@@ -253,7 +253,7 @@ std::unique_ptr<Expression> Parser::parseBooleanEqualityExpression() {
     auto left = parseComparisonExpression();
 
     while (checkValue(Operator::Equal) || checkValue(Operator::NotEqual)) {
-        auto op = expect<Operator>();
+        auto op    = expect<Operator>();
         auto right = parseComparisonExpression();
 
         left = std::make_unique<BinaryExpression>(std::move(left), op, std::move(right));
@@ -264,9 +264,9 @@ std::unique_ptr<Expression> Parser::parseBooleanEqualityExpression() {
 std::unique_ptr<Expression> Parser::parseComparisonExpression() {
     auto left = parseAdditiveExpression();
 
-    while (checkValue(Operator::Less) || checkValue(Operator::LessEqual)
-           || checkValue(Operator::Greater) || checkValue(Operator::GreaterEqual)) {
-        auto op = expect<Operator>();
+    while (checkValue(Operator::LessThan) || checkValue(Operator::LessEqual)
+           || checkValue(Operator::GreaterThan) || checkValue(Operator::GreaterEqual)) {
+        auto op    = expect<Operator>();
         auto right = parseAdditiveExpression();
 
         left = std::make_unique<BinaryExpression>(std::move(left), op, std::move(right));
@@ -278,7 +278,7 @@ std::unique_ptr<Expression> Parser::parseAdditiveExpression() {
     auto left = parseMultiplicativeExpression();
 
     while (checkValue(Operator::Plus) || checkValue(Operator::Minus)) {
-        auto op = expect<Operator>();
+        auto op    = expect<Operator>();
         auto right = parseMultiplicativeExpression();
 
         left = std::make_unique<BinaryExpression>(std::move(left), op, std::move(right));
@@ -290,7 +290,7 @@ std::unique_ptr<Expression> Parser::parseMultiplicativeExpression() {
     auto left = parseUnaryExpression();
 
     while (checkValue(Operator::Star) || checkValue(Operator::Slash)) {
-        auto op = expect<Operator>();
+        auto op    = expect<Operator>();
         auto right = parseUnaryExpression();
 
         left = std::make_unique<BinaryExpression>(std::move(left), op, std::move(right));
@@ -301,7 +301,7 @@ std::unique_ptr<Expression> Parser::parseMultiplicativeExpression() {
 std::unique_ptr<Expression> Parser::parseUnaryExpression() {
     if (checkValue(Operator::Plus) || checkValue(Operator::Minus)
         || checkValue(Operator::Exclamation)) {
-        auto op = expect<Operator>();
+        auto op      = expect<Operator>();
         auto operand = parsePrimary();
 
         return std::make_unique<UnaryExpression>(std::move(operand), op);

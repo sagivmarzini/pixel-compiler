@@ -31,6 +31,10 @@ add_executable(compiler-project
         src/parse/AST/AstPrinter.cpp
         src/parse/AST/AstPrinter.h
         src/lex/Token.cpp
+        src/semantic/TypeCheckerVisitor.cpp
+        src/semantic/TypeCheckerVisitor.h
+        src/semantic/SymbolTable.cpp
+        src/semantic/SymbolTable.h
 )
 
 target_include_directories(compiler-project
