@@ -7,15 +7,16 @@
 #include "AstNode.h"
 #include "../../lex/Token.h"
 
+struct Symbol;
 class Visitor;
 
-// Base expression class
-class Expression : public AstNode {
-public:
+struct Expression : AstNode {
     ~Expression() override = default;
+
+    Type type = Type::Unspecified;
 };
 
-struct IntegerLiteralNode : Expression {
+struct IntegerLiteralNode final : Expression {
     int value;
 
     IntegerLiteralNode(const int value) : value(value) {
@@ -24,7 +25,7 @@ struct IntegerLiteralNode : Expression {
     void accept(AstVisitor& visitor) override;
 };
 
-struct FloatLiteralNode : Expression {
+struct FloatLiteralNode final : Expression {
     float value;
 
     FloatLiteralNode(const float value) : value(value) {
@@ -33,7 +34,7 @@ struct FloatLiteralNode : Expression {
     void accept(AstVisitor& visitor) override;
 };
 
-struct StringLiteralNode : Expression {
+struct StringLiteralNode final : Expression {
     std::string value;
 
     StringLiteralNode(std::string value) : value(std::move(value)) {
@@ -42,7 +43,7 @@ struct StringLiteralNode : Expression {
     void accept(AstVisitor& visitor) override;
 };
 
-struct BooleanLiteralNode : Expression {
+struct BooleanLiteralNode final : Expression {
     bool value;
 
     BooleanLiteralNode(const bool value) : value(value) {
@@ -52,9 +53,9 @@ struct BooleanLiteralNode : Expression {
 };
 
 // Binary operations (e.g., a + b, x * y)
-struct BinaryExpression : Expression {
+struct BinaryExpression final : Expression {
     std::unique_ptr<Expression> left;
-    Operator op;
+    Operator                    op;
     std::unique_ptr<Expression> right;
 
     BinaryExpression(std::unique_ptr<Expression> left, const Operator op, std::unique_ptr<Expression> right)
@@ -64,9 +65,9 @@ struct BinaryExpression : Expression {
     void accept(AstVisitor& visitor) override;
 };
 
-struct UnaryExpression : Expression {
+struct UnaryExpression final : Expression {
     std::unique_ptr<Expression> operand;
-    Operator op;
+    Operator                    op;
 
     UnaryExpression(std::unique_ptr<Expression> operand, const Operator op)
         : operand(std::move(operand)), op(op) {
@@ -76,8 +77,9 @@ struct UnaryExpression : Expression {
 };
 
 // Variable reference
-struct IdentifierNode : Expression {
+struct IdentifierNode final : Expression {
     std::string name;
+    Symbol*     symbol = nullptr;
 
     IdentifierNode(std::string name) : name(std::move(name)) {
     }
@@ -86,9 +88,9 @@ struct IdentifierNode : Expression {
 };
 
 // Function call
-struct FunctionCall : Expression {
+struct FunctionCall final : Expression {
     struct FunctionArgument {
-        std::string name;
+        std::string                 name;
         std::unique_ptr<Expression> value;
 
         FunctionArgument(std::string name, std::unique_ptr<Expression> value)
@@ -96,7 +98,7 @@ struct FunctionCall : Expression {
         }
     };
 
-    std::string functionName;
+    std::string                   functionName;
     std::vector<FunctionArgument> arguments;
 
     FunctionCall(std::string name, std::vector<FunctionArgument> arguments)
@@ -106,7 +108,7 @@ struct FunctionCall : Expression {
     void accept(AstVisitor& visitor) override;
 };
 
-struct RangeExpression : Expression {
+struct RangeExpression final : Expression {
     std::unique_ptr<Expression> start;
     std::unique_ptr<Expression> end;
 

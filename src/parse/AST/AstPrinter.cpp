@@ -5,7 +5,7 @@
 #include "Statement.h"
 #include "semantic/Symbol.h"
 
-void AstPrinter::print(AstNode &root) {
+void AstPrinter::print(AstNode& root) {
     _indent = 0;
     root.accept(*this);
 }
@@ -16,7 +16,7 @@ void AstPrinter::printIndent() const {
     }
 }
 
-void AstPrinter::printSymbol(const Symbol &symbol) {
+void AstPrinter::printSymbol(const Symbol& symbol) {
     printIndent();
     std::cout << "Symbol:\n";
     _indent++;
@@ -28,17 +28,17 @@ void AstPrinter::printSymbol(const Symbol &symbol) {
     std::cout << "Kind: " << symbolKindToString(symbol.kind) << "\n";
 
     printIndent();
-    std::cout << "Type: " << typeToString(symbol.type) << "\n";
+    std::cout << "Type: " << symbol.type << "\n";
 
     printIndent();
     std::cout << "Scope: " << symbol.scope << "\n";
 
-    if (!symbol.paramTypes.empty()) {
+    if (!symbol.params.empty()) {
         printIndent();
-        std::cout << "ParamTypes: [";
-        for (size_t i = 0; i < symbol.paramTypes.size(); i++) {
-            std::cout << typeToString(symbol.paramTypes[i]);
-            if (i < symbol.paramTypes.size() - 1) std::cout << ", ";
+        std::cout << "Params: [";
+        for (size_t i = 0; i < symbol.params.size(); i++) {
+            std::cout << symbol.params[i].name << ": " << symbol.params[i].type;
+            if (i < symbol.params.size() - 1) std::cout << ", ";
         }
         std::cout << "]\n";
     }
@@ -56,63 +56,63 @@ std::string AstPrinter::symbolKindToString(Symbol::SymbolKind kind) {
     }
 }
 
-void AstPrinter::visit(Program &program) {
+void AstPrinter::visit(Program& program) {
     printIndent();
     std::cout << "Program\n";
     _indent++;
-    for (auto &node: program.statements) {
+    for (auto& node: program.statements) {
         node->accept(*this);
     }
     _indent--;
 }
 
-void AstPrinter::visit(IntegerLiteralNode &node) {
+void AstPrinter::visit(IntegerLiteralNode& node) {
     printIndent();
     std::cout << "IntegerLiteral: " << node.value << "\n";
 }
 
-void AstPrinter::visit(FloatLiteralNode &node) {
+void AstPrinter::visit(FloatLiteralNode& node) {
     printIndent();
     std::cout << "FloatLiteral: " << node.value << "\n";
 }
 
-void AstPrinter::visit(StringLiteralNode &node) {
+void AstPrinter::visit(StringLiteralNode& node) {
     printIndent();
     std::cout << "StringLiteral: \"" << node.value << "\"\n";
 }
 
-void AstPrinter::visit(BooleanLiteralNode &node) {
+void AstPrinter::visit(BooleanLiteralNode& node) {
     printIndent();
     std::cout << "BooleanLiteral: " << (node.value ? "true" : "false") << "\n";
 }
 
-void AstPrinter::visit(BinaryExpression &node) {
+void AstPrinter::visit(BinaryExpression& node) {
     printIndent();
-    std::cout << "BinaryExpression: " << operatorToString(node.op) << "\n";
+    std::cout << "BinaryExpression: " << node.op << "\n";
     _indent++;
     node.left->accept(*this);
     node.right->accept(*this);
     _indent--;
 }
 
-void AstPrinter::visit(UnaryExpression &node) {
+void AstPrinter::visit(UnaryExpression& node) {
     printIndent();
-    std::cout << "UnaryExpression: " << operatorToString(node.op) << "\n";
+    std::cout << "UnaryExpression: " << node.op << "\n";
     _indent++;
     node.operand->accept(*this);
     _indent--;
 }
 
-void AstPrinter::visit(IdentifierNode &node) {
+void AstPrinter::visit(IdentifierNode& node) {
     printIndent();
     std::cout << "Identifier: " << node.name << "\n";
 }
 
-void AstPrinter::visit(FunctionCall &node) {
+void AstPrinter::visit(FunctionCall& node) {
     printIndent();
     std::cout << "FunctionCall: " << node.functionName << "\n";
     _indent++;
-    for (auto &arg: node.arguments) {
+    for (auto& arg: node.arguments) {
         printIndent();
         std::cout << "Argument: " << arg.name << "\n";
         _indent++;
@@ -122,9 +122,9 @@ void AstPrinter::visit(FunctionCall &node) {
     _indent--;
 }
 
-void AstPrinter::visit(VariableDeclaration &node) {
+void AstPrinter::visit(VariableDeclaration& node) {
     printIndent();
-    std::cout << "VariableDeclaration: " << node.name << " : " << typeToString(node.type) << "\n";
+    std::cout << "VariableDeclaration: " << node.name << " : " << node.specifiedType << "\n";
 
     if (node.symbol) {
         _indent++;
@@ -143,15 +143,15 @@ void AstPrinter::visit(VariableDeclaration &node) {
     }
 }
 
-void AstPrinter::visit(VariableAssignment &node) {
+void AstPrinter::visit(VariableAssignment& node) {
     printIndent();
-    std::cout << "VariableAssignment: " << node.name << "\n";
+    std::cout << "VariableAssignment: " << node.varName << "\n";
     _indent++;
-    node.newValue->accept(*this);
+    node.assignedValue->accept(*this);
     _indent--;
 }
 
-void AstPrinter::visit(ReturnStatement &node) {
+void AstPrinter::visit(ReturnStatement& node) {
     printIndent();
     std::cout << "ReturnStatement\n";
     _indent++;
@@ -159,7 +159,7 @@ void AstPrinter::visit(ReturnStatement &node) {
     _indent--;
 }
 
-void AstPrinter::visit(ExpressionStatement &node) {
+void AstPrinter::visit(ExpressionStatement& node) {
     printIndent();
     std::cout << "ExpressionStatement\n";
     _indent++;
@@ -167,17 +167,17 @@ void AstPrinter::visit(ExpressionStatement &node) {
     _indent--;
 }
 
-void AstPrinter::visit(Block &node) {
+void AstPrinter::visit(Block& node) {
     printIndent();
     std::cout << "Block\n";
     _indent++;
-    for (auto &statement: node.statements) {
+    for (auto& statement: node.statements) {
         statement->accept(*this);
     }
     _indent--;
 }
 
-void AstPrinter::visit(WhileLoop &node) {
+void AstPrinter::visit(WhileLoop& node) {
     printIndent();
     std::cout << "WhileLoop\n";
     _indent++;
@@ -194,7 +194,7 @@ void AstPrinter::visit(WhileLoop &node) {
     _indent--;
 }
 
-void AstPrinter::visit(ForLoop &node) {
+void AstPrinter::visit(ForLoop& node) {
     printIndent();
     std::cout << "ForLoop\n";
     _indent++;
@@ -223,7 +223,7 @@ void AstPrinter::visit(ForLoop &node) {
     _indent--;
 }
 
-void AstPrinter::visit(IfStatement &node) {
+void AstPrinter::visit(IfStatement& node) {
     printIndent();
     std::cout << "IfStatement\n";
     _indent++;
@@ -247,9 +247,9 @@ void AstPrinter::visit(IfStatement &node) {
     _indent--;
 }
 
-void AstPrinter::visit(FunctionDeclaration &node) {
+void AstPrinter::visit(FunctionDeclaration& node) {
     printIndent();
-    std::cout << "FunctionDeclaration: " << node.name << " -> " << typeToString(node.returnType) << "\n";
+    std::cout << "FunctionDeclaration: " << node.name << " -> " << node.returnType << "\n";
 
     _indent++;
     if (node.symbol) {
@@ -260,9 +260,9 @@ void AstPrinter::visit(FunctionDeclaration &node) {
         printIndent();
         std::cout << "Parameters:\n";
         _indent++;
-        for (auto &param: node.parameters) {
+        for (auto& param: node.parameters) {
             printIndent();
-            std::cout << param.name << ": " << typeToString(param.type) << "\n";
+            std::cout << param.name << ": " << param.type << "\n";
         }
         _indent--;
     }
@@ -274,7 +274,7 @@ void AstPrinter::visit(FunctionDeclaration &node) {
     _indent--;
 }
 
-void AstPrinter::visit(RangeExpression &node) {
+void AstPrinter::visit(RangeExpression& node) {
     printIndent();
     std::cout << "RangeExpression\n";
     _indent++;

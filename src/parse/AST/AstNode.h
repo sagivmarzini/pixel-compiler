@@ -24,9 +24,9 @@ protected:
 
 // Program root
 struct Program final : AstNode {
-    std::vector<std::unique_ptr<AstNode> > statements;
+    std::vector<std::unique_ptr<AstNode>> statements;
 
-    Program(std::vector<std::unique_ptr<AstNode> > declarations) : statements(std::move(declarations)) {
+    Program(std::vector<std::unique_ptr<AstNode>> statements) : statements(std::move(statements)) {
     }
 
     void accept(AstVisitor& visitor) override;

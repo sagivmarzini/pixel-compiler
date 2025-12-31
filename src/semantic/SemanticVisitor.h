@@ -4,30 +4,25 @@
 
 #ifndef COMPILER_PROJECT_SEMANTICVISITOR_H
 #define COMPILER_PROJECT_SEMANTICVISITOR_H
-#include <memory>
-#include <vector>
 
 #include "parse/AST/AstVisitor.h"
-#include "semantic/Scope.h"
+#include "SymbolTable.h"
 
 class AstNode;
 class SymbolPool;
 
 class SemanticVisitor : public AstVisitor {
 public:
-    explicit SemanticVisitor(SymbolPool& symbolPool);
+    explicit SemanticVisitor(SymbolTable& symbolTable);
 
     virtual void run(AstNode& root) = 0;
 
 protected:
-    SymbolPool& _pool;
-    Scope* _currentScope;
-    std::vector<std::unique_ptr<Scope> > _scopes;
+    SymbolTable& _symbolTable;
 
+    void enterScope() const;
 
-    void pushScope();
-
-    void popScope();
+    void exitScope() const;
 };
 
 

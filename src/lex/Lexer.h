@@ -54,7 +54,7 @@ const std::unordered_map<std::string, Keyword> Keywords = {
 const std::unordered_map<std::string, Type> Types = {
     {"int", Type::Int},
     {"float", Type::Float},
-    {"bool", Type::Bool},
+    {"bool", Type::Boolean},
     {"ptr", Type::Ptr},
     {"string", Type::String},
     {"color", Type::Color},
