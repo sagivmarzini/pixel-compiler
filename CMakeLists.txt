@@ -35,6 +35,7 @@ add_executable(compiler-project
         src/semantic/TypeCheckerVisitor.h
         src/semantic/SymbolTable.cpp
         src/semantic/SymbolTable.h
+        src/semantic/SymbolTable.cpp
 )
 
 target_include_directories(compiler-project
