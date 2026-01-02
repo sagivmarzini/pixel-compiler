@@ -10,7 +10,6 @@
 #include "lex/Token.h"
 #include "Symbol.h"
 #include "Scope.h"
-#include "parse/AST/Statement.h"
 
 class SymbolPool;
 
