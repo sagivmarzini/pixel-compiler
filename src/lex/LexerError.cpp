@@ -1,32 +1,23 @@
 #include "LexerError.h"
 
 #include <format>
-#include <utility>
 
-LexerError::LexerError(const LexerErrorType &type, int line, int col, std::string lexeme)
-    : _type(type), _metadata(line, col, std::move(lexeme)) {
-    switch (_type) {
+LexerError::LexerError(const LexerErrorType& type, int line, int col, const std::string& lexeme)
+    : CompilerError({line, col, lexeme}) {
+    switch (type) {
         case LexerErrorType::UnexpectedChar:
-            _msg = std::format("unexpected token '{}'", _metadata.lexeme);
+            _message = std::format("unexpected character '{}'", lexeme);
             break;
         case LexerErrorType::UnterminatedString:
-            _msg = std::format("unterminated string '{}'", _metadata.lexeme);
+            _message = "missing terminating '\"' character";
             break;
         case LexerErrorType::UnterminatedComment:
-            _msg = std::format("unterminated comment '{}'", _metadata.lexeme);
+            _message = "unterminated block comment";
             break;
         case LexerErrorType::InvalidNumber:
-            _msg = std::format("invalid number '{}'", _metadata.lexeme);
+            _message = std::format("invalid numeric literal '{}'", lexeme);
             break;
         default:
-            _msg = "unknown error";
+            _message = "unknown lexical error";
     }
-}
-
-std::string LexerError::message() const {
-    return _msg;
-}
-
-TokenMetadata LexerError::getMetadata() const {
-    return _metadata;
 }

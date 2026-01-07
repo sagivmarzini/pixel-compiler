@@ -4,20 +4,31 @@
 #include "AST/Statement.h"
 #include "lex/Lexer.h"
 
+class ParserError;
+enum class ParserErrorType;
+
 class Parser {
 public:
     Parser(std::vector<Token> tokens);
 
     Program parseProgram();
 
+    struct ParseUnwindException : std::runtime_error {
+        ParseUnwindException() : std::runtime_error("") {
+        }
+    };
+
 private:
-    std::vector<Token> _tokens;
-    size_t _position;
-    Token _endOfFileToken = Token(EndOfFile(), -1, -1, "EOF");
+    std::vector<Token>         _tokens;
+    size_t                     _position;
+    Token                      _endOfFileToken = Token(EndOfFile(), -1, -1, "EOF");
+    std::vector<CompilerError> _errors;
+    // A flag to prevent multiple errors from one single mistake
+    bool _isPanicMode = false;
 
     std::unique_ptr<Statement> parseStatement();
 
-    std::unique_ptr<Statement> parseBlock();
+    std::unique_ptr<Block> parseBlock();
 
     std::vector<FunctionCall::FunctionArgument> parseFunctionArguments();
 
@@ -59,6 +70,8 @@ private:
 
     Token& peek();
 
+    Token& peekPrevious();
+
     Token& peekNext();
 
     template<typename T>
@@ -68,10 +81,10 @@ private:
     bool checkNext();
 
     template<typename T>
-    bool match(); // Check token type and eat if matches
+    bool match(); // Check token type and advance if matches
 
     template<typename T>
-    bool matchValue(T value); // Check and eat if matches
+    bool matchValue(T value); // Check and advance if matches
 
     template<typename T>
     bool checkValue(T value);
@@ -79,7 +92,7 @@ private:
     template<typename T>
     bool checkNextValue(T value);
 
-    void eat();
+    void advance();
 
     template<typename T>
     T expect(); // expects and eats the token if it matches
@@ -87,6 +100,13 @@ private:
     T expectValue(T value);
 
     bool isAtEnd();
+
+    void synchronize();
+
+    bool isAtStartOfStatement();
+
+    void error(const ParserErrorType& type, const Token& errorToken,
+               const TokenType&       expectedTokenType = Type::Unspecified);
 };
 
 

@@ -16,7 +16,7 @@ enum class Keyword {
     For, In, Step
 };
 
-std::ostream &operator<<(std::ostream &os, const Keyword &keyword);
+std::ostream& operator<<(std::ostream& os, const Keyword& keyword);
 
 
 enum class Type {
@@ -31,7 +31,7 @@ enum class Type {
     Void,
 };
 
-std::ostream &operator<<(std::ostream &os, const Type &type);
+std::ostream& operator<<(std::ostream& os, const Type& type);
 
 
 // Token payload structs
@@ -58,26 +58,26 @@ struct BooleanLiteral {
 enum class Operator {
     Assignment, // =
 
-    Plus, // +
-    PlusPlus, // ++
-    Minus, // -
+    Plus,       // +
+    PlusPlus,   // ++
+    Minus,      // -
     MinusMinus, // --
-    Star, // *
-    Slash, // /
+    Star,       // *
+    Slash,      // /
 
-    And, // &&
-    Or, // ||
-    Equal, // ==
-    NotEqual, // !=
+    And,         // &&
+    Or,          // ||
+    Equal,       // ==
+    NotEqual,    // !=
     Exclamation, // !
 
-    LessThan, // <
-    LessEqual, // <=
-    GreaterThan, // >
+    LessThan,     // <
+    LessEqual,    // <=
+    GreaterThan,  // >
     GreaterEqual, // >=
 };
 
-std::ostream &operator<<(std::ostream &os, const Operator &op);
+std::ostream& operator<<(std::ostream& os, const Operator& op);
 
 struct Semicolon {
 };
@@ -162,13 +162,13 @@ static const std::unordered_map<std::string, TokenType> keywords = {
 };
 
 struct TokenMetadata {
-    int line;
-    int col;
+    int         line;
+    int         col;
     std::string lexeme;
 };
 
 struct Token {
-    TokenType type;
+    TokenType     type;
     TokenMetadata metadata{};
 
     Token() = default;
@@ -178,7 +178,7 @@ struct Token {
     }
 };
 
-std::ostream &operator<<(std::ostream &os, const Token &token);
+std::ostream& operator<<(std::ostream& os, const Token& token);
 
 std::string typeToString(Type type);
 
@@ -186,7 +186,7 @@ std::string operatorToString(Operator op);
 
 std::string keywordToString(Keyword keyword);
 
-std::string tokenToString(const Token &token);
+std::string tokenTypeToString(const TokenType& tokenType);
 
 
 #endif // COMPILER_PROJECT_TOKEN_H

@@ -6,10 +6,10 @@
 
 #include <format>
 
-CompilerException::CompilerException(const std::vector<LexerError>& errors) {
+CompilerException::CompilerException(const std::vector<CompilerError>& errors) {
     for (const auto& error: errors) {
         const auto [line, col, lexeme] = error.getMetadata();
-        _errors.push_back(std::format("{}:{}: error: {}", line, col, error.message()) + '\n');
+        _errors.push_back(std::format("{}:{}: error: {}", line, col, error.getMessage()) + '\n');
     }
 }
 

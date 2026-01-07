@@ -1,18 +1,29 @@
 #include "Parser.h"
+
+#include "CompilerException.h"
 #include "AST/Statement.h"
+#include "ParserError.h"
 
 Parser::Parser(std::vector<Token> tokens)
     : _tokens(std::move(tokens)), _position(0) {
 }
 
 Program Parser::parseProgram() {
-    std::vector<std::unique_ptr<AstNode> > declarations;
+    Program program;
 
     while (!isAtEnd()) {
-        declarations.push_back(parseStatement());
+        try {
+            program.addStatement(parseStatement());
+        } catch (const ParseUnwindException& e) {
+            synchronize();
+        }
     }
 
-    return {std::move(declarations)};
+    if (!_errors.empty()) {
+        throw CompilerException(_errors);
+    }
+
+    return program;
 }
 
 std::unique_ptr<Statement> Parser::parseStatement() {
@@ -30,6 +41,9 @@ std::unique_ptr<Statement> Parser::parseStatement() {
     }
     if (checkValue(Keyword::If)) {
         return parseIfStatement();
+    }
+    if (matchValue(Keyword::Else)) {
+        error(ParserErrorType::ElseWithoutIf, peekPrevious());
     }
     if (checkValue(Keyword::While)) {
         return parseWhileLoop();
@@ -49,13 +63,14 @@ std::unique_ptr<Statement> Parser::parseStatement() {
     return std::make_unique<ExpressionStatement>(std::move(expression));
 }
 
-std::unique_ptr<Statement> Parser::parseBlock() {
+std::unique_ptr<Block> Parser::parseBlock() {
+    const auto startToken = peek();
     expect<LBrace>();
 
     Block block;
     while (!check<RBrace>()) {
         if (isAtEnd()) {
-            throw std::runtime_error("Missing closing bracket '}'!");
+            error(ParserErrorType::MissingClosingBrace, startToken);
         }
         block.statements.push_back(parseStatement());
     }
@@ -67,7 +82,8 @@ std::unique_ptr<Statement> Parser::parseBlock() {
 std::vector<FunctionCall::FunctionArgument> Parser::parseFunctionArguments() {
     std::vector<FunctionCall::FunctionArgument> args;
     while (!check<RParen>()) {
-        if (isAtEnd()) throw std::runtime_error("Missing closing paren ')'!");
+        if (isAtEnd())
+            error(ParserErrorType::MissingClosingParen, peek());
 
         auto name = expect<Identifier>();
         expect<Colon>();
@@ -75,8 +91,11 @@ std::vector<FunctionCall::FunctionArgument> Parser::parseFunctionArguments() {
 
         args.emplace_back(name.name, std::move(value));
 
-        if (!check<RParen>())
+        if (!check<RParen>()) {
             expect<Comma>();
+            if (check<RParen>())
+                error(ParserErrorType::TrailingComma, peek());
+        }
     }
 
     return args;
@@ -91,7 +110,7 @@ std::unique_ptr<Statement> Parser::parseFunctionDeclaration() {
     //parse parameters
     while (!check<RParen>()) {
         if (isAtEnd()) {
-            throw std::runtime_error("Missing closing brace ')'!");
+            error(ParserErrorType::MissingClosingParen, peek());
         }
 
         auto paramName = expect<Identifier>();
@@ -99,8 +118,12 @@ std::unique_ptr<Statement> Parser::parseFunctionDeclaration() {
         auto paramType = expect<Type>();
 
         parameters.emplace_back(paramName.name, paramType);
-        if (!check<RParen>())
-            expect<Comma>(); // if didn't read the end, get a comma seperator [func foo(a:int, b:int)]
+        if (!check<RParen>()) {
+            expect<Comma>(); // if didn't read the end, get a comma seperator
+            // Check for trailing comma
+            if (check<RParen>())
+                error(ParserErrorType::TrailingComma, peek());
+        }
     }
 
     expect<RParen>();
@@ -116,7 +139,8 @@ std::unique_ptr<Statement> Parser::parseVariableDeclaration() {
     const bool isConst = checkValue(Keyword::Const) ? true : false;
     expect<Keyword>();
 
-    auto [name] = expect<Identifier>();
+    const auto varNameToken = peek(); // for logging error on the variable
+    auto       [name]       = expect<Identifier>();
 
     // if initializing with inferred type set it to undefined
     Type                        type  = Type::Unspecified;
@@ -132,7 +156,7 @@ std::unique_ptr<Statement> Parser::parseVariableDeclaration() {
     }
 
     if (!value && type == Type::Unspecified) {
-        throw std::runtime_error("Trying to initialize a variable without a type!");
+        error(ParserErrorType::TypelessVarDeclaration, varNameToken);
     }
     expect<Semicolon>();
 
@@ -213,7 +237,11 @@ std::unique_ptr<Statement> Parser::parseForLoop() {
 
 std::unique_ptr<Statement> Parser::parseReturnStatement() {
     expect<Keyword>();
-    auto value = parseExpression();
+
+    std::unique_ptr<Expression> value;
+
+    if (!match<Semicolon>())
+        value = parseExpression();
     expect<Semicolon>();
 
     return std::make_unique<ReturnStatement>(std::move(value));
@@ -333,7 +361,7 @@ std::unique_ptr<Expression> Parser::parsePrimary() {
         expect<RParen>();
         return expression;
     }
-    throw std::runtime_error("Unexpected token '" + peek().metadata.lexeme + "'");
+    error(ParserErrorType::ExpectedExpression, peek());
 }
 
 
@@ -342,6 +370,12 @@ Token& Parser::peek() {
         return _endOfFileToken;
     }
     return _tokens[_position];
+}
+
+Token& Parser::peekPrevious() {
+    if (_position == 0)
+        return _endOfFileToken;
+    return _tokens[_position - 1];
 }
 
 Token& Parser::peekNext() {
@@ -358,22 +392,22 @@ bool Parser::check() {
 }
 
 template<typename T>
+bool Parser::checkNext() {
+    return std::holds_alternative<T>(peekNext().type);
+}
+
+template<typename T>
 bool Parser::match() {
     const bool match = check<T>();
-    if (match) eat();
+    if (match) advance();
     return match;
 }
 
 template<typename T>
 bool Parser::matchValue(T value) {
     const bool match = checkValue(value);
-    if (match) eat();
+    if (match) advance();
     return match;
-}
-
-template<typename T>
-bool Parser::checkNext() {
-    return std::holds_alternative<T>(peekNext().type);
 }
 
 template<typename T>
@@ -386,31 +420,89 @@ bool Parser::checkNextValue(T value) {
     return checkNext<T>() && std::get<T>(peekNext().type) == value;
 }
 
+void Parser::advance() {
+    if (!isAtEnd()) _position++;
+}
+
 template<typename T>
 T Parser::expect() {
     if (check<T>()) {
-        auto tokenType = _tokens[_position].type;
-        _position++;
-        return std::get<T>(tokenType);
+        T value = std::get<T>(peek().type);
+        advance();
+        return value;
     }
-    throw std::runtime_error(
-        "Unexpected token! expected " + std::string{typeid(T).name()} + ", got '" + tokenToString(peek()) + "'");
+
+    // error() throws ParseUnwindException, so this line
+    // technically never returns, but we call it to log and throw.
+    error(ParserErrorType::UnexpectedToken, peek(), T());
+
+    // Unreachable, but keeps the compiler happy
+    throw std::runtime_error("Unreachable");
 }
 
 template<typename T>
 T Parser::expectValue(T value) {
     if (!checkValue(value)) {
-        throw std::runtime_error("Unexpected Token! got '" + tokenToString(peek()) + "'");
+        error(ParserErrorType::UnexpectedToken, peek(), value);
     }
-    T v = std::get<T>(peek().type);
-    eat();
-    return v;
-}
-
-void Parser::eat() {
-    _position++;
+    T returnValue = std::get<T>(peek().type);
+    advance();
+    return returnValue;
 }
 
 bool Parser::isAtEnd() {
     return check<EndOfFile>();
+}
+
+void Parser::synchronize() {
+    _isPanicMode = false;
+
+    // If the token that caused the error is already a safe 'anchor',
+    // stay there! parseProgram will pick it up on the next loop.
+    if (isAtStartOfStatement()) return;
+
+    // Otherwise, we must skip the "bad" token that caused the error
+    advance();
+
+    while (!isAtEnd()) {
+        // Stop if the PREVIOUS token was a semicolon (end of a statement)
+        if (std::holds_alternative<Semicolon>(peekPrevious().type)) return;
+
+        // Stop if the CURRENT token starts a new block/statement
+        if (isAtStartOfStatement()) return;
+
+        advance();
+    }
+}
+
+bool Parser::isAtStartOfStatement() {
+    if (check<Keyword>()) {
+        switch (std::get<Keyword>(peek().type)) {
+            case Keyword::Func:
+            case Keyword::Var:
+            case Keyword::Const:
+            case Keyword::If:
+            case Keyword::While:
+            case Keyword::Return:
+            case Keyword::For:
+                return true;
+            default:
+                return false;
+        }
+    }
+    if (check<LBrace>()) return true;
+    return false;
+}
+
+void Parser::error(const ParserErrorType& type, const Token& errorToken, const TokenType& expectedTokenType) {
+    if (_isPanicMode) {
+        std::cout << "There was actually a panic mode so I skipped (testing if this flag is necessary)\n";
+        return;
+    } // Don't report secondary errors
+    _isPanicMode = true;
+
+    _errors.push_back(ParserError(type, errorToken, expectedTokenType));
+
+    // Unwind the stack to the nearest synchronization point
+    throw ParseUnwindException();
 }

@@ -9,6 +9,8 @@
 
 #include <string>
 
+#include "CompilerError.h"
+
 enum class LexerErrorType {
     UnexpectedChar,
     UnterminatedString,
@@ -17,18 +19,9 @@ enum class LexerErrorType {
 };
 
 
-class LexerError {
+class LexerError : public CompilerError {
 public:
-    LexerError(const LexerErrorType &type, int line, int col, std::string lexeme);
-
-    [[nodiscard]] std::string message() const;
-
-    [[nodiscard]] TokenMetadata getMetadata() const;
-
-private:
-    std::string _msg;
-    LexerErrorType _type;
-    TokenMetadata _metadata;
+    LexerError(const LexerErrorType& type, int line, int col, const std::string& lexeme);
 };
 
 
