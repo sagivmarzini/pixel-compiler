@@ -36,6 +36,10 @@ add_executable(compiler-project
         src/semantic/SymbolTable.cpp
         src/semantic/SymbolTable.h
         src/semantic/SymbolTable.cpp
+        src/CompilerError.cpp
+        src/CompilerError.h
+        src/parse/ParserError.cpp
+        src/parse/ParserError.h
 )
 
 target_include_directories(compiler-project

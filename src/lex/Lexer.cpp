@@ -72,7 +72,7 @@ std::vector<Token> Lexer::lex() {
                         token = Token(DoubleDot{}, _line, _col - 1, std::string{current});
                     } else {
                         eat();
-                        _errors.emplace_back(LexerErrorType::UnexpectedChar, _line, _col - 1, std::string{current});
+                        error(LexerErrorType::UnexpectedChar, _line, _col - 1, std::string{current});
                     }
                     break;
                 case '-':
@@ -164,7 +164,7 @@ std::vector<Token> Lexer::lex() {
                         token = Token(Operator::And, _line, _col - 1, std::string{current});
                     } else {
                         eat();
-                        _errors.emplace_back(LexerErrorType::UnexpectedChar, _line, _col - 1, std::string{current});
+                        error(LexerErrorType::UnexpectedChar, _line, _col - 1, std::string{current});
                     }
                     break;
                 case '|':
@@ -174,12 +174,12 @@ std::vector<Token> Lexer::lex() {
                         token = Token(Operator::Or, _line, _col - 1, std::string{current});
                     } else {
                         eat();
-                        _errors.emplace_back(LexerErrorType::UnexpectedChar, _line, _col - 1, std::string{current});
+                        error(LexerErrorType::UnexpectedChar, _line, _col - 1, std::string{current});
                     }
                     break;
                 default:
                     eat();
-                    _errors.emplace_back(LexerErrorType::UnexpectedChar, _line, _col - 1, std::string{current});
+                    error(LexerErrorType::UnexpectedChar, _line, _col - 1, std::string{current});
             }
         }
 
@@ -212,7 +212,7 @@ char Lexer::eat() {
 
 Token Lexer::parseNumber() {
     std::string numberStr;
-    bool isFloat = false;
+    bool        isFloat = false;
 
     // Position tracking for error messages
     const int startCol = _col;
@@ -227,7 +227,7 @@ Token Lexer::parseNumber() {
             }
             if (isFloat) {
                 // Error: Found a second dot within the number (e.g., 1.2.3)
-                _errors.emplace_back(LexerErrorType::InvalidNumber, _line, _col + 1, numberStr + '.');
+                error(LexerErrorType::InvalidNumber, _line, _col + 1, numberStr + '.');
                 eat(); // Consume the offending second dot to advance past the error
                 break;
             }
@@ -239,14 +239,14 @@ Token Lexer::parseNumber() {
     }
 
     if (numberStr.empty() || (numberStr.length() == 1 && numberStr[0] == '.')) {
-        _errors.emplace_back(LexerErrorType::InvalidNumber, _line, startCol, numberStr);
+        error(LexerErrorType::InvalidNumber, _line, startCol, numberStr);
         return Token(IntegerLiteral{0}, _line, startCol, "");
     }
 
     if (isFloat) {
         // Ensure numbers don't start or end with a bare dot (e.g., .123 or 123.)
         if (numberStr.front() == '.' || numberStr.back() == '.') {
-            _errors.emplace_back(LexerErrorType::InvalidNumber, _line, startCol, numberStr);
+            error(LexerErrorType::InvalidNumber, _line, startCol, numberStr);
             return Token(FloatLiteral{0.0f}, _line, startCol, numberStr);
         }
 
@@ -254,7 +254,7 @@ Token Lexer::parseNumber() {
             float floatValue = std::stof(numberStr);
             return Token(FloatLiteral{floatValue}, _line, startCol, numberStr);
         } catch (const std::out_of_range&) {
-            _errors.emplace_back(LexerErrorType::InvalidNumber, _line, startCol, numberStr);
+            error(LexerErrorType::InvalidNumber, _line, startCol, numberStr);
             return Token(FloatLiteral{0.0f}, _line, startCol, numberStr);
         }
     } else {
@@ -262,7 +262,7 @@ Token Lexer::parseNumber() {
             int intValue = std::stoi(numberStr);
             return Token(IntegerLiteral{intValue}, _line, startCol, numberStr);
         } catch (const std::out_of_range&) {
-            _errors.emplace_back(LexerErrorType::InvalidNumber, _line, startCol, numberStr);
+            error(LexerErrorType::InvalidNumber, _line, startCol, numberStr);
             return Token(IntegerLiteral{0}, _line, startCol, numberStr);
         }
     }
@@ -270,9 +270,11 @@ Token Lexer::parseNumber() {
 
 Token Lexer::parseIdentifierOrKeyword() {
     std::string text;
+    const auto  startLine = _line;
+    const auto  startCol  = _col;
 
     // Identifiers and keywords must start with a letter
-    if (!isalpha(peek())) _errors.emplace_back(LexerErrorType::UnexpectedChar, _line, _col - 1, std::string{peek()});
+    if (!isalpha(peek())) error(LexerErrorType::UnexpectedChar, _line, _col - 1, std::string{peek()});
     text.push_back(eat());
 
     while (isalnum(peek()) || peek() == '_') {
@@ -281,11 +283,11 @@ Token Lexer::parseIdentifierOrKeyword() {
 
     // Look up in keyword map
     if (const auto it = keywords.find(text); it != keywords.end()) {
-        return {it->second, _line, _col - 1, text};
+        return {it->second, startLine, startCol, text};
     }
 
     // Default to identifier
-    return Token(Identifier{text}, _line, _col - 1, text);
+    return Token(Identifier{text}, startLine, startCol, text);
 }
 
 void Lexer::skipSingleLineComment() {
@@ -300,7 +302,7 @@ void Lexer::skipMultiLineComment() {
         const char currentChar = peek();
 
         if (!currentChar) {
-            _errors.emplace_back(LexerErrorType::UnterminatedComment, _line, _col, comment);
+            error(LexerErrorType::UnterminatedComment, _line, _col, comment);
             return;
         }
 
@@ -322,7 +324,7 @@ Token Lexer::parseStringLiteral() {
     eat(); // eat opening quotes
     while (peek() != '"') {
         if (!peek()) {
-            _errors.emplace_back(LexerErrorType::UnterminatedString, _line, _col, string);
+            error(LexerErrorType::UnterminatedString, _line, _col, string);
             return Token{};
         }
 
@@ -331,4 +333,8 @@ Token Lexer::parseStringLiteral() {
     eat(); // eat closing quotes
 
     return Token(StringLiteral{string}, _line, _col - 1, string);
+}
+
+void Lexer::error(const LexerErrorType& type, int line, int col, const std::string& lexeme) {
+    _errors.push_back(LexerError(type, line, col, lexeme));
 }

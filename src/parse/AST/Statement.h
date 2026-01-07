@@ -115,11 +115,11 @@ struct FunctionDeclaration : Statement {
     std::string                    name;
     Type                           returnType;
     std::vector<FunctionParameter> parameters;
-    std::unique_ptr<Statement>     body; // usually a block
+    std::unique_ptr<Block>         body;
     Symbol*                        symbol = nullptr;
 
-    FunctionDeclaration(const Type                     returnType, std::string                name,
-                        std::vector<FunctionParameter> parameters, std::unique_ptr<Statement> body)
+    FunctionDeclaration(const Type                     returnType, std::string            name,
+                        std::vector<FunctionParameter> parameters, std::unique_ptr<Block> body)
         : returnType(returnType), name(std::move(name)), parameters(std::move(parameters)), body(std::move(body)) {
     }
 

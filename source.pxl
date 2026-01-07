@@ -1,49 +1,41 @@
-func calculate_gravity(planet_type: int) -> float {
-    var gravity: float = 9.81;
+// CASE 1: Variable Declaration Failures
+var ;                         // Missing identifier
+const x : = 10;               // Missing type after colon
+var y: int = ;                // Missing expression after assignment
+var typeless;                 // Error: TypelessVarDeclaration (no type, no value)
 
-    if planet_type == 1 {
-        gravity = 3.71; // Mars
-    } else if planet_type == 2 {
-        gravity = 24.79; // Jupiter
-    }
-    
-    return gravity;
+// CASE 2: Function Declaration & Argument Failures
+func (a: int) -> int { }      // Missing function name
+func errorParam(a int) -> int { } // Missing colon in parameters
+func trailingComma(a: int, ) -> int { } // Trailing comma error
+func missingBody() -> int     // Missing block (EOF or next keyword)
+
+// CASE 3: Control Flow & Synchronization
+if (x > 10)                   // Missing body/statement
+else { var z = 20; }          // Else without a preceding valid If
+
+while (x < 10                 // Missing closing parenthesis
+{
+    x = x + 1;
 }
 
-func is_within_range(val: float, target: float, error: float) -> bool {
-    return (val >= target - error) && (val <= target + error);
+for i 1..10 { }               // Missing 'in' keyword
+for j in ..10 { }             // Missing start expression in range
+
+// CASE 4: Expression & Operator Stress
+var exprErr = 5 + * 10;       // Binary operator missing right-hand side
+var parenErr = (5 + 10;       // Missing closing parenthesis in expression
+var callErr = foo(x: ,);      // Missing argument value
+
+// CASE 5: Block Recovery
+{
+    var a = 10;
+    func;                // Total gibberish to trigger synchronization
+    var b = 20;               // Parser should recover and find this
 }
 
-// Main logic starts here
-const planet = 1;
-var velocity = 50.0;
-var angle_rad = 0.785; // ~45 degrees
-var g = calculate_gravity(planet_type: planet);
-
-const target_dist: float = 120.0;
-var hit_detected: bool = false;
-
-// Testing for-loops with range and step
-for time in 0..10 step 1 {
-    var x: float = velocity * time; 
-    
-    // Using complex binary expressions and unary operators
-    var y: float = (velocity * time) - (0.5 * g * (time * time));
-    
-    if y < 0.0 {
-        y = 0.0;
-    }
-
-    if is_within_range(val: x, target: target_dist, error: 5.0) {
-        hit_detected = true;
-    }
+// CASE 6: Return Statements
+func test() -> int {
+    return                    // Missing semicolon (if parser expects it)
+    var after = 10;
 }
-
-// Testing while loop
-var countdown: int = 3;
-while countdown > 0 {
-    countdown = countdown - 1;
-}
-
-const final_status: string = "Simulation Complete";
-return hit_detected;

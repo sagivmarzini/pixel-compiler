@@ -4,6 +4,7 @@
 #include "lex/Token.h"
 
 
+class Statement;
 class AstVisitor;
 
 class AstNode {
@@ -24,12 +25,13 @@ protected:
 
 // Program root
 struct Program final : AstNode {
-    std::vector<std::unique_ptr<AstNode>> statements;
+    std::vector<std::unique_ptr<AstNode> > statements;
 
-    Program(std::vector<std::unique_ptr<AstNode>> statements) : statements(std::move(statements)) {
-    }
+    Program() = default;
 
     void accept(AstVisitor& visitor) override;
+
+    void addStatement(std::unique_ptr<Statement> statement);
 };
 
 #endif //COMPILER_PROJECT_ASTNODE_H

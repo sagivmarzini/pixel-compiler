@@ -18,11 +18,11 @@ public:
     [[nodiscard]] std::vector<Token> lex();
 
 private:
-    std::string _sourceCode;
-    size_t _position;
-    int _line;
-    int _col;
-    std::vector<LexerError> _errors;
+    std::string                _sourceCode;
+    size_t                     _position;
+    int                        _line;
+    int                        _col;
+    std::vector<CompilerError> _errors;
 
     [[nodiscard]] char peek() const;
 
@@ -39,6 +39,8 @@ private:
     void skipMultiLineComment();
 
     Token parseStringLiteral();
+
+    void error(const LexerErrorType& type, int line, int col, const std::string& lexeme);
 };
 
 const std::unordered_map<std::string, Keyword> Keywords = {

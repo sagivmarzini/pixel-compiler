@@ -10,11 +10,12 @@
 #include <vector>
 
 #include "lex/LexerError.h"
+#include "parse/ParserError.h"
 
 // Generic compiler error class. Errors in specific parts of the compiler inherit from this.
 class CompilerException : public std::exception {
 public:
-    CompilerException(const std::vector<LexerError> &errors);
+    explicit CompilerException(const std::vector<CompilerError>& errors);
 
     [[nodiscard]] std::vector<std::string> errors() const noexcept;
 
