@@ -8,6 +8,10 @@ struct Symbol;
 
 class Statement : public AstNode {
 public:
+    explicit Statement(const TokenMetadata& metadata)
+        : AstNode(metadata) {
+    }
+
     ~Statement() override = default;
 };
 
@@ -19,8 +23,9 @@ struct VariableDeclaration : Statement {
     std::unique_ptr<Expression> value; // Can be null
     Symbol*                     symbol = nullptr;
 
-    VariableDeclaration(bool isConst, const Type type, std::string name, std::unique_ptr<Expression> init = nullptr)
-        : isConst(isConst), specifiedType(type), name(std::move(name)), value(std::move(init)) {
+    VariableDeclaration(const TokenMetadata&        metadata, bool isConst, const Type type, std::string name,
+                        std::unique_ptr<Expression> init = nullptr)
+        : Statement(metadata), isConst(isConst), specifiedType(type), name(std::move(name)), value(std::move(init)) {
     }
 
     void accept(AstVisitor& visitor) override;
@@ -30,8 +35,8 @@ struct VariableAssignment : Statement {
     std::string                 varName;
     std::unique_ptr<Expression> assignedValue;
 
-    VariableAssignment(std::string name, std::unique_ptr<Expression> value)
-        : varName(std::move(name)), assignedValue(std::move(value)) {
+    VariableAssignment(const TokenMetadata& metadata, std::string name, std::unique_ptr<Expression> value)
+        : Statement(metadata), varName(std::move(name)), assignedValue(std::move(value)) {
     }
 
     void accept(AstVisitor& visitor) override;
@@ -41,7 +46,8 @@ struct VariableAssignment : Statement {
 struct ReturnStatement : Statement {
     std::unique_ptr<Expression> value; // Can be null for void returns
 
-    ReturnStatement(std::unique_ptr<Expression> val = nullptr) : value(std::move(val)) {
+    explicit ReturnStatement(const TokenMetadata& metadata, std::unique_ptr<Expression> val = nullptr)
+        : Statement(metadata), value(std::move(val)) {
     }
 
     void accept(AstVisitor& visitor) override;
@@ -52,9 +58,8 @@ struct Block : Statement {
     std::vector<std::unique_ptr<Statement> > statements;
     Scope*                                   scope;
 
-    Block() = default;
-
-    Block(std::vector<std::unique_ptr<Statement> > stmts) : statements(std::move(stmts)) {
+    explicit Block(const TokenMetadata& metadata, std::vector<std::unique_ptr<Statement> > stmts = {})
+        : Statement(metadata), statements(std::move(stmts)), scope(nullptr) {
     }
 
     void accept(AstVisitor& visitor) override;
@@ -65,8 +70,8 @@ struct WhileLoop : Statement {
     std::unique_ptr<Expression> condition;
     std::unique_ptr<Statement>  body;
 
-    WhileLoop(std::unique_ptr<Expression> condition, std::unique_ptr<Statement> body)
-        : condition(std::move(condition)), body(std::move(body)) {
+    WhileLoop(const TokenMetadata& metadata, std::unique_ptr<Expression> condition, std::unique_ptr<Statement> body)
+        : Statement(metadata), condition(std::move(condition)), body(std::move(body)) {
     }
 
     void accept(AstVisitor& visitor) override;
@@ -78,9 +83,10 @@ struct ForLoop : Statement {
     std::unique_ptr<Expression>      step;
     std::unique_ptr<Statement>       body;
 
-    ForLoop(std::string                 identifier, std::unique_ptr<RangeExpression> range,
-            std::unique_ptr<Expression> step, std::unique_ptr<Statement>             body)
-        : identifier(std::move(identifier)), range(std::move(range)), step(std::move(step)), body(std::move(body)) {
+    ForLoop(const TokenMetadata&        metadata, std::string identifier, std::unique_ptr<RangeExpression> range,
+            std::unique_ptr<Expression> step, std::unique_ptr<Statement> body)
+        : Statement(metadata), identifier(std::move(identifier)), range(std::move(range)), step(std::move(step)),
+          body(std::move(body)) {
     }
 
     void accept(AstVisitor& visitor) override;
@@ -92,9 +98,11 @@ struct IfStatement : Statement {
     std::unique_ptr<Statement>  thenBranch;
     std::unique_ptr<Statement>  elseBranch; // Can be null
 
-    IfStatement(std::unique_ptr<Expression> condition, std::unique_ptr<Statement> thenBranch,
-                std::unique_ptr<Statement>  elseBranch = nullptr)
-        : condition(std::move(condition)), thenBranch(std::move(thenBranch)), elseBranch(std::move(elseBranch)) {
+    IfStatement(const TokenMetadata&       metadata, std::unique_ptr<Expression> condition,
+                std::unique_ptr<Statement> thenBranch,
+                std::unique_ptr<Statement> elseBranch = nullptr)
+        : Statement(metadata), condition(std::move(condition)), thenBranch(std::move(thenBranch)),
+          elseBranch(std::move(elseBranch)) {
     }
 
     void accept(AstVisitor& visitor) override;
@@ -118,9 +126,10 @@ struct FunctionDeclaration : Statement {
     std::unique_ptr<Block>         body;
     Symbol*                        symbol = nullptr;
 
-    FunctionDeclaration(const Type                     returnType, std::string            name,
+    FunctionDeclaration(const TokenMetadata&           metadata, const Type               returnType, std::string name,
                         std::vector<FunctionParameter> parameters, std::unique_ptr<Block> body)
-        : returnType(returnType), name(std::move(name)), parameters(std::move(parameters)), body(std::move(body)) {
+        : Statement(metadata), name(std::move(name)), returnType(returnType), parameters(std::move(parameters)),
+          body(std::move(body)) {
     }
 
     void accept(AstVisitor& visitor) override;
@@ -129,7 +138,8 @@ struct FunctionDeclaration : Statement {
 struct ExpressionStatement : Statement {
     std::unique_ptr<Expression> expression;
 
-    explicit ExpressionStatement(std::unique_ptr<Expression> expression) : expression(std::move(expression)) {
+    ExpressionStatement(const TokenMetadata& metadata, std::unique_ptr<Expression> expression)
+        : Statement(metadata), expression(std::move(expression)) {
     }
 
     void accept(AstVisitor& visitor) override;

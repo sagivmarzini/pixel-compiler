@@ -7,11 +7,15 @@
 #include <set>
 
 
+#include "CompilerException.h"
 #include "parse/AST/Expression.h"
 #include "parse/AST/Statement.h"
 
 void TypeCheckerVisitor::run(AstNode& root) {
     root.accept(*this);
+
+    if (!_errors.empty())
+        throw CompilerException(_errors);
 }
 
 bool TypeCheckerVisitor::isNumeric(Type type) {
@@ -41,11 +45,11 @@ Type TypeCheckerVisitor::getPromotedType(Type leftType, Type rightType) {
         return Type::Float;
     }
 
-    throw std::runtime_error(std::format("Cannot promote types: {} and {}", typeToString(leftType),
-                                         typeToString(rightType)));
+    return Type::Error;
 }
 
 void TypeCheckerVisitor::visit(Program& program) {
+    _symbolTable.setCurrentScope(program.scope);
     for (const auto& stmt: program.statements) {
         stmt->accept(*this);
     }
@@ -58,7 +62,7 @@ void TypeCheckerVisitor::visit(FunctionDeclaration& node) {
     node.body->accept(*this);
 
     if (!_foundReturn && node.returnType != Type::Void) {
-        throw std::runtime_error("Missing return statement in non-void function " + node.name);
+        logError(SemanticErrorType::MissingReturn, node);
     }
 }
 
@@ -71,7 +75,7 @@ void TypeCheckerVisitor::visit(IfStatement& node) {
 
     // Ensure condition returns a boolean
     if (node.condition->type != Type::Boolean) {
-        throw std::runtime_error("If condition must be boolean");
+        logError(SemanticErrorType::NonBooleanCondition, node);
     }
 
     node.thenBranch->accept(*this);
@@ -85,7 +89,7 @@ void TypeCheckerVisitor::visit(WhileLoop& node) {
 
     // Ensure condition returns a boolean
     if (node.condition->type != Type::Boolean) {
-        throw std::runtime_error("While condition must be boolean");
+        logError(SemanticErrorType::NonBooleanCondition, node);
     }
 
     node.body->accept(*this);
@@ -98,7 +102,7 @@ void TypeCheckerVisitor::visit(ForLoop& node) {
         node.step->accept(*this);
 
         if (!isNumeric(node.step->type)) {
-            throw std::runtime_error("Loop step must be a numeric type.");
+            logError(SemanticErrorType::NonNumericStep, node);
         }
     }
 
@@ -113,11 +117,8 @@ void TypeCheckerVisitor::visit(RangeExpression& node) {
     const Type endType   = node.end->type;
 
     if (!isNumeric(startType) || !isNumeric(endType)) {
-        throw std::runtime_error(
-            std::format("Range expression requires numeric bounds (start: {}, end: {}).",
-                        typeToString(startType),
-                        typeToString(endType))
-        );
+        logError(SemanticErrorType::NonNumericRange, node);
+        return;
     }
 
     node.type = Type::Int;
@@ -134,8 +135,11 @@ void TypeCheckerVisitor::visit(VariableDeclaration& node) {
     if (node.value) {
         node.value->accept(*this);
 
-        if (node.specifiedType != Type::Unspecified && node.value->type != node.specifiedType)
-            throw std::runtime_error("Value doesn't match specified type of variable: " + node.name);
+        if (node.specifiedType != Type::Unspecified && node.value->type != node.specifiedType) {
+            logError(SemanticErrorType::IncompatibleAssignment, node,
+                     TypeMismatchData(node.specifiedType, node.value->type));
+            return;
+        }
 
         const auto symbol = node.symbol;
         if (!symbol) throw std::runtime_error("Internal error: undefined variable: " + node.name);
@@ -145,25 +149,26 @@ void TypeCheckerVisitor::visit(VariableDeclaration& node) {
     } else {
         // Parser already checked for typeless variable with no initial value,
         // checking here again just in case
-        if (node.specifiedType == Type::Unspecified)
-            throw std::runtime_error("Cannot infer variable '" + node.name + "' with no initial value");
+        if (node.specifiedType == Type::Unspecified) {
+            logError(SemanticErrorType::CannotInferType, node);
+            return;
+        }
     }
 }
 
 
 void TypeCheckerVisitor::visit(FunctionCall& node) {
     const auto calledFunction = _symbolTable.lookup(node.functionName);
-    if (!calledFunction)
-        throw std::runtime_error("Attempting to call undefined function: " + node.functionName);
+    if (!calledFunction) {
+        logError(SemanticErrorType::UndefinedFunction, node, node.functionName);
+        return;
+    }
 
     // Check if the number of arguments matches
-    if (node.arguments.size() != calledFunction->params.size()) {
-        throw std::runtime_error(std::format(
-            "Function '{}' expects {} arguments, but {} were provided",
-            node.functionName,
-            calledFunction->params.size(),
-            node.arguments.size()
-        ));
+    if (const auto expectedArgAmount = calledFunction->params.size(); node.arguments.size() != expectedArgAmount) {
+        logError(SemanticErrorType::ArgumentCountMismatch, node,
+                 ParamMismatchData(node.functionName, expectedArgAmount, node.arguments.size()));
+        return;
     }
 
     node.type = calledFunction->type;
@@ -172,22 +177,16 @@ void TypeCheckerVisitor::visit(FunctionCall& node) {
     for (const auto& argument: node.arguments) {
         // Check for duplicate named arguments
         if (seenParams.contains(argument.name)) {
-            throw std::runtime_error(std::format(
-                "Duplicate argument '{}' provided in call to function '{}'",
-                argument.name,
-                node.functionName
-            ));
+            logError(SemanticErrorType::DuplicateParameterName, node, argument.name);
+            return;
         }
         seenParams.insert(argument.name);
 
         // Verify the parameter name exists in the function definition
         auto parameter = calledFunction->getParameterByName(argument.name);
         if (!parameter.has_value()) {
-            throw std::runtime_error(std::format(
-                "Function '{}' has no parameter named '{}'",
-                node.functionName,
-                argument.name
-            ));
+            logError(SemanticErrorType::UndefinedParameter, node, argument.name);
+            return;
         }
 
         // Visit the argument expression to resolve its type
@@ -195,13 +194,9 @@ void TypeCheckerVisitor::visit(FunctionCall& node) {
 
         // Compare the expression type to the expected parameter type
         if (argument.value->type != parameter.value().type) {
-            throw std::runtime_error(std::format(
-                "Type mismatch for argument '{}' in call to '{}': expected '{}', but got '{}'",
-                argument.name,
-                node.functionName,
-                typeToString(parameter.value().type),
-                typeToString(argument.value->type)
-            ));
+            logError(SemanticErrorType::ArgumentTypeMismatch, node,
+                     TypeMismatchData(parameter.value().type, argument.value->type));
+            return;
         }
     }
 }
@@ -209,9 +204,10 @@ void TypeCheckerVisitor::visit(FunctionCall& node) {
 void TypeCheckerVisitor::visit(BinaryExpression& node) {
     node.left->accept(*this);
     node.right->accept(*this);
+    if (node.left->type == Type::Error || node.right->type == Type::Error) return;
 
-    Type leftType  = node.left->type;
-    Type rightType = node.right->type;
+    const Type leftType  = node.left->type;
+    const Type rightType = node.right->type;
 
     switch (node.op) {
         // Arithmetic Operators (+, -, *, /)
@@ -222,22 +218,22 @@ void TypeCheckerVisitor::visit(BinaryExpression& node) {
             if (isNumeric(leftType) && isNumeric(rightType)) {
                 // Determine result type based on type promotion (e.g., int + float = float)
                 node.type = getPromotedType(leftType, rightType);
+                if (node.type == Type::Error) {
+                    logError(SemanticErrorType::TypeMismatch, node, OperatorData(node.op, leftType, rightType));
+                    return;
+                }
             } else if (node.op == Operator::Plus && (isString(leftType) || isString(rightType))) {
                 // Check that the OTHER type is one that can be converted to a string (e.g., numeric, or another string).
                 if (const Type otherType = isString(leftType) ? rightType : leftType;
                     isString(otherType) || isNumeric(otherType)) {
                     node.type = Type::String;
                 } else {
-                    throw std::runtime_error(
-                        std::format("Cannot concatenate string with type {}", typeToString(otherType))
-                    );
+                    logError(SemanticErrorType::TypeMismatch, node, OperatorData(node.op, Type::String, otherType));
+                    return;
                 }
             } else {
-                throw std::runtime_error(
-                    std::format("Undefined {} operation between non-numeric types {} and {}",
-                                operatorToString(node.op), typeToString(leftType),
-                                typeToString(rightType))
-                );
+                logError(SemanticErrorType::TypeMismatch, node, OperatorData(node.op, leftType, rightType));
+                return;
             }
             break;
         }
@@ -253,11 +249,8 @@ void TypeCheckerVisitor::visit(BinaryExpression& node) {
             if (areComparableTypes(leftType, rightType)) {
                 node.type = Type::Boolean; // Result of comparison is always boolean
             } else {
-                throw std::runtime_error(
-                    std::format("Cannot compare types {} and {} using {}",
-                                typeToString(leftType), typeToString(rightType),
-                                operatorToString(node.op))
-                );
+                logError(SemanticErrorType::TypeMismatch, node, OperatorData(node.op, leftType, rightType));
+                return;
             }
             break;
         }
@@ -269,11 +262,8 @@ void TypeCheckerVisitor::visit(BinaryExpression& node) {
             if (isBoolean(leftType) && isBoolean(rightType)) {
                 node.type = Type::Boolean; // Result is always boolean
             } else {
-                throw std::runtime_error(
-                    std::format("Logical operator '{}' requires boolean operands, but got {} and {}",
-                                operatorToString(node.op), typeToString(leftType),
-                                typeToString(rightType))
-                );
+                logError(SemanticErrorType::TypeMismatch, node, OperatorData(node.op, leftType, rightType));
+                return;
             }
             break;
         }
@@ -295,9 +285,10 @@ void TypeCheckerVisitor::visit(UnaryExpression& node) {
         case Operator::PlusPlus:
         case Operator::Minus:
         case Operator::MinusMinus: {
-            if (!isNumeric(operandType))
-                throw std::runtime_error(std::format("Cannot perform operator {} on type {}", operatorToString(node.op),
-                                                     typeToString(operandType)));
+            if (!isNumeric(operandType)) {
+                logError(SemanticErrorType::TypeMismatch, node, OperatorData(node.op, operandType, Type::Unspecified));
+                return;
+            }
 
             node.type = operandType;
 
@@ -305,10 +296,11 @@ void TypeCheckerVisitor::visit(UnaryExpression& node) {
         }
 
         case Operator::Exclamation: {
-            if (!isBoolean(operandType))
-                throw std::runtime_error(std::format("Cannot perform operator {} on non-boolean type {}",
-                                                     operatorToString(node.op),
-                                                     typeToString(operandType)));
+            if (!isBoolean(operandType)) {
+                logError(SemanticErrorType::TypeMismatch, node, OperatorData(node.op, operandType, Type::Unspecified));
+                return;
+            }
+
             node.type = Type::Boolean;
 
             break;
@@ -325,19 +317,21 @@ void TypeCheckerVisitor::visit(VariableAssignment& node) {
     const Type assignedType = node.assignedValue->type;
 
     const auto symbol = _symbolTable.lookup(node.varName);
-    if (!symbol)
-        throw std::runtime_error("Invalid assignment: variable '" + node.varName + "' is undefined");
+    if (!symbol) {
+        logError(SemanticErrorType::UndefinedIdentifier, node);
+        return;
+    }
 
-    if (symbol->isConst)
-        throw std::runtime_error("Cannot assign to const variable: " + node.varName);
+    if (symbol->isConst) {
+        logError(SemanticErrorType::ReadOnlyAssignment, node);
+        return;
+    }
 
     if (const Type variableType = symbol->type;
-        variableType != assignedType && !isAssignableTo(assignedType, variableType))
-        throw std::runtime_error(std::format(
-            "Type mismatch in assignment to variable '{}'. Cannot assign value of type {} to variable of type {}",
-            node.varName,
-            typeToString(assignedType),
-            typeToString(variableType)));
+        variableType != assignedType && !isAssignableTo(assignedType, variableType)) {
+        logError(SemanticErrorType::IncompatibleAssignment, node, TypeMismatchData(variableType, assignedType));
+        return;
+    }
 }
 
 void TypeCheckerVisitor::visit(ReturnStatement& node) {
@@ -346,11 +340,10 @@ void TypeCheckerVisitor::visit(ReturnStatement& node) {
     node.value->accept(*this);
 
     if (const auto returnedType = node.value->type;
-        !isAssignableTo(_currentFunctionReturnType, returnedType))
-        throw std::runtime_error(std::format(
-            "Return Type Mismatch: Function expects to return {}, but received {} instead",
-            typeToString(_currentFunctionReturnType),
-            typeToString(returnedType)));
+        !isAssignableTo(_currentFunctionReturnType, returnedType)) {
+        logError(SemanticErrorType::TypeMismatch, node, TypeMismatchData(_currentFunctionReturnType, returnedType));
+        return;
+    }
 }
 
 void TypeCheckerVisitor::visit(IntegerLiteralNode& node) {
@@ -374,7 +367,11 @@ void TypeCheckerVisitor::visit(IdentifierNode& node) {
         // Only look up if we haven't already
         node.symbol = _symbolTable.lookup(node.name);
     }
-    if (!node.symbol) throw std::runtime_error("Undefined " + node.name);
+    if (!node.symbol) {
+        logError(SemanticErrorType::UndefinedIdentifier, node, node.name);
+        node.type = Type::Error;
+        return;
+    }
 
     node.type = node.symbol->type;
 }

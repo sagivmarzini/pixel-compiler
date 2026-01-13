@@ -11,6 +11,10 @@ struct Symbol;
 class Visitor;
 
 struct Expression : AstNode {
+    explicit Expression(const TokenMetadata& metadata)
+        : AstNode(metadata) {
+    }
+
     ~Expression() override = default;
 
     Type type = Type::Unspecified;
@@ -19,7 +23,8 @@ struct Expression : AstNode {
 struct IntegerLiteralNode final : Expression {
     int value;
 
-    IntegerLiteralNode(const int value) : value(value) {
+    IntegerLiteralNode(const TokenMetadata& metadata, const int value)
+        : Expression(metadata), value(value) {
     }
 
     void accept(AstVisitor& visitor) override;
@@ -28,7 +33,7 @@ struct IntegerLiteralNode final : Expression {
 struct FloatLiteralNode final : Expression {
     float value;
 
-    FloatLiteralNode(const float value) : value(value) {
+    FloatLiteralNode(const TokenMetadata& metadata, const float value) : Expression(metadata), value(value) {
     }
 
     void accept(AstVisitor& visitor) override;
@@ -37,7 +42,8 @@ struct FloatLiteralNode final : Expression {
 struct StringLiteralNode final : Expression {
     std::string value;
 
-    StringLiteralNode(std::string value) : value(std::move(value)) {
+    StringLiteralNode(const TokenMetadata& metadata, std::string value) : Expression(metadata),
+                                                                          value(std::move(value)) {
     }
 
     void accept(AstVisitor& visitor) override;
@@ -46,7 +52,7 @@ struct StringLiteralNode final : Expression {
 struct BooleanLiteralNode final : Expression {
     bool value;
 
-    BooleanLiteralNode(const bool value) : value(value) {
+    BooleanLiteralNode(const TokenMetadata& metadata, const bool value) : Expression(metadata), value(value) {
     }
 
     void accept(AstVisitor& visitor) override;
@@ -58,8 +64,9 @@ struct BinaryExpression final : Expression {
     Operator                    op;
     std::unique_ptr<Expression> right;
 
-    BinaryExpression(std::unique_ptr<Expression> left, const Operator op, std::unique_ptr<Expression> right)
-        : left(std::move(left)), op(op), right(std::move(right)) {
+    BinaryExpression(const TokenMetadata&        metadata, std::unique_ptr<Expression> left, const Operator op,
+                     std::unique_ptr<Expression> right)
+        : Expression(metadata), left(std::move(left)), op(op), right(std::move(right)) {
     }
 
     void accept(AstVisitor& visitor) override;
@@ -69,8 +76,8 @@ struct UnaryExpression final : Expression {
     std::unique_ptr<Expression> operand;
     Operator                    op;
 
-    UnaryExpression(std::unique_ptr<Expression> operand, const Operator op)
-        : operand(std::move(operand)), op(op) {
+    UnaryExpression(const TokenMetadata& metadata, std::unique_ptr<Expression> operand, const Operator op)
+        : Expression(metadata), operand(std::move(operand)), op(op) {
     }
 
     void accept(AstVisitor& visitor) override;
@@ -81,7 +88,7 @@ struct IdentifierNode final : Expression {
     std::string name;
     Symbol*     symbol = nullptr;
 
-    IdentifierNode(std::string name) : name(std::move(name)) {
+    IdentifierNode(const TokenMetadata& metadata, std::string name) : Expression(metadata), name(std::move(name)) {
     }
 
     void accept(AstVisitor& visitor) override;
@@ -101,8 +108,8 @@ struct FunctionCall final : Expression {
     std::string                   functionName;
     std::vector<FunctionArgument> arguments;
 
-    FunctionCall(std::string name, std::vector<FunctionArgument> arguments)
-        : functionName(std::move(name)), arguments(std::move(arguments)) {
+    FunctionCall(const TokenMetadata& metadata, std::string name, std::vector<FunctionArgument> arguments)
+        : Expression(metadata), functionName(std::move(name)), arguments(std::move(arguments)) {
     }
 
     void accept(AstVisitor& visitor) override;
@@ -112,8 +119,8 @@ struct RangeExpression final : Expression {
     std::unique_ptr<Expression> start;
     std::unique_ptr<Expression> end;
 
-    RangeExpression(std::unique_ptr<Expression> start, std::unique_ptr<Expression> end)
-        : start(std::move(start)), end(std::move(end)) {
+    RangeExpression(const TokenMetadata& metadata, std::unique_ptr<Expression> start, std::unique_ptr<Expression> end)
+        : Expression(metadata), start(std::move(start)), end(std::move(end)) {
     }
 
     void accept(AstVisitor& visitor) override;

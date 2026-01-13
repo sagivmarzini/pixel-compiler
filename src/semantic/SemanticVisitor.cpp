@@ -16,3 +16,7 @@ void SemanticVisitor::enterScope() const {
 void SemanticVisitor::exitScope() const {
     _symbolTable.exitScope();
 }
+
+void SemanticVisitor::logError(SemanticErrorType type, const AstNode& node) {
+    _errors.push_back(SemanticError(type, node, std::monostate{}));
+}

@@ -1,41 +1,58 @@
-// CASE 1: Variable Declaration Failures
-var ;                         // Missing identifier
-const x : = 10;               // Missing type after colon
-var y: int = ;                // Missing expression after assignment
-var typeless;                 // Error: TypelessVarDeclaration (no type, no value)
+// 1. Redefining a constant (ReadOnlyAssignment)
+const pi = 3.14;
+pi = 6.28;
 
-// CASE 2: Function Declaration & Argument Failures
-func (a: int) -> int { }      // Missing function name
-func errorParam(a int) -> int { } // Missing colon in parameters
-func trailingComma(a: int, ) -> int { } // Trailing comma error
-func missingBody() -> int     // Missing block (EOF or next keyword)
+// 2. Type mismatch in assignment (IncompatibleAssignment)
+var age: int = "Twenty";
 
-// CASE 3: Control Flow & Synchronization
-if (x > 10)                   // Missing body/statement
-else { var z = 20; }          // Else without a preceding valid If
+// 3. Undefined identifier
+var total = count + 10;
 
-while (x < 10                 // Missing closing parenthesis
-{
-    x = x + 1;
+// 4. Redeclaration of symbol (DuplicateDeclaration)
+var x = 10;
+// var x = 20;
+
+// 5. Function errors
+func calculate(val: int) -> int {
+    // 6. Incompatible return type (IncompatibleReturnType)
+    if val > 0 {
+        return "Positive";
+    }
+    // 7. Missing return statement (MissingReturn)
+    // (If val <= 0, no return is hit in a non-void function)
 }
 
-for i 1..10 { }               // Missing 'in' keyword
-for j in ..10 { }             // Missing start expression in range
+func setup() -> void {
+    // 8. Call to undefined function (UndefinedFunction)
+    startEngine();
 
-// CASE 4: Expression & Operator Stress
-var exprErr = 5 + * 10;       // Binary operator missing right-hand side
-var parenErr = (5 + 10;       // Missing closing parenthesis in expression
-var callErr = foo(x: ,);      // Missing argument value
+    // 9. Argument count mismatch
+    circle(x: 100, y: 100); // Missing 'radius'
 
-// CASE 5: Block Recovery
-{
-    var a = 10;
-    func;                // Total gibberish to trigger synchronization
-    var b = 20;               // Parser should recover and find this
+    // 10. Argument type mismatch
+    rect(x: 10, y: 10, width: "Wide", height: 50);
+
+    // 11. Undefined parameter name
+    line(fromX: 0, fromY: 0, toX: 100, toY: 100, thickness: 5);
 }
 
-// CASE 6: Return Statements
-func test() -> int {
-    return                    // Missing semicolon (if parser expects it)
-    var after = 10;
+func draw() -> void {
+    // 12. Non-boolean condition in If (NonBooleanCondition)
+    if 100 + 50 {
+        print(str: "This shouldn't work");
+    }
+
+    // 13. Non-numeric range in For loop (NonNumericRange)
+    for i in "start".."end" {
+        print(str: i);
+    }
+
+    // 14. Operator not defined (OperatorNotDefined)
+    var result = "Hello" * 5;
 }
+
+func circle(x: int, y: int, radius: float) -> void {}
+
+func rect(x: int, y: int, width: float, height: float) -> void {}
+
+func line(fromX: int, fromY: int, toX: int, toY: int, width: int) -> void {}

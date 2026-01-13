@@ -32,6 +32,7 @@ std::string typeToString(const Type type) {
         case Type::Color: return "color";
         case Type::Void: return "void";
         case Type::Unspecified: return "Type"; // for printing 'expected a 'type' token'
+        case Type::Error: return "Error";
         default: return "unknown type";
     }
 }

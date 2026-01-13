@@ -18,11 +18,13 @@ public:
 
     Symbol* findSymbol(const std::string& name);
 
+    bool localSymbolExists(const std::string& name) const;
+
     [[nodiscard]] Scope* getParent() const;
 
 private:
     Scope*                                   _parent;
-    std::unordered_map<std::string, Symbol*> symbols;
+    std::unordered_map<std::string, Symbol*> _symbols;
 };
 
 
