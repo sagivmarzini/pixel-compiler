@@ -40,6 +40,8 @@ add_executable(compiler-project
         src/CompilerError.h
         src/parse/ParserError.cpp
         src/parse/ParserError.h
+        src/semantic/SemanticError.cpp
+        src/semantic/SemanticError.h
 )
 
 target_include_directories(compiler-project

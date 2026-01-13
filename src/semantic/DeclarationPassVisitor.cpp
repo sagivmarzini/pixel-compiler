@@ -4,6 +4,7 @@
 
 #include "DeclarationPassVisitor.h"
 
+#include "CompilerException.h"
 #include "Symbol.h"
 #include "SymbolTable.h"
 #include "parse/AST/AstNode.h"
@@ -13,9 +14,13 @@ void DeclarationPassVisitor::run(AstNode& root) {
     enterScope(); // Push the global scope
     root.accept(*this);
     exitScope();
+
+    if (!_errors.empty())
+        throw CompilerException(_errors);
 }
 
 void DeclarationPassVisitor::visit(Program& program) {
+    program.scope = _symbolTable.getCurrentScope();
     for (const auto& stmt: program.statements) {
         stmt->accept(*this);
     }
@@ -23,15 +28,17 @@ void DeclarationPassVisitor::visit(Program& program) {
 
 void DeclarationPassVisitor::visit(FunctionDeclaration& node) {
     auto symbol = _symbolTable.declare(node.name, Symbol::SymbolKind::Function, node.returnType);
-    if (!symbol) throw std::runtime_error("Function is already defined: " + node.name);
+    if (!symbol) {
+        logError(SemanticErrorType::DuplicateDeclaration, node, node.name);
+    }
     node.symbol = symbol;
 
     enterScope();
     for (const auto& param: node.parameters) {
         symbol->params.push_back(param);
-        if (!_symbolTable.declare(param.name, Symbol::SymbolKind::Parameter, param.type))
-            throw std::runtime_error(std::format("Cannot redeclare parameter '{}' in function '{}'", param.name,
-                                                 node.name));
+        if (!_symbolTable.declare(param.name, Symbol::SymbolKind::Parameter, param.type)) {
+            logError(SemanticErrorType::ParameterRedeclaration, node, param.name);
+        }
     }
     node.body->accept(*this);
 
@@ -58,9 +65,9 @@ void DeclarationPassVisitor::visit(WhileLoop& node) {
 
 void DeclarationPassVisitor::visit(ForLoop& node) {
     enterScope();
-    if (!_symbolTable.declare(node.identifier, Symbol::SymbolKind::Variable, Type::Int))
-        throw std::runtime_error(std::format(
-            "Cannot use '{}' as loop variable - identifier is already defined in this scope", node.identifier));
+    if (!_symbolTable.declare(node.identifier, Symbol::SymbolKind::Variable, Type::Int)) {
+        logError(SemanticErrorType::DuplicateDeclaration, node, node.identifier);
+    }
     node.body->accept(*this);
     exitScope();
 }
@@ -77,7 +84,9 @@ void DeclarationPassVisitor::visit(Block& node) {
 void DeclarationPassVisitor::visit(VariableDeclaration& node) {
     const auto symbolPtr = _symbolTable.declare(node.name, Symbol::SymbolKind::Variable, node.specifiedType,
                                                 node.isConst);
-    if (!symbolPtr) throw std::runtime_error("Variable is already defined in this scope: " + node.name);
+    if (!symbolPtr) {
+        logError(SemanticErrorType::DuplicateDeclaration, node, node.name);
+    }
 
     node.symbol = symbolPtr;
 }

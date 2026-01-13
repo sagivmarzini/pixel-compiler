@@ -5,6 +5,8 @@
 #ifndef COMPILER_PROJECT_SEMANTICVISITOR_H
 #define COMPILER_PROJECT_SEMANTICVISITOR_H
 
+#include "CompilerError.h"
+#include "SemanticError.h"
 #include "parse/AST/AstVisitor.h"
 #include "SymbolTable.h"
 
@@ -18,11 +20,20 @@ public:
     virtual void run(AstNode& root) = 0;
 
 protected:
-    SymbolTable& _symbolTable;
+    SymbolTable&               _symbolTable;
+    std::vector<CompilerError> _errors;
 
     void enterScope() const;
 
     void exitScope() const;
+
+    template<typename T>
+    void logError(SemanticErrorType type, const AstNode& node, T&& contextData) {
+        _errors.push_back(SemanticError(type, node, ErrorContext(std::forward<T>(contextData))));
+    }
+
+    // Overload for errors with no extra data
+    void logError(SemanticErrorType type, const AstNode& node);
 };
 
 

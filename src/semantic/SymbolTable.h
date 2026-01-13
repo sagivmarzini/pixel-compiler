@@ -31,7 +31,7 @@ public:
                                   bool               isConst = false) const;
 
 private:
-    Scope*                               _currentScope = nullptr;
+    Scope*                               _currentScope;
     SymbolPool&                          _pool;
     std::vector<std::unique_ptr<Scope> > _scopes;
 };

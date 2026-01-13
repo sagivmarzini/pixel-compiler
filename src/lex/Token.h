@@ -29,6 +29,8 @@ enum class Type {
     String,
     Color,
     Void,
+
+    Error
 };
 
 std::ostream& operator<<(std::ostream& os, const Type& type);

@@ -22,6 +22,7 @@ struct FunctionDeclaration;
 
 struct Program;
 
+// TODO: Templated visitor with return type - AstVisitor<void> - template<typename R> class AstVisitor
 class AstVisitor {
 public:
     virtual ~AstVisitor() = default;
