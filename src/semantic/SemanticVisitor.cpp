@@ -1,7 +1,3 @@
-//
-// Created by Sagiv Marzini on 04/12/2025.
-//
-
 #include "SemanticVisitor.h"
 #include "SymbolTable.h"
 

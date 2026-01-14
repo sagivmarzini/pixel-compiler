@@ -1,7 +1,3 @@
-//
-// Created by sagivm on 11/12/2025.
-//
-
 #include "SymbolTable.h"
 
 #include "SymbolPool.h"

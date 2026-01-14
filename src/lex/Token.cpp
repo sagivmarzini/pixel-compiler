@@ -1,6 +1,3 @@
-//
-// Created by Sagiv Marzini on 06/12/2025.
-//
 #include "Token.h"
 
 #include <stdexcept>

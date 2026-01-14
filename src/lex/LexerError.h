@@ -1,7 +1,3 @@
-//
-// Created by Sagiv Marzini on 21/11/2025.
-//
-
 #ifndef COMPILER_PROJECT_LEXERERROR_H
 #define COMPILER_PROJECT_LEXERERROR_H
 

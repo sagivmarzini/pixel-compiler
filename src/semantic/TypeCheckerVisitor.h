@@ -1,7 +1,3 @@
-//
-// Created by sagivm on 10/12/2025.
-//
-
 #ifndef COMPILER_PROJECT_TYPECHECKERVISITOR_H
 #define COMPILER_PROJECT_TYPECHECKERVISITOR_H
 #include "SemanticError.h"

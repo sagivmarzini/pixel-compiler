@@ -1,7 +1,3 @@
-//
-// Created by Sagiv Marzini on 13/01/2026.
-//
-
 #ifndef COMPILER_PROJECT_SEMANTICERROR_H
 #define COMPILER_PROJECT_SEMANTICERROR_H
 #include <utility>

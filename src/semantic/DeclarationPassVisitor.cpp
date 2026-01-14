@@ -1,7 +1,3 @@
-//
-// Created by Sagiv Marzini on 05/12/2025.
-//
-
 #include "DeclarationPassVisitor.h"
 
 #include "CompilerException.h"
