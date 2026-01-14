@@ -1,7 +1,3 @@
-//
-// Created by Sagiv Marzini on 04/12/2025.
-//
-
 #ifndef COMPILER_PROJECT_SEMANTICVISITOR_H
 #define COMPILER_PROJECT_SEMANTICVISITOR_H
 

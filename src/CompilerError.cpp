@@ -1,7 +1,3 @@
-//
-// Created by Sagiv Marzini on 02/01/2026.
-//
-
 #include "CompilerError.h"
 
 CompilerError::CompilerError(const TokenMetadata& metadata)

@@ -1,7 +1,3 @@
-//
-// Created by sagivm on 10/12/2025.
-//
-
 #include "TypeCheckerVisitor.h"
 
 #include <set>

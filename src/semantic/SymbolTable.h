@@ -1,7 +1,3 @@
-//
-// Created by sagivm on 11/12/2025.
-//
-
 #ifndef COMPILER_PROJECT_SYMBOLTABLE_H
 #define COMPILER_PROJECT_SYMBOLTABLE_H
 #include <memory>

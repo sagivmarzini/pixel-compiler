@@ -1,7 +1,3 @@
-//
-// Created by Sagiv Marzini on 05/12/2025.
-//
-
 #ifndef COMPILER_PROJECT_SYMBOLPOOL_H
 #define COMPILER_PROJECT_SYMBOLPOOL_H
 #include <memory>

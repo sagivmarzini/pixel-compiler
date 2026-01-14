@@ -1,7 +1,3 @@
-//
-// Created by Sagiv Marzini on 02/01/2026.
-//
-
 #ifndef COMPILER_PROJECT_COMPILERERROR_H
 #define COMPILER_PROJECT_COMPILERERROR_H
 #include <string>
