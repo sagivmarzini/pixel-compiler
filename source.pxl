@@ -1,58 +1,49 @@
-// 1. Redefining a constant (ReadOnlyAssignment)
 const pi = 3.14;
-pi = 6.28;
 
-// 2. Type mismatch in assignment (IncompatibleAssignment)
-var age: int = "Twenty";
+func failTest() -> void {
+  // 1. Literal incrementing
+  // A parser often accepts this because "5" is an expression and "++" follows it.
+  // However, you cannot increment a constant value.
+  5++;
 
-// 3. Undefined identifier
-var total = count + 10;
+  // 2. Expression incrementing
+  // (x + y) results in a value, not a variable. You cannot increment a result.
+  (x + y)--;
 
-// 4. Redeclaration of symbol (DuplicateDeclaration)
-var x = 10;
-// var x = 20;
+  // 3. Chained postfix (in most languages)
+  // i++ returns a value (the old i), so (i++)++ is trying to increment a value.
+  var i = 0;
+  i++++;
 
-// 5. Function errors
-func calculate(val: int) -> int {
-    // 6. Incompatible return type (IncompatibleReturnType)
-    if val > 0 {
-        return "Positive";
-    }
-    // 7. Missing return statement (MissingReturn)
-    // (If val <= 0, no return is hit in a non-void function)
+  // 4. Constant modification
+  pi++;
 }
 
-func setup() -> void {
-    // 8. Call to undefined function (UndefinedFunction)
-    startEngine();
 
-    // 9. Argument count mismatch
-    circle(x: 100, y: 100); // Missing 'radius'
+// Variable declarations
+var lives: int = 3;
+var level: int = 1;
+var totalPoints: int = 0;
 
-    // 10. Argument type mismatch
-    rect(x: 10, y: 10, width: "Wide", height: 50);
+func testOperators() -> void {
+  // Postfix increment/decrement
+  lives++;
+  level--;
 
-    // 11. Undefined parameter name
-    line(fromX: 0, fromY: 0, toX: 100, toY: 100, thickness: 5);
+  // Prefix increment/decrement
+  ++lives;
+  --level;
+
+  // Usage in expressions
+  var nextLevel = ++level;
+  var currentLives = lives--;
+
+  // Usage in Control Flow
+  while lives > 0 {
+    lives--;
+  }
+
+  for i in 0..10 {
+    var steps = i++;
+  }
 }
-
-func draw() -> void {
-    // 12. Non-boolean condition in If (NonBooleanCondition)
-    if 100 + 50 {
-        print(str: "This shouldn't work");
-    }
-
-    // 13. Non-numeric range in For loop (NonNumericRange)
-    for i in "start".."end" {
-        print(str: i);
-    }
-
-    // 14. Operator not defined (OperatorNotDefined)
-    var result = "Hello" * 5;
-}
-
-func circle(x: int, y: int, radius: float) -> void {}
-
-func rect(x: int, y: int, width: float, height: float) -> void {}
-
-func line(fromX: int, fromY: int, toX: int, toY: int, width: int) -> void {}
