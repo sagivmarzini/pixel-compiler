@@ -343,6 +343,7 @@ std::unique_ptr<Expression> Parser::parseMultiplicativeExpression() {
 
 std::unique_ptr<Expression> Parser::parseUnaryExpression() {
     if (checkValue(Operator::Plus) || checkValue(Operator::Minus)
+        || checkValue(Operator::PlusPlus) || checkValue(Operator::MinusMinus)
         || checkValue(Operator::Exclamation)) {
         auto       op      = expect<Operator>();
         const auto opPos   = peekPrevious().metadata;
@@ -369,7 +370,14 @@ std::unique_ptr<Expression> Parser::parsePrimary() {
     if (check<Identifier>()) {
         if (checkNext<LParen>()) return parseFunctionCall();
 
-        return std::make_unique<IdentifierNode>(peek().metadata, expect<Identifier>().name);
+        auto variable = std::make_unique<IdentifierNode>(peek().metadata, expect<Identifier>().name);
+
+        if (checkValue(Operator::PlusPlus) || checkValue(Operator::MinusMinus)) {
+            auto op = expect<Operator>();
+            return std::make_unique<UnaryExpression>(variable->metadata, std::move(variable), op);
+        }
+
+        return variable;
     }
     if (check<LParen>()) {
         expect<LParen>();
