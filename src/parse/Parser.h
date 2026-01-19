@@ -26,6 +26,8 @@ private:
     // A flag to prevent multiple errors from one single mistake
     bool _isPanicMode = false;
 
+    std::unique_ptr<Statement> parseDeclaration();
+
     std::unique_ptr<Statement> parseStatement();
 
     std::unique_ptr<Block> parseBlock();

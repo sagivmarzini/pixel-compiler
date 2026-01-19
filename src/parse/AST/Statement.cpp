@@ -41,7 +41,7 @@ void Program::accept(AstVisitor& visitor) {
     visitor.visit(*this);
 }
 
-void Program::addStatement(std::unique_ptr<Statement> statement) {
+void Program::addDeclaration(std::unique_ptr<Statement> statement) {
     if (statement) {
         // Safety check to ensure we don't add nulls
         statements.push_back(std::move(statement));
