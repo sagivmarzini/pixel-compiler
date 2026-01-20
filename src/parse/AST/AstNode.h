@@ -34,7 +34,7 @@ struct Program final : AstNode {
 
     void accept(AstVisitor& visitor) override;
 
-    void addStatement(std::unique_ptr<Statement> statement);
+    void addDeclaration(std::unique_ptr<Statement> statement);
 };
 
 #endif //COMPILER_PROJECT_ASTNODE_H

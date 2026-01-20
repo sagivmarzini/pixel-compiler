@@ -13,7 +13,7 @@ Program Parser::parseProgram() {
 
     while (!isAtEnd()) {
         try {
-            program.addStatement(parseStatement());
+            program.addDeclaration(parseDeclaration());
         } catch (const ParseUnwindException& e) {
             synchronize();
         }
@@ -26,15 +26,25 @@ Program Parser::parseProgram() {
     return program;
 }
 
+std::unique_ptr<Statement> Parser::parseDeclaration() {
+    if (checkValue(Keyword::Var) || checkValue(Keyword::Const)) {
+        return parseVariableDeclaration();
+    }
+    if (checkValue(Keyword::Func)) {
+        return parseFunctionDeclaration();
+    }
+
+    error(ParserErrorType::ExpectedDeclaration, peek());
+    // Unreachable, but keeps the compiler happy
+    throw std::runtime_error("Internal error: unreachable");
+}
+
 std::unique_ptr<Statement> Parser::parseStatement() {
     if (check<LBrace>()) {
         return parseBlock();
     }
     if (checkValue(Keyword::Var) || checkValue(Keyword::Const)) {
         return parseVariableDeclaration();
-    }
-    if (checkValue(Keyword::Func)) {
-        return parseFunctionDeclaration();
     }
     if (checkValue(Keyword::Return)) {
         return parseReturnStatement();
