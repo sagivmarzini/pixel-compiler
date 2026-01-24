@@ -24,11 +24,17 @@ struct OperatorData {
     Type     right;
 };
 
+struct UnaryOperatorData {
+    Operator op;
+    Type operand;
+};
+
 using ErrorContext = std::variant<
     std::monostate, // No extra info
     TypeMismatchData,
     ParamMismatchData,
     OperatorData,
+    UnaryOperatorData,
     std::string // Generic fallback
 >;
 

@@ -56,6 +56,8 @@ private:
 
     void visit(UnaryExpression& node) override;
 
+    void visit(IncDecExpression &node) override;
+
     void visit(VariableAssignment& node) override;
 
     void visit(ReturnStatement& node) override;

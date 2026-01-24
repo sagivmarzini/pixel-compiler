@@ -10,6 +10,7 @@ struct StringLiteralNode;
 struct BooleanLiteralNode;
 struct BinaryExpression;
 struct UnaryExpression;
+struct IncDecExpression;
 struct IdentifierNode;
 struct FunctionCall;
 struct VariableDeclaration;
@@ -48,6 +49,8 @@ public:
     virtual void visit(BinaryExpression& node) = 0;
 
     virtual void visit(UnaryExpression& node) = 0;
+
+    virtual void visit(IncDecExpression& node) = 0;
 
     virtual void visit(VariableAssignment& node) = 0;
 

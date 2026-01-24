@@ -282,7 +282,7 @@ void TypeCheckerVisitor::visit(UnaryExpression& node) {
         case Operator::Minus:
         case Operator::MinusMinus: {
             if (!isNumeric(operandType)) {
-                logError(SemanticErrorType::TypeMismatch, node, OperatorData(node.op, operandType, Type::Unspecified));
+                logError(SemanticErrorType::TypeMismatch, node, UnaryOperatorData(node.op, operandType));
                 return;
             }
 
@@ -293,7 +293,7 @@ void TypeCheckerVisitor::visit(UnaryExpression& node) {
 
         case Operator::Exclamation: {
             if (!isBoolean(operandType)) {
-                logError(SemanticErrorType::TypeMismatch, node, OperatorData(node.op, operandType, Type::Unspecified));
+                logError(SemanticErrorType::TypeMismatch, node, UnaryOperatorData(node.op, operandType));
                 return;
             }
 
@@ -305,6 +305,32 @@ void TypeCheckerVisitor::visit(UnaryExpression& node) {
         default:
             throw std::runtime_error(std::format("Internal error: Unhandled unary operator {}",
                                                  operatorToString(node.op)));
+    }
+}
+
+void TypeCheckerVisitor::visit(IncDecExpression &node) {
+    auto operand = _symbolTable.lookup(node.variableName);
+    if (!operand) {
+        logError(SemanticErrorType::UndefinedIdentifier, node);
+        return;
+    }
+
+    switch (node.op) {
+        case Operator::PlusPlus:
+        case Operator::MinusMinus: {
+            if (!isNumeric(operand->type)) {
+                logError(SemanticErrorType::TypeMismatch, node, UnaryOperatorData(node.op, operand->type));
+            }
+
+            if (operand->isConst) {
+                logError(SemanticErrorType::ReadOnlyAssignment, node);
+            }
+            node.type = operand->type;
+            break;
+        }
+
+        default:
+            throw std::runtime_error("Internal error: Unhandled postfix operator " + operatorToString(node.op));
     }
 }
 

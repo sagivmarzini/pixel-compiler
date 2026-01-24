@@ -11,6 +11,7 @@ enum class ParserErrorType {
     ExpectedDeclaration,
     TrailingComma,
     ElseWithoutIf,
+    IncrementNonVariable,
 };
 
 
