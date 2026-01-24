@@ -68,6 +68,8 @@ private:
 
     std::unique_ptr<Expression> parseUnaryExpression();
 
+    std::unique_ptr<Expression> parseIncDecExpression();
+
     std::unique_ptr<Expression> parsePrimary();
 
     Token& peek();

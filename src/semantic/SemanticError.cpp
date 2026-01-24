@@ -28,8 +28,14 @@ SemanticError::SemanticError(SemanticErrorType type, const AstNode& node, ErrorC
                                             return std::format("operator '{}' not defined for types '{}' and '{}'",
                                                                operatorToString(d.op), typeToString(d.left),
                                                                typeToString(d.right));
+                                        },
+
+                                        [](const UnaryOperatorData& d) {
+                                            return std::format("operator '{}' not defined for type '{}'",
+                                                               operatorToString(d.op), typeToString(d.operand));
                                         }
-                                    }, _context);
+
+                                        },_context);
 
     // Map the Enum to a prefix and combine with the detail
     std::string prefix;

@@ -83,6 +83,22 @@ struct UnaryExpression final : Expression {
     void accept(AstVisitor& visitor) override;
 };
 
+// increment and decrement expressions ++ and --
+struct IncDecExpression final : Expression {
+    std::string variableName;
+    Operator op;
+    enum Fix {
+        Prefix,
+        Postfix
+    } fix;
+
+    IncDecExpression(const TokenMetadata& metadata ,const std::string& varName, const Operator op, const Fix fixPos)
+        : Expression(metadata), variableName(varName), op(op), fix(fixPos) {
+    }
+
+    void accept(AstVisitor &visitor) override;
+};
+
 // Variable reference
 struct IdentifierNode final : Expression {
     std::string name;

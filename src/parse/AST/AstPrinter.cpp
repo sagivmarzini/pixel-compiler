@@ -103,6 +103,11 @@ void AstPrinter::visit(UnaryExpression& node) {
     _indent--;
 }
 
+void AstPrinter::visit(IncDecExpression &node) {
+    printIndent();
+    std::cout << "PostfixExpression: " << node.variableName << " " << node.op << "\n";
+}
+
 void AstPrinter::visit(IdentifierNode& node) {
     printIndent();
     std::cout << "Identifier: " << node.name << "\n";

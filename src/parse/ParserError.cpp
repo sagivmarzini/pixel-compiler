@@ -30,5 +30,8 @@ ParserError::ParserError(const ParserErrorType& type, const Token& errorToken, c
         case ParserErrorType::ElseWithoutIf:
             _message = "'else' statement has no corresponding 'if'";
             break;
+        case ParserErrorType::IncrementNonVariable:
+            _message = "cannot apply operator ++/-- on non variable types";
+            break;
     }
 }

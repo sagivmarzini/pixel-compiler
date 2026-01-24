@@ -26,6 +26,10 @@ void UnaryExpression::accept(AstVisitor& visitor) {
     visitor.visit(*this);
 }
 
+void IncDecExpression::accept(AstVisitor &visitor) {
+    visitor.visit(*this);
+}
+
 void IdentifierNode::accept(AstVisitor& visitor) {
     visitor.visit(*this);
 }

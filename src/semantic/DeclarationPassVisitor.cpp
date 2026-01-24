@@ -99,6 +99,10 @@ void DeclarationPassVisitor::visit(UnaryExpression& node) {
     // nothing to do in declaration pass
 }
 
+void DeclarationPassVisitor::visit(IncDecExpression &node) {
+    // nothing to do in decleration pass
+}
+
 void DeclarationPassVisitor::visit(VariableAssignment& node) {
     // nothing to do in declaration pass
 }

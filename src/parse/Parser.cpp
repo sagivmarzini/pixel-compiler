@@ -83,7 +83,11 @@ std::unique_ptr<Block> Parser::parseBlock() {
         if (isAtEnd()) {
             error(ParserErrorType::MissingClosingBrace, startToken);
         }
-        block.statements.push_back(parseStatement());
+        try {
+            block.statements.push_back(parseStatement());
+        } catch (const ParseUnwindException& e) {
+            synchronize();
+        }
     }
     expect<RBrace>();
 
@@ -352,16 +356,44 @@ std::unique_ptr<Expression> Parser::parseMultiplicativeExpression() {
 }
 
 std::unique_ptr<Expression> Parser::parseUnaryExpression() {
-    if (checkValue(Operator::Plus) || checkValue(Operator::Minus)
-        || checkValue(Operator::PlusPlus) || checkValue(Operator::MinusMinus)
-        || checkValue(Operator::Exclamation)) {
+    if (checkValue(Operator::Plus) || checkValue(Operator::Minus) ||
+        checkValue(Operator::Exclamation)) {
         auto       op      = expect<Operator>();
-        const auto opPos   = peekPrevious().metadata;
-        auto       operand = parsePrimary();
+        auto       operand = parseUnaryExpression(); // to allow -++i
 
-        return std::make_unique<UnaryExpression>(opPos, std::move(operand), op);
+        return std::make_unique<UnaryExpression>(peekPrevious().metadata, std::move(operand), op);
     }
-    return parsePrimary();
+    return parseIncDecExpression();
+}
+
+std::unique_ptr<Expression> Parser::parseIncDecExpression() {
+    // check for prefix ++ and --
+    if (checkValue(Operator::PlusPlus) || checkValue(Operator::MinusMinus)) {
+        if (!checkNext<Identifier>()) {
+            error(ParserErrorType::IncrementNonVariable, peek());
+        }
+
+        auto op = expect<Operator>();
+        auto var = expect<Identifier>();
+        auto fixPos = IncDecExpression::Fix::Prefix;
+
+        return std::make_unique<IncDecExpression>(peekPrevious().metadata, var.name, op, fixPos);
+    }
+    // check for postfix ++ and --
+    auto expr = parsePrimary();
+
+    while (checkValue(Operator::PlusPlus) || checkValue(Operator::MinusMinus)) {
+        if (auto var = dynamic_cast<IdentifierNode*>(expr.get())) {
+
+            auto op = expect<Operator>();
+            auto fixPos = IncDecExpression::Fix::Postfix;
+            expr = std::make_unique<IncDecExpression>(peekPrevious().metadata, var->name, op, fixPos);
+        }
+        else {
+            error(ParserErrorType::IncrementNonVariable, peek());
+        }
+    }
+    return expr;
 }
 
 std::unique_ptr<Expression> Parser::parsePrimary() {
@@ -380,14 +412,7 @@ std::unique_ptr<Expression> Parser::parsePrimary() {
     if (check<Identifier>()) {
         if (checkNext<LParen>()) return parseFunctionCall();
 
-        auto variable = std::make_unique<IdentifierNode>(peek().metadata, expect<Identifier>().name);
-
-        if (checkValue(Operator::PlusPlus) || checkValue(Operator::MinusMinus)) {
-            auto op = expect<Operator>();
-            return std::make_unique<UnaryExpression>(variable->metadata, std::move(variable), op);
-        }
-
-        return variable;
+        return std::make_unique<IdentifierNode>(peekPrevious().metadata, expect<Identifier>().name);
     }
     if (check<LParen>()) {
         expect<LParen>();

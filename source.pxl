@@ -1,49 +1,33 @@
-const pi = 3.14;
+func testIncrementDecrement() -> void {
+    var a: int = 10;
+    var b: int = 20;
+    var result: int = 0;
 
-func failTest() -> void {
-  // 1. Literal incrementing
-  // A parser often accepts this because "5" is an expression and "++" follows it.
-  // However, you cannot increment a constant value.
-  5++;
+    // 1. Basic Postfix/Prefix in assignments
+    a++;          // Postfix: a becomes 11
+    ++a;          // Prefix: a becomes 12
+    b--;          // Postfix: b becomes 19
+    --b;          // Prefix: b becomes 18
 
-  // 2. Expression incrementing
-  // (x + y) results in a value, not a variable. You cannot increment a result.
-  (x + y)--;
+    // 2. Precedence and Order of Operations
+    // Expected behavior: prefix happens before the addition,
+    // postfix happens after the value is used for the sum.
+    result = ++a + b--;
+    // Execution: a (12->13), then (13 + 18), then b (18->17)
+    // result should be 31
 
-  // 3. Chained postfix (in most languages)
-  // i++ returns a value (the old i), so (i++)++ is trying to increment a value.
-  var i = 0;
-  i++++;
+    // 3. Nested in Control Flow
+    while (a-- > 0) {
+        if (++result / 2 == 0) {
+            var x = 0;
+        }
+    }
 
-  // 4. Constant modification
-  pi++;
-}
-
-
-// Variable declarations
-var lives: int = 3;
-var level: int = 1;
-var totalPoints: int = 0;
-
-func testOperators() -> void {
-  // Postfix increment/decrement
-  lives++;
-  level--;
-
-  // Prefix increment/decrement
-  ++lives;
-  --level;
-
-  // Usage in expressions
-  var nextLevel = ++level;
-  var currentLives = lives--;
-
-  // Usage in Control Flow
-  while lives > 0 {
-    lives--;
-  }
-
-  for i in 0..10 {
-    var steps = i++;
-  }
+    // 5. Stress Test: Multiple operations in one line
+    // This tests if the parser greedily consumes '+' or '-' correctly
+    var x: int = 5;
+    var y: int = 10;
+    var z: int = x++ + ++y - --x;
+    // This ensures + + (addition and prefix) are tokenized correctly
+    // and not confused for +++ (invalid)
 }
