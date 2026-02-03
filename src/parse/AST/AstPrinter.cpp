@@ -119,7 +119,7 @@ void AstPrinter::visit(FunctionCall& node) {
     _indent++;
     for (auto& arg: node.arguments) {
         printIndent();
-        std::cout << "Argument: " << arg.name << "\n";
+        std::cout << "Argument: " << arg.name.value_or("") << "\n";
         _indent++;
         arg.value->accept(*this);
         _indent--;
@@ -267,7 +267,7 @@ void AstPrinter::visit(FunctionDeclaration& node) {
         _indent++;
         for (auto& param: node.parameters) {
             printIndent();
-            std::cout << param.name << ": " << param.type << "\n";
+            std::cout << param.name << ": " << param.type << (param.isImplicit ? "- implicit" : "- explicit") << "\n";
         }
         _indent--;
     }

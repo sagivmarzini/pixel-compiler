@@ -56,7 +56,6 @@ void TypeCheckerVisitor::visit(FunctionDeclaration& node) {
     _foundReturn               = false;
 
     node.body->accept(*this);
-
     if (!_foundReturn && node.returnType != Type::Void) {
         logError(SemanticErrorType::MissingReturn, node);
     }
@@ -169,31 +168,52 @@ void TypeCheckerVisitor::visit(FunctionCall& node) {
 
     node.type = calledFunction->type;
     std::set<std::string> seenParams;
+    int index = 0;
 
     for (const auto& argument: node.arguments) {
+        auto& parameter = calledFunction->params.at(index);
+
+        if (argument.name.has_value()) {
+            // named arument
+            auto argName = argument.name.value();
+
+            if (parameter.name != argName) {
+                if (calledFunction->getParameterByName(argName)) {
+                    // invalid pos
+                    logError(SemanticErrorType::InvalidArgumentPosition, node, ArgumentPositionData(node.arguments, calledFunction->params));
+                    return;
+                }
+
+                logError(SemanticErrorType::UndefinedArgument, node, argName);
+                return;
+            }
+        } else {
+            // nameless argument
+            if (!parameter.isImplicit) {
+                logError(SemanticErrorType::MissingArgumentLabel, node, parameter.name
+);
+            }
+        }
         // Check for duplicate named arguments
-        if (seenParams.contains(argument.name)) {
-            logError(SemanticErrorType::DuplicateParameterName, node, argument.name);
+        if (seenParams.contains(parameter.name
+)) {
+            logError(SemanticErrorType::DuplicateParameterName, node, parameter.name
+);
             return;
         }
-        seenParams.insert(argument.name);
-
-        // Verify the parameter name exists in the function definition
-        auto parameter = calledFunction->getParameterByName(argument.name);
-        if (!parameter.has_value()) {
-            logError(SemanticErrorType::UndefinedParameter, node, argument.name);
-            return;
-        }
-
+        seenParams.insert(parameter.name
+);
+        
         // Visit the argument expression to resolve its type
         argument.value->accept(*this);
 
         // Compare the expression type to the expected parameter type
-        if (argument.value->type != parameter.value().type) {
+        if (argument.value->type != parameter.type) {
             logError(SemanticErrorType::ArgumentTypeMismatch, node,
-                     TypeMismatchData(parameter.value().type, argument.value->type));
+                     TypeMismatchData(parameter.type, argument.value->type));
             return;
         }
+        index++;
     }
 }
 

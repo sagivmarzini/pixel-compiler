@@ -30,8 +30,16 @@ std::vector<Token> Lexer::lex() {
 
         if (isdigit(current)) {
             token = parseNumber();
-        } else if (isalpha(current)) {
-            token = parseIdentifierOrKeyword();
+        } else if (isalpha(current) || current == '_') {
+            const auto text = parseIdentifierOrKeyword();
+
+            if (text == "_") {
+                token = Token(Underscore(), _line, _col, text);
+            } else if (const auto it = keywords.find(text); it != keywords.end()) {
+                token = Token{it->second, _line, _col, text};
+            } else {
+                token = Token(Identifier{text}, _line, _col, text);
+            }
         } else {
             switch (current) {
                 case '"':
@@ -268,26 +276,18 @@ Token Lexer::parseNumber() {
     }
 }
 
-Token Lexer::parseIdentifierOrKeyword() {
+std::string Lexer::parseIdentifierOrKeyword() {
     std::string text;
     const auto  startLine = _line;
     const auto  startCol  = _col;
 
-    // Identifiers and keywords must start with a letter
-    if (!isalpha(peek())) error(LexerErrorType::UnexpectedChar, _line, _col - 1, std::string{peek()});
     text.push_back(eat());
 
     while (isalnum(peek()) || peek() == '_') {
         text.push_back(eat());
     }
 
-    // Look up in keyword map
-    if (const auto it = keywords.find(text); it != keywords.end()) {
-        return {it->second, startLine, startCol, text};
-    }
-
-    // Default to identifier
-    return Token(Identifier{text}, startLine, startCol, text);
+    return text;
 }
 
 void Lexer::skipSingleLineComment() {

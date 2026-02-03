@@ -12,93 +12,135 @@ struct overloaded : Ts... {
 
 SemanticError::SemanticError(SemanticErrorType type, const AstNode& node, ErrorContext context)
     : CompilerError(node.metadata), _type(type), _node(&node), _context(std::move(context)) {
-    // First, handle the data inside the variant
+    // 1. Format the specific details (The "Why")
+    // We format these to be grammatically smooth when appended to the prefix.
     std::string detail = std::visit(overloaded{
                                         [](std::monostate) -> std::string { return ""; },
-                                        [](const std::string& s) { return s; },
+
+                                        // Simple string detail (usually the identifier name)
+                                        [](const std::string& s) { return std::format("'{}'", s); },
+
                                         [](const TypeMismatchData& d) {
-                                            return std::format("expected '{}', but found '{}'",
+                                            return std::format("expected type '{}', but found '{}'",
                                                                typeToString(d.expected), typeToString(d.actual));
                                         },
+
                                         [](const ParamMismatchData& d) {
-                                            return std::format("function '{}' expects {} arguments, but got {}",
-                                                               d.name, d.expectedCount, d.actualCount);
+                                            return std::format(
+                                                "function '{}' requires {} arguments, but {} were provided",
+                                                d.name, d.expectedCount, d.actualCount);
                                         },
+
                                         [](const OperatorData& d) {
-                                            return std::format("operator '{}' not defined for types '{}' and '{}'",
-                                                               operatorToString(d.op), typeToString(d.left),
-                                                               typeToString(d.right));
+                                            return std::format(
+                                                "cannot apply binary operator '{}' to operands of type '{}' and '{}'",
+                                                operatorToString(d.op), typeToString(d.left), typeToString(d.right));
                                         },
 
                                         [](const UnaryOperatorData& d) {
-                                            return std::format("operator '{}' not defined for type '{}'",
-                                                               operatorToString(d.op), typeToString(d.operand));
+                                            return std::format(
+                                                "cannot apply unary operator '{}' to operand of type '{}'",
+                                                operatorToString(d.op), typeToString(d.operand));
+                                        },
+
+                                        [](const ArgumentPositionData& d) {
+                                            return std::format("signature expects ({}), but call provided ({})",
+                                                               d.parameters, d.arguments);
                                         }
+                                    }, _context);
 
-                                        },_context);
-
-    // Map the Enum to a prefix and combine with the detail
+    // 2. Define the high-level error category (The "What")
     std::string prefix;
     switch (type) {
+        // --- Identifier & Scope Errors ---
         case SemanticErrorType::UndefinedIdentifier:
-            prefix = "Undefined identifier";
+            prefix = "use of undeclared identifier";
             break;
         case SemanticErrorType::UndefinedFunction:
-            prefix = "Call to undefined function";
-            break;
-        case SemanticErrorType::TypeMismatch:
-            prefix = "Type mismatch";
-            break;
-        case SemanticErrorType::IncompatibleAssignment:
-            prefix = "Incompatible types in assignment";
-            break;
-        case SemanticErrorType::MissingReturn:
-            prefix = "Control reaches end of non-void function";
-            break;
-        case SemanticErrorType::NonBooleanCondition:
-            prefix = "Condition expression must be of boolean type";
-            break;
-        case SemanticErrorType::ArgumentCountMismatch:
-            prefix = "Invalid number of arguments";
+            prefix = "call to undeclared function";
             break;
         case SemanticErrorType::DuplicateDeclaration:
-            prefix = "Redeclaration of symbol";
-            break;
-        case SemanticErrorType::CannotInferType:
-            prefix = "Cannot infer type of variable without initializer";
-            break;
-        case SemanticErrorType::ReadOnlyAssignment:
-            prefix = "Cannot assign to a read-only (const) variable";
-            break;
-        case SemanticErrorType::UndefinedParameter:
-            prefix = "Function has no parameter with the given name";
-            break;
-        case SemanticErrorType::ArgumentTypeMismatch:
-            prefix = "Argument type mismatch";
+            prefix = "redefinition of symbol";
             break;
         case SemanticErrorType::DuplicateParameterName:
-            prefix = "Duplicate parameter name in function definition";
+            prefix = "redefinition of parameter name";
+            break;
+
+        // --- Type System Errors ---
+        case SemanticErrorType::TypeMismatch:
+            // If we have details, the prefix acts as a header.
+            prefix = "type mismatch";
+            break;
+        case SemanticErrorType::IncompatibleAssignment:
+            prefix = "cannot assign value of incompatible type";
+            break;
+        case SemanticErrorType::CannotInferType:
+            prefix = "type declarations require an explicit type or an initializer";
             break;
         case SemanticErrorType::IncompatibleReturnType:
-            prefix = "Value of return expression does not match function return type";
+            prefix = "return value type does not match function signature";
+            break;
+
+        // --- Function Call Errors ---
+        case SemanticErrorType::ArgumentCountMismatch:
+            prefix = "incorrect number of arguments";
+            break;
+        case SemanticErrorType::UndefinedArgument:
+            prefix = "function does not accept a parameter named"; // detail will be 'name'
+            break;
+        case SemanticErrorType::ArgumentTypeMismatch:
+            prefix = "invalid argument type";
+            break;
+        case SemanticErrorType::DuplicateArgumentName:
+            prefix = "parameter provided multiple times in call";
+            break;
+        case SemanticErrorType::MissingArgumentLabel:
+            prefix = "missing argument label in function call";
+            break;
+        case SemanticErrorType::InvalidArgumentPosition:
+            prefix = "arguments provided in incorrect order";
+            break;
+
+        // --- Control Flow & Logic Errors ---
+        case SemanticErrorType::MissingReturn:
+            prefix = "non-void function does not return a value in all code paths";
+            break;
+        case SemanticErrorType::NonBooleanCondition:
+            prefix = "if/while condition must be a boolean expression";
+            break;
+        case SemanticErrorType::ReadOnlyAssignment:
+            prefix = "cannot assign to immutable variable";
             break;
         case SemanticErrorType::NonNumericRange:
-            prefix = "Range bounds must be numeric";
+            prefix = "range bounds must be numeric types";
             break;
         case SemanticErrorType::NonNumericStep:
-            prefix = "Loop step must be a numeric value";
+            prefix = "loop step must be a numeric value";
             break;
+
+        // --- Operator Errors ---
         case SemanticErrorType::OperatorNotDefined:
-            prefix = "Binary operator not defined for these operands";
-            break;
         case SemanticErrorType::UnaryOperatorMismatch:
-            prefix = "Unary operator not defined for this operand type";
+            // The detail string handles the full explanation here,
+            // so we keep the prefix empty or generic if detail is missing.
+            prefix = "invalid operation";
             break;
+
         default:
-            prefix = "Semantic error";
+            prefix = "semantic error";
             break;
     }
 
-    // Combine into the final message
-    _message = detail.empty() ? prefix : std::format("{}: {}", prefix, detail);
+    // 3. Construct the Final Message
+    // Logic: If the detail is long/complex (contains spaces), we use a colon separator.
+    // If the detail is just a variable name (no spaces), we integrate it directly.
+
+    if (detail.empty()) {
+        _message = prefix;
+    } else if (type == SemanticErrorType::OperatorNotDefined || type == SemanticErrorType::UnaryOperatorMismatch) {
+        // For operators, the detail is the whole sentence.
+        _message = detail;
+    } else {
+        _message = std::format("{}: {}", prefix, detail);
+    }
 }

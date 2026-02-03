@@ -33,7 +33,7 @@ void DeclarationPassVisitor::visit(FunctionDeclaration& node) {
     for (const auto& param: node.parameters) {
         symbol->params.push_back(param);
         if (!_symbolTable.declare(param.name, Symbol::SymbolKind::Parameter, param.type)) {
-            logError(SemanticErrorType::ParameterRedeclaration, node, param.name);
+            logError(SemanticErrorType::DuplicateDeclaration, node, param.name);
         }
     }
     node.body->accept(*this);

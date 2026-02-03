@@ -85,6 +85,7 @@ std::string tokenTypeToString(const TokenType& tokenType) {
         else if constexpr (std::is_same_v<T, RParen>) return ")";
         else if constexpr (std::is_same_v<T, Arrow>) return "->";
         else if constexpr (std::is_same_v<T, DoubleDot>) return "..";
+        else if constexpr (std::is_same_v<T, Underscore>) return "Underscore";
         else if constexpr (std::is_same_v<T, EndOfFile>) return "EndOfFile";
         else if constexpr (std::is_same_v<T, Operator>) {
             return operatorToString(arg);
