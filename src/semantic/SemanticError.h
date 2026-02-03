@@ -3,6 +3,8 @@
 #include <utility>
 
 #include "CompilerError.h"
+#include "parse/AST/Expression.h"
+#include "parse/AST/Statement.h"
 
 class AstNode;
 
@@ -29,12 +31,27 @@ struct UnaryOperatorData {
     Type operand;
 };
 
+struct ArgumentPositionData {
+    std::string parameters;
+    std::string arguments;
+
+    ArgumentPositionData(std::vector<FunctionCall::FunctionArgument>& args,
+        std::vector<FunctionDeclaration::FunctionParameter>& params) {
+        for (int i = 0; i < args.size(); i++) {
+            auto param = params[i].isImplicit ? params[i].name : "_";
+            parameters.append(param + ", ");
+            arguments.append(args[i].name.value_or("_") + ", ");
+        }
+    }
+};
+
 using ErrorContext = std::variant<
     std::monostate, // No extra info
     TypeMismatchData,
     ParamMismatchData,
     OperatorData,
     UnaryOperatorData,
+    ArgumentPositionData,
     std::string // Generic fallback
 >;
 
@@ -47,10 +64,14 @@ enum class SemanticErrorType {
 
     // Function/Call Issues
     UndefinedFunction,
-    UndefinedParameter,
+    UndefinedArgument,
     ArgumentCountMismatch,
     ArgumentTypeMismatch,
     DuplicateParameterName,
+    DuplicateArgumentName,
+    MissingArgumentLabel,
+    InvalidArgumentPosition,
+
 
     // Type Logic
     TypeMismatch, // General purpose
@@ -66,9 +87,6 @@ enum class SemanticErrorType {
     // Operators
     OperatorNotDefined,    // e.g. "String - String"
     UnaryOperatorMismatch, // e.g. "!5"
-
-    // Declaration pass
-    ParameterRedeclaration,
 };
 
 class SemanticError : public CompilerError {

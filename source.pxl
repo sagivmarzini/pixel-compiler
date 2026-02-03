@@ -1,33 +1,123 @@
-func testIncrementDecrement() -> void {
-    var a: int = 10;
-    var b: int = 20;
-    var result: int = 0;
+// ===============================
+// function declarations
+// ===============================
 
-    // 1. Basic Postfix/Prefix in assignments
-    a++;          // Postfix: a becomes 11
-    ++a;          // Prefix: a becomes 12
-    b--;          // Postfix: b becomes 19
-    --b;          // Prefix: b becomes 18
-
-    // 2. Precedence and Order of Operations
-    // Expected behavior: prefix happens before the addition,
-    // postfix happens after the value is used for the sum.
-    result = ++a + b--;
-    // Execution: a (12->13), then (13 + 18), then b (18->17)
-    // result should be 31
-
-    // 3. Nested in Control Flow
-    while (a-- > 0) {
-        if (++result / 2 == 0) {
-            var x = 0;
-        }
-    }
-
-    // 5. Stress Test: Multiple operations in one line
-    // This tests if the parser greedily consumes '+' or '-' correctly
-    var x: int = 5;
-    var y: int = 10;
-    var z: int = x++ + ++y - --x;
-    // This ensures + + (addition and prefix) are tokenized correctly
-    // and not confused for +++ (invalid)
+func f1(_ a: int, b: int, _ c: int) -> int {
+    return a + b + c;
 }
+
+func f2(x: int, _ y: int, z: int) -> int {
+    return x + y + z;
+}
+
+func f3(_ a: int, _ b: int, c: int) -> int {
+    return a + b + c;
+}
+
+func f4(name: string, _ age: int, score: int) -> string {
+    return name;
+}
+
+func f5(_ x: int, y: int) -> int {
+    return x + y;
+}
+
+// ===============================
+// valid calls (positionally correct)
+// ===============================
+
+// implicit, explicit, implicit
+var ok1 = f1(1, b: 2, 3);
+var ok2 = f1(a: 1, b: 2, c: 3);
+
+// explicit, implicit, explicit
+var ok3 = f2(x: 1, 2, z: 3);
+var ok4 = f2(x: 1, y: 2, z: 3);
+
+// implicit, implicit, explicit
+var ok5 = f3(1, 2, c: 3);
+var ok6 = f3(a: 1, b: 2, c: 3);
+
+// explicit, implicit, explicit
+var ok7 = f4(name: "alice", 20, score: 100);
+var ok8 = f4(name: "bob", age: 30, score: 200);
+
+// implicit, explicit
+var ok9 = f5(10, y: 20);
+var ok10 = f5(x: 10, y: 20);
+
+// ===============================
+// missing labels (explicit param unnamed)
+// ===============================
+
+// b is explicit
+var err_label_1 = f1(1, 2, 3);
+
+// x and z are explicit
+var err_label_2 = f2(1, 2, 3);
+
+// c is explicit
+var err_label_3 = f3(1, 2, 3);
+
+// name and score are explicit
+var err_label_4 = f4("carol", 40, 300);
+
+// y is explicit
+var err_label_5 = f5(10, 20);
+
+// ===============================
+// illegal labels (implicit param labeled)
+// ===============================
+
+var err_forbidden_1 = f1(a: 1, b: 2, c: 3);
+var err_forbidden_2 = f2(x: 1, y: 2, z: 3);
+var err_forbidden_3 = f3(a: 1, b: 2, c: 3);
+var err_forbidden_4 = f4(name: "dave", age: 50, score: 400);
+
+// ===============================
+// wrong label at correct position
+// (labels don't reorder, so this is still an error)
+// ===============================
+
+// first param is `_ a`
+var err_wrong_label_1 = f1(b: 1, b: 2, c: 3);
+
+// second param is `b`
+var err_wrong_label_2 = f1(1, a: 2, 3);
+
+// third param is `_ c`
+var err_wrong_label_3 = f1(1, b: 2, a: 3);
+
+// ===============================
+// argument count mismatches
+// ===============================
+
+var err_count_1 = f1(1, b: 2);
+var err_count_2 = f2(x: 1, 2, z: 3, 4);
+var err_count_3 = f3(1);
+var err_count_4 = f4(name: "eve", 20);
+
+// ===============================
+// type mismatches (positionally correct)
+// ===============================
+
+var err_type_1 = f1(1, b: "two", 3);
+var err_type_2 = f2(x: "one", 2, z: 3);
+var err_type_3 = f4(name: 123, 20, score: 100);
+var err_type_4 = f5(10, y: "twenty");
+
+// ===============================
+// mixed chaos (realistic foot-guns)
+// ===============================
+
+// labels look right, but position is wrong
+var err_chaos_1 = f2(z: 1, 2, x: 3);
+
+// implicit labeled + explicit unlabeled
+var err_chaos_2 = f1(a: 1, 2, c: 3);
+
+// correct count, wrong labeling everywhere
+var err_chaos_3 = f4(score: 100, 20, name: "frank");
+
+// everything wrong but still same arity
+var err_chaos_4 = f3(c: 1, a: 2, b: 3);

@@ -113,11 +113,11 @@ struct IdentifierNode final : Expression {
 // Function call
 struct FunctionCall final : Expression {
     struct FunctionArgument {
-        std::string                 name;
         std::unique_ptr<Expression> value;
+        std::optional<std::string> name;
 
-        FunctionArgument(std::string name, std::unique_ptr<Expression> value)
-            : name(std::move(name)), value(std::move(value)) {
+        FunctionArgument(std::unique_ptr<Expression> value, std::optional<std::string> name)
+            : value(std::move(value)), name(std::move(name)) {
         }
     };
 

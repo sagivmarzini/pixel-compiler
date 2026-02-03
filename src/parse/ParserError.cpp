@@ -22,7 +22,7 @@ ParserError::ParserError(const ParserErrorType& type, const Token& errorToken, c
             _message = "expected expression";
             break;
         case ParserErrorType::ExpectedDeclaration:
-            _message = "expected declaration or statement";
+            _message = "expected a declaration";
             break;
         case ParserErrorType::TrailingComma:
             _message = "trailing comma";

@@ -108,6 +108,9 @@ struct Arrow {
 struct DoubleDot {
 };
 
+struct Underscore {
+};
+
 struct EndOfFile {
 };
 
@@ -123,6 +126,7 @@ using TokenType = std::variant<
     RParen,
     Arrow,
     DoubleDot,
+    Underscore,
 
     // payload tokens
     Operator,

@@ -86,6 +86,10 @@ std::unique_ptr<Block> Parser::parseBlock() {
         try {
             block.statements.push_back(parseStatement());
         } catch (const ParseUnwindException& e) {
+            if (checkValue(Keyword::Func)) {
+                // if at start of a declaration, return to global scope
+                throw ParseUnwindException();
+            }
             synchronize();
         }
     }
@@ -97,17 +101,22 @@ std::unique_ptr<Block> Parser::parseBlock() {
 std::vector<FunctionCall::FunctionArgument> Parser::parseFunctionArguments() {
     std::vector<FunctionCall::FunctionArgument> args;
     while (!check<RParen>()) {
-        if (isAtEnd())
+        if (isAtEnd()) {
             error(ParserErrorType::MissingClosingParen, peek());
+        }
+        std::optional<std::string> paramName;
 
-        auto name = expect<Identifier>();
-        expect<Colon>();
-        auto value = parseExpression();
+        if (check<Identifier>() && checkNext<Colon>()) {
+            // parameter with identifier: value
+            paramName = expect<Identifier>().name;
+            expect<Colon>();
+        }
+        auto param = parseExpression();
 
-        args.emplace_back(name.name, std::move(value));
-
+        args.emplace_back(std::move(param), paramName);
         if (!check<RParen>()) {
-            expect<Comma>();
+            expect<Comma>(); // if didn't read the end, get a comma seperator
+            // Check for trailing comma
             if (check<RParen>())
                 error(ParserErrorType::TrailingComma, peek());
         }
@@ -128,12 +137,13 @@ std::unique_ptr<Statement> Parser::parseFunctionDeclaration() {
         if (isAtEnd()) {
             error(ParserErrorType::MissingClosingParen, peek());
         }
+        bool isImplicit = match<Underscore>();
 
         auto paramName = expect<Identifier>();
         expect<Colon>();
         auto paramType = expect<Type>();
 
-        parameters.emplace_back(paramName.name, paramType);
+        parameters.emplace_back(paramName.name, paramType, isImplicit);
         if (!check<RParen>()) {
             expect<Comma>(); // if didn't read the end, get a comma seperator
             // Check for trailing comma
@@ -358,8 +368,8 @@ std::unique_ptr<Expression> Parser::parseMultiplicativeExpression() {
 std::unique_ptr<Expression> Parser::parseUnaryExpression() {
     if (checkValue(Operator::Plus) || checkValue(Operator::Minus) ||
         checkValue(Operator::Exclamation)) {
-        auto       op      = expect<Operator>();
-        auto       operand = parseUnaryExpression(); // to allow -++i
+        auto op      = expect<Operator>();
+        auto operand = parseUnaryExpression(); // to allow -++i
 
         return std::make_unique<UnaryExpression>(peekPrevious().metadata, std::move(operand), op);
     }
@@ -373,8 +383,8 @@ std::unique_ptr<Expression> Parser::parseIncDecExpression() {
             error(ParserErrorType::IncrementNonVariable, peek());
         }
 
-        auto op = expect<Operator>();
-        auto var = expect<Identifier>();
+        auto op     = expect<Operator>();
+        auto var    = expect<Identifier>();
         auto fixPos = IncDecExpression::Fix::Prefix;
 
         return std::make_unique<IncDecExpression>(peekPrevious().metadata, var.name, op, fixPos);
@@ -384,12 +394,10 @@ std::unique_ptr<Expression> Parser::parseIncDecExpression() {
 
     while (checkValue(Operator::PlusPlus) || checkValue(Operator::MinusMinus)) {
         if (auto var = dynamic_cast<IdentifierNode*>(expr.get())) {
-
-            auto op = expect<Operator>();
+            auto op     = expect<Operator>();
             auto fixPos = IncDecExpression::Fix::Postfix;
-            expr = std::make_unique<IncDecExpression>(peekPrevious().metadata, var->name, op, fixPos);
-        }
-        else {
+            expr        = std::make_unique<IncDecExpression>(peekPrevious().metadata, var->name, op, fixPos);
+        } else {
             error(ParserErrorType::IncrementNonVariable, peek());
         }
     }
@@ -518,20 +526,14 @@ bool Parser::isAtEnd() {
 void Parser::synchronize() {
     _isPanicMode = false;
 
-    // If the token that caused the error is already a safe 'anchor',
-    // stay there! parseProgram will pick it up on the next loop.
-    if (isAtStartOfStatement()) return;
-
-    // Otherwise, we must skip the "bad" token that caused the error
-    advance();
+    // IMPORTANT: If we are synchronizing, the current token is
+    // part of the failure. We MUST consume it to avoid infinite loops,
+    // even if it looks like the start of a statement.
+    if (!isAtEnd()) advance();
 
     while (!isAtEnd()) {
-        // Stop if the PREVIOUS token was a semicolon (end of a statement)
         if (std::holds_alternative<Semicolon>(peekPrevious().type)) return;
-
-        // Stop if the CURRENT token starts a new block/statement
         if (isAtStartOfStatement()) return;
-
         advance();
     }
 }

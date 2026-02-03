@@ -32,7 +32,7 @@ private:
 
     Token parseNumber();
 
-    Token parseIdentifierOrKeyword();
+    std::string parseIdentifierOrKeyword();
 
     void skipSingleLineComment();
 
