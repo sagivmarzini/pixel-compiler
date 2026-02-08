@@ -36,3 +36,12 @@ Symbol* SymbolTable::declare(const std::string& name, Symbol::SymbolKind kind, T
     Symbol& sym = _pool.createSymbol(name, kind, type, _currentScope, isConst);
     return _currentScope->addSymbol(sym);
 }
+
+// here and not in ctor because we need the scope
+void SymbolTable::declareBuiltins() {
+    for (auto& [name, params] : _builtinFunctions) {
+        auto& symbol = _pool.createSymbol(name, Symbol::SymbolKind::Function, Type::Void, _currentScope, true);
+        symbol.params = params;
+        _currentScope->addSymbol(symbol);
+    }
+}

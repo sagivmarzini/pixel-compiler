@@ -116,7 +116,7 @@ struct FunctionDeclaration : Statement {
         Type        type;
         bool isImplicit;
 
-        FunctionParameter(std::string name, const Type type, bool isImplicit)
+        FunctionParameter(std::string name, const Type type, bool isImplicit = false)
             : name(std::move(name)), type(type), isImplicit(isImplicit) {
         }
     };
