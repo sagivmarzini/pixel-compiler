@@ -17,6 +17,7 @@ void DeclarationPassVisitor::run(AstNode& root) {
 
 void DeclarationPassVisitor::visit(Program& program) {
     program.scope = _symbolTable.getCurrentScope();
+    _symbolTable.declareBuiltins();
     for (const auto& stmt: program.statements) {
         stmt->accept(*this);
     }
