@@ -3,6 +3,13 @@ project(compiler-project)
 
 set(CMAKE_CXX_STANDARD 23)
 
+find_package(LLVM REQUIRED CONFIG)
+
+include_directories(${LLVM_INCLUDE_DIRS})
+add_definitions(${LLVM_DEFINITIONS})
+
+llvm_map_components_to_libnames(llvm_libs core support native target)
+
 add_executable(compiler-project
         src/main.cpp
         src/Compiler.cpp
@@ -42,9 +49,9 @@ add_executable(compiler-project
         src/parse/ParserError.h
         src/semantic/SemanticError.cpp
         src/semantic/SemanticError.h
+        src/IR/IRGeneratorLLVM.cpp
+        src/IR/IRGeneratorLLVM.h
 )
 
-target_include_directories(compiler-project
-        PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/src
-)
+target_include_directories(compiler-project PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_link_libraries(compiler-project PRIVATE ${llvm_libs})

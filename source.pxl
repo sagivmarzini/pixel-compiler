@@ -1,82 +1,617 @@
-// This is a demo program covering all features
+// Comprehensive LLVM IR Generator Test Suite
+// Tests ALL visitor methods and edge cases
 
+// =============================================================================
+// 1. GLOBAL VARIABLE DECLARATIONS - LITERAL TESTS
+// =============================================================================
 
-/*
- Multi-line comment:
- Drawing shapes, using variables, loops, functions, and transforms
-*/
+// Integer literals
+var testInt1 = 0;
+var testInt2 = 42;
+var testInt3 = -100;
+var testInt4 = 2147483647;
 
+// Float literals
+var testFloat1 = 0.0;
+var testFloat2 = 3.14;
+var testFloat3 = -2.5;
+var testFloat4 = 100.999;
 
-// Variables
-var score: int = 0;
-var playerName = "Alex";   // inferred
-const pi = 3.14159;
-var x = 50;
-var y = 50;
-var isGameOver: bool = false;
+// Boolean literals
+var testBool1 = true;
+var testBool2 = false;
 
-// Functions
-func greet(name: string) -> void {
- print("Hello, " + name);
+// Global variables for testing
+var globalInt = 100;
+var globalFloat = 3.14;
+var globalBool = true;
+var globalCounter = 0;
+var globalResult = 0;
+
+// =============================================================================
+// 2. BINARY EXPRESSION TESTS
+// =============================================================================
+
+func testBinaryOperations() -> Int {
+    var a = 10;
+    var b = 5;
+    var fA = 10.0;
+    var fB = 5.0;
+
+    // Arithmetic operators - Integer
+    var addInt = a + b;
+    var subInt = a - b;
+    var mulInt = a * b;
+    var divInt = a / b;
+
+    // Arithmetic operators - Float
+    var addFloat = fA + fB;
+    var subFloat = fA - fB;
+    var mulFloat = fA * fB;
+    var divFloat = fA / fB;
+
+    // Mixed type promotion (int -> float)
+    var mixedAdd = a + fB;
+    var mixedMul = fA * b;
+
+    // Comparison operators - Integer
+    var eqInt = a == b;
+    var neqInt = a != b;
+    var gtInt = a > b;
+    var gteInt = a >= b;
+    var ltInt = a < b;
+    var lteInt = a <= b;
+
+    // Comparison operators - Float
+    var eqFloat = fA == fB;
+    var neqFloat = fA != fB;
+    var gtFloat = fA > fB;
+    var gteFloat = fA >= fB;
+    var ltFloat = fA < fB;
+    var lteFloat = fA <= fB;
+
+    // Logical operators
+    var logAnd = true && false;
+    var logOr = true || false;
+    var logNot = !true;
+
+    return addInt;
 }
 
 
-func add(a: int, b: int) -> int {
- return a + b;
+// =============================================================================
+// 3. UNARY EXPRESSION TESTS
+// =============================================================================
+
+func testUnaryOperations() -> Int {
+    var x = 10;
+    var y = -5;
+    var negX = -x;
+    var negY = -y;
+
+    var flag = true;
+    var notFlag = !flag;
+    var notNotFlag = !!flag;
+
+    return negX;
 }
 
 
-func drawPlayer(x: int, y: int, size: int) -> void {
- setColor(r: 0, g: 0, b: 255);
- circle(x: 0, y: 0, radius: size);
+// =============================================================================
+// 4. INCREMENT/DECREMENT TESTS
+// =============================================================================
+
+func testIncDec() -> Int {
+    var x = 10;
+    var y = 20;
+
+    // Prefix increment/decrement
+    var preInc = ++x;
+    var preDec = --y;
+
+    // Postfix increment/decrement
+    var postInc = x++;
+    var postDec = y--;
+
+    return x;
 }
 
 
-// Control Flow
-func updateScore() -> void {
- if score > 10 {
-   print("You're doing great!");
- } else {
-   print("Keep going...");
- }
+// =============================================================================
+// 5. IF STATEMENT TESTS
+// =============================================================================
+
+func testIfStatements(val: Int) -> Int {
+    var result = 0;
+
+    // Simple if
+    if val > 0 {
+        result = 1;
+    }
+
+    // If-else
+    if val == 0 {
+        result = 0;
+    } else {
+        result = 2;
+    }
+
+    // Nested if-else
+    if val < 0 {
+        if val < -10 {
+            result = -2;
+        } else {
+            result = -1;
+        }
+    } else {
+        if val > 10 {
+            result = 2;
+        } else {
+            result = 1;
+        }
+    }
+
+    // If with early return
+    if val == 999 {
+        return 999;
+    }
+
+    return result;
 }
 
 
-// Setup & Draw
-func setup() -> void {
- setCanvas(width: 800, height: 600);
- greet(name: playerName);
+// =============================================================================
+// 6. WHILE LOOP TESTS
+// =============================================================================
+
+func testWhileLoop() -> Int {
+    var count = 0;
+    var i = 0;
+
+    // Basic while loop
+    while i < 10 {
+        count = count + 1;
+        i = i + 1;
+    }
+
+    // While with break condition (early return)
+    var j = 0;
+    while j < 100 {
+        if j == 50 {
+            return j;
+        }
+        j = j + 1;
+    }
+
+    // Nested while loops
+    var outer = 0;
+    while outer < 3 {
+        var inner = 0;
+        while inner < 3 {
+            count = count + 1;
+            inner = inner + 1;
+        }
+        outer = outer + 1;
+    }
+
+    return count;
 }
 
 
-func draw() -> void {
- background(r: 255, g: 255, b: 255);
+// =============================================================================
+// 7. FOR LOOP TESTS
+// =============================================================================
 
+func testForLoop() -> Int {
+    var sum = 0;
 
- // Draw shapes
- setColor(r: 255, g: 0, b: 0);
- rect(x: 100, y: 100, width: 200, height: 100);
+    // Basic for loop
+    for i in 0.1..10.9 step 0.2 {
+        sum = sum + i;
+    }
 
+    // For loop with different range
+    for j in 5..15 {
+        sum = sum + 1;
+    }
 
- setColor(r: 0, g: 255, b: 0);
+    // Nested for loops
+    for x in 0..5 {
+        for y in 0..5 {
+            sum = sum + 1;
+        }
+    }
 
+    // For loop with early return
+    for k in 0..100 {
+        if k == 50 {
+            return k;
+        }
+    }
 
- // Draw player
- drawPlayer(x: x, y: y, size: 50);
-
-
- // Update score
- updateScore();
-
-
- // Loop
- for i in 0..5 {
-   setColor(r: i * 40, g: 100, b: 200);
-   circle(x: i * 100, y: 500, radius: 20);
- }
-
-
- while x < 300 {
-   x = x + 1;
- }
+    return sum;
 }
+
+
+// =============================================================================
+// 8. FUNCTION DECLARATION & CALL TESTS
+// =============================================================================
+
+// Function with no parameters, void return
+func noParamsVoidReturn() -> Void {
+    var x = 10;
+}
+
+// Function with parameters, int return
+func addNumbers(a: Int, b: Int) -> Int {
+    return a + b;
+}
+
+// Function with float parameters
+func multiplyFloats(x: Float, y: Float) -> Float {
+    return x * y;
+}
+
+// Function with boolean return
+func isPositive(num: Int) -> Bool {
+    return num > 0;
+}
+
+// Recursive function
+func factorial(n: Int) -> Int {
+    if n <= 1 {
+        return 1;
+    } else {
+        return n * factorial(n: n - 1);
+    }
+}
+
+// Function calling other functions
+func complexCalculation(a: Int, b: Int) -> Int {
+    var sum = addNumbers(a: a, b: b);
+    var doubled = addNumbers(a: sum, b: sum);
+    return doubled;
+}
+
+
+// =============================================================================
+// 9. BLOCK & SCOPE TESTS
+// =============================================================================
+
+func testScoping() -> Int {
+    var outer = 10;
+
+    {
+        var inner = 20;
+        outer = outer + inner;
+    }
+
+    if true {
+        var blockVar = 30;
+        outer = outer + blockVar;
+    }
+
+    return outer;
+}
+
+
+// =============================================================================
+// 10. EXPRESSION STATEMENT TESTS
+// =============================================================================
+
+func testExpressionStatements() -> Void {
+    // Function call as expression statement
+    addNumbers(a: 5, b: 10);
+
+    // Increment/decrement as expression statement
+    var x = 0;
+    x++;
+    ++x;
+    x--;
+    --x;
+
+    // Assignment as part of expression
+    var y = 0;
+    y = y + 1;
+}
+
+
+// =============================================================================
+// 11. RETURN STATEMENT TESTS
+// =============================================================================
+
+func testEarlyReturn(val: Int) -> Int {
+    if val < 0 {
+        return -1;
+    }
+
+    if val == 0 {
+        return 0;
+    }
+
+    return 1;
+}
+
+func testMultipleReturns(x: Int, y: Int) -> Int {
+    if x > y {
+        return x;
+    } else {
+        return y;
+    }
+}
+
+
+// =============================================================================
+// 12. LOCAL VARIABLE TESTS
+// =============================================================================
+
+func testLocalVariables() -> Int {
+    var local1 = 10;
+    var local2 = 20;
+    var local3 = local1 + local2;
+
+    local1 = 15;
+    local2 = local1 + 5;
+
+    return local1 + local2 + local3;
+}
+
+
+// =============================================================================
+// 13. COMPLEX NESTED TESTS
+// =============================================================================
+
+func complexNestedLogic(n: Int) -> Int {
+    var result = 0;
+
+    for i in 0..n {
+        if i / 2 == 0 {
+            var temp = 0;
+            while temp < i {
+                if temp / 3 == 0 {
+                    result = result + 1;
+                }
+                temp = temp + 1;
+            }
+        } else {
+            for j in 0..i {
+                result = result + j;
+            }
+        }
+    }
+
+    return result;
+}
+
+
+// =============================================================================
+// 14. EDGE CASE TESTS
+// =============================================================================
+
+func testEdgeCases() -> Int {
+    // Empty block
+    {
+    }
+
+    // Multiple empty blocks
+    if true {
+    }
+
+    while false {
+    }
+
+    // Deeply nested expressions
+    var complex = ((10 + 5) * (20 - 3)) / ((4 + 1) * 2);
+
+    // Chain of comparisons
+    var chain = 1 < 2 && 2 < 3 && 3 < 4;
+
+    // Complex boolean expressions
+    var boolExpr = (true || false) && (false || true) && !false;
+
+    return complex;
+}
+
+
+// =============================================================================
+// 15. TYPE PROMOTION TESTS
+// =============================================================================
+
+func testTypePromotion() -> Float {
+    var intVal = 10;
+    var floatVal = 3.14;
+
+    // Int promoted to float in various operations
+    var promoted1 = intVal + floatVal;
+    var promoted2 = floatVal - intVal;
+    var promoted3 = intVal * floatVal;
+    var promoted4 = floatVal / intVal;
+
+    // Comparison with promotion
+    var cmp1 = intVal > floatVal;
+    var cmp2 = floatVal == intVal;
+
+    return promoted1;
+}
+
+
+
+// =============================================================================
+// 16. VARIABLE EXPRESSION TESTS
+// =============================================================================
+
+func testVariableExpressions() -> Int {
+    var a = 10;
+    var b = 20;
+    var c = 30;
+
+    // Load variables multiple times
+    var sum1 = a + b;
+    var sum2 = b + c;
+    var sum3 = a + c;
+    var total = sum1 + sum2 + sum3;
+
+    // Use same variable multiple times
+    var squared = a * a;
+    var cubed = a * a * a;
+
+    return total;
+}
+
+
+// =============================================================================
+// 17. FUNCTION PARAMETER TESTS - Named vs Unnamed (Swift-style)
+// =============================================================================
+
+// All parameters require names at call site
+func multipleParams(p1: Int, p2: Int, p3: Int, p4: Int, p5: Int) -> Int {
+    return p1 + p2 + p3 + p4 + p5;
+}
+
+func mixedTypeParams(i: Int, f: Float, b: Bool) -> Int {
+    if b {
+        return i;
+    } else {
+        return 0;
+    }
+}
+
+// Mix of named and unnamed parameters
+func mixedNamedUnnamed(_ a: Int, b: Int, _ c: Int) -> Int {
+    // a and c are unnamed at call site (use _)
+    // b is named at call site
+    return a + b + c;
+}
+
+// External vs internal parameter names (like Swift)
+func externalInternal(start: Int, end: Int) -> Int {
+    // Called with: externalInternal(start: 0, end: 10)
+    // Inside function, use: start and end
+    return end - start;
+}
+
+// All unnamed parameters
+func allUnnamed(_ a: Int, _ b: Int, _ c: Int) -> Int {
+    return a + b + c;
+}
+
+
+
+// =============================================================================
+// 18. STRESS TESTS
+// =============================================================================
+
+func stressTestDeepNesting() -> Int {
+    var result = 0;
+
+    if true {
+        if true {
+            if true {
+                if true {
+                    if true {
+                        while result < 10 {
+                            for i in 0..5 {
+                                if i / 2 == 0 {
+                                    result = result + 1;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return result;
+}
+
+func stressTestManyVariables() -> Int {
+    var v1 = 1;
+    var v2 = 2;
+    var v3 = 3;
+    var v4 = 4;
+    var v5 = 5;
+    var v6 = 6;
+    var v7 = 7;
+    var v8 = 8;
+    var v9 = 9;
+    var v10 = 10;
+
+    return v1 + v2 + v3 + v4 + v5 + v6 + v7 + v8 + v9 + v10;
+}
+
+func stressTestLongExpressions() -> Int {
+    var result = 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 +
+                 11 + 12 + 13 + 14 + 15 + 16 + 17 + 18 + 19 + 20;
+
+    var product = 2 * 3 * 4 * 5;
+
+    var mixed = (1 + 2) * (3 + 4) - (5 + 6) / (7 - 5);
+
+    return result + product + mixed;
+}
+
+// =============================================================================
+// 19. REQUIRED LIFECYCLE FUNCTIONS
+// =============================================================================
+
+func setup() -> Void {
+    // Test global variable assignments
+    globalInt = 200;
+    globalFloat = 6.28;
+    globalBool = false;
+
+    // Initialize counter
+    globalCounter = 0;
+}
+
+func draw() -> Void {
+    // Call all test functions to exercise the IR generator
+    globalResult = testBinaryOperations();
+    globalResult = testUnaryOperations();
+    globalResult = testIncDec();
+    globalResult = testIfStatements(val: 5);
+    globalResult = testWhileLoop();
+    globalResult = testForLoop();
+
+    noParamsVoidReturn();
+    globalResult = addNumbers(a: 10, b: 20);
+    multiplyFloats(x: 3.14, y: 2.0);
+    isPositive(num: 10);
+    globalResult = factorial(n: 5);
+    globalResult = complexCalculation(a: 10, b: 20);
+    globalResult = testScoping();
+    testExpressionStatements();
+    globalResult = testEarlyReturn(val: 5);
+    globalResult = testMultipleReturns(x: 10, y: 20);
+    globalResult = testLocalVariables();
+    globalResult = complexNestedLogic(n: 10);
+    globalResult = testEdgeCases();
+    testTypePromotion();
+    globalResult = testVariableExpressions();
+
+    // Test named parameters
+    globalResult = multipleParams(p1: 1, p2: 2, p3: 3, p4: 4, p5: 5);
+    globalResult = mixedTypeParams(i: 42, f: 3.14, b: true);
+
+    // Test mixed named/unnamed
+    globalResult = mixedNamedUnnamed(5, b: 10, 15);
+
+    // Test external/internal names
+    globalResult = externalInternal(start: 0, end: 100);
+
+    // Test all unnamed
+    globalResult = allUnnamed(1, 2, 3);
+
+    globalResult = stressTestDeepNesting();
+    globalResult = stressTestManyVariables();
+    globalResult = stressTestLongExpressions();
+
+    globalCounter = globalCounter + 1;
+}
+
+func main() -> Void {
+    setup();
+    draw();
+}
+

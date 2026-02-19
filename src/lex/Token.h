@@ -60,22 +60,22 @@ struct BooleanLiteral {
 enum class Operator {
     Assignment, // =
 
-    Plus,       // +
-    PlusPlus,   // ++
-    Minus,      // -
+    Plus, // +
+    PlusPlus, // ++
+    Minus, // -
     MinusMinus, // --
-    Star,       // *
-    Slash,      // /
+    Star, // *
+    Slash, // /
 
-    And,         // &&
-    Or,          // ||
-    Equal,       // ==
-    NotEqual,    // !=
+    LogicalAnd, // &&
+    LogicalOr, // ||
+    Equal, // ==
+    NotEqual, // !=
     Exclamation, // !
 
-    LessThan,     // <
-    LessEqual,    // <=
-    GreaterThan,  // >
+    LessThan, // <
+    LessEqual, // <=
+    GreaterThan, // >
     GreaterEqual, // >=
 };
 
@@ -155,26 +155,26 @@ static const std::unordered_map<std::string, TokenType> keywords = {
     {"in", Keyword::In},
     {"step", Keyword::Step},
 
-    {"int", Type::Int},
-    {"float", Type::Float},
-    {"bool", Type::Boolean},
-    {"ptr", Type::Ptr},
-    {"string", Type::String},
+    {"Int", Type::Int},
+    {"Float", Type::Float},
+    {"Bool", Type::Boolean},
+    {"Ptr", Type::Ptr},
+    {"String", Type::String},
     {"Color", Type::Color},
-    {"void", Type::Void},
+    {"Void", Type::Void},
 
     {"true", BooleanLiteral{true}},
     {"false", BooleanLiteral{false}},
 };
 
 struct TokenMetadata {
-    int         line;
-    int         col;
+    int line;
+    int col;
     std::string lexeme;
 };
 
 struct Token {
-    TokenType     type;
+    TokenType type;
     TokenMetadata metadata{};
 
     Token() = default;

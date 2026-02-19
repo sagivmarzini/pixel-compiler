@@ -28,6 +28,8 @@ struct IntegerLiteralNode final : Expression {
     }
 
     void accept(AstVisitor& visitor) override;
+
+    llvm::Value* acceptIR(IRGeneratorLLVM& visitor) override;
 };
 
 struct FloatLiteralNode final : Expression {
@@ -37,6 +39,8 @@ struct FloatLiteralNode final : Expression {
     }
 
     void accept(AstVisitor& visitor) override;
+
+    llvm::Value* acceptIR(IRGeneratorLLVM& visitor) override;
 };
 
 struct StringLiteralNode final : Expression {
@@ -47,6 +51,8 @@ struct StringLiteralNode final : Expression {
     }
 
     void accept(AstVisitor& visitor) override;
+
+    llvm::Value* acceptIR(IRGeneratorLLVM& visitor) override;
 };
 
 struct BooleanLiteralNode final : Expression {
@@ -56,6 +62,8 @@ struct BooleanLiteralNode final : Expression {
     }
 
     void accept(AstVisitor& visitor) override;
+
+    llvm::Value* acceptIR(IRGeneratorLLVM& visitor) override;
 };
 
 // Binary operations (e.g., a + b, x * y)
@@ -70,6 +78,8 @@ struct BinaryExpression final : Expression {
     }
 
     void accept(AstVisitor& visitor) override;
+
+    llvm::Value* acceptIR(IRGeneratorLLVM& visitor) override;
 };
 
 struct UnaryExpression final : Expression {
@@ -81,6 +91,8 @@ struct UnaryExpression final : Expression {
     }
 
     void accept(AstVisitor& visitor) override;
+
+    llvm::Value* acceptIR(IRGeneratorLLVM& visitor) override;
 };
 
 // increment and decrement expressions ++ and --
@@ -91,23 +103,28 @@ struct IncDecExpression final : Expression {
         Prefix,
         Postfix
     } fix;
+    Symbol* symbol = nullptr;
 
     IncDecExpression(const TokenMetadata& metadata ,const std::string& varName, const Operator op, const Fix fixPos)
         : Expression(metadata), variableName(varName), op(op), fix(fixPos) {
     }
 
     void accept(AstVisitor &visitor) override;
+
+    llvm::Value* acceptIR(IRGeneratorLLVM &visitor) override;
 };
 
 // Variable reference
-struct IdentifierNode final : Expression {
+struct VariableExpression final : Expression {
     std::string name;
     Symbol*     symbol = nullptr;
 
-    IdentifierNode(const TokenMetadata& metadata, std::string name) : Expression(metadata), name(std::move(name)) {
+    VariableExpression(const TokenMetadata& metadata, std::string name) : Expression(metadata), name(std::move(name)) {
     }
 
     void accept(AstVisitor& visitor) override;
+
+    llvm::Value* acceptIR(IRGeneratorLLVM& visitor) override;
 };
 
 // Function call
@@ -129,6 +146,8 @@ struct FunctionCall final : Expression {
     }
 
     void accept(AstVisitor& visitor) override;
+
+    llvm::Value* acceptIR(IRGeneratorLLVM& visitor) override;
 };
 
 struct RangeExpression final : Expression {
@@ -140,6 +159,8 @@ struct RangeExpression final : Expression {
     }
 
     void accept(AstVisitor& visitor) override;
+
+    llvm::Value* acceptIR(IRGeneratorLLVM& visitor) override;
 };
 
 #endif //COMPILER_PROJECT_EXPRESSION_H

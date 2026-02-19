@@ -169,7 +169,7 @@ std::vector<Token> Lexer::lex() {
                     if (peekNext() == '&') {
                         eat();
                         eat();
-                        token = Token(Operator::And, _line, _col - 1, std::string{current});
+                        token = Token(Operator::LogicalAnd, _line, _col - 1, std::string{current});
                     } else {
                         eat();
                         error(LexerErrorType::UnexpectedChar, _line, _col - 1, std::string{current});
@@ -179,7 +179,7 @@ std::vector<Token> Lexer::lex() {
                     if (peekNext() == '|') {
                         eat();
                         eat();
-                        token = Token(Operator::Or, _line, _col - 1, std::string{current});
+                        token = Token(Operator::LogicalOr, _line, _col - 1, std::string{current});
                     } else {
                         eat();
                         error(LexerErrorType::UnexpectedChar, _line, _col - 1, std::string{current});

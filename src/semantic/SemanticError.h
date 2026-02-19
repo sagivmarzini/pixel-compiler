@@ -87,6 +87,10 @@ enum class SemanticErrorType {
     // Operators
     OperatorNotDefined,    // e.g. "String - String"
     UnaryOperatorMismatch, // e.g. "!5"
+
+    // Declaration pass
+    ParameterRedeclaration,
+    MissingMainFunction,
 };
 
 class SemanticError : public CompilerError {

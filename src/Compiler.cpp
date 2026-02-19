@@ -1,5 +1,7 @@
 #include "Compiler.h"
 
+#include <format>
+
 #include "semantic/SymbolPool.h"
 #include "semantic/SymbolTable.h"
 #include <fstream>
@@ -7,6 +9,7 @@
 #include <sstream>
 #include <utility>
 
+#include "IR/IRGeneratorLLVM.h"
 #include "parse/AST/AstPrinter.h"
 #include "semantic/DeclarationPassVisitor.h"
 #include "semantic/TypeCheckerVisitor.h"
@@ -28,26 +31,26 @@ void Compiler::compile() const {
     Lexer lexer(_sourceCode);
 
     const auto tokens = lexer.lex();
-    // printTokens(tokens);
 
     // Parsing
     Parser parser(tokens);
-    auto ast = parser.parseProgram();
+    auto   ast = parser.parseProgram();
 
     AstPrinter printer;
 
     // Semantic analyzing
-    SymbolPool symbols;
+    SymbolPool  symbols;
     SymbolTable symbolTable(symbols);
 
     DeclarationPassVisitor declPass(symbolTable);
     declPass.run(ast);
-    // printer.print(ast);
-    // std::cout << "================================\n\n";
 
     TypeCheckerVisitor typeChecker(symbolTable);
     typeChecker.run(ast);
-    printer.print(ast);
+
+    IRGeneratorLLVM generator;
+    generator.visit(ast);
+    generator.print();
 }
 
 void Compiler::printTokens(const std::vector<Token>& tokens) {

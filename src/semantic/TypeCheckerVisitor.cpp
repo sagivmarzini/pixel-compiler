@@ -1,5 +1,6 @@
 #include "TypeCheckerVisitor.h"
 
+#include <format>
 #include <set>
 
 
@@ -48,6 +49,10 @@ void TypeCheckerVisitor::visit(Program& program) {
     _symbolTable.setCurrentScope(program.scope);
     for (const auto& stmt: program.statements) {
         stmt->accept(*this);
+    }
+
+    if (!_symbolTable.lookup("main")) {
+        logError(SemanticErrorType::MissingMainFunction, program);
     }
 }
 
@@ -116,7 +121,7 @@ void TypeCheckerVisitor::visit(RangeExpression& node) {
         return;
     }
 
-    node.type = Type::Int;
+    node.type = getPromotedType(startType, endType);
 }
 
 void TypeCheckerVisitor::visit(Block& node) {
@@ -168,7 +173,7 @@ void TypeCheckerVisitor::visit(FunctionCall& node) {
 
     node.type = calledFunction->type;
     std::set<std::string> seenParams;
-    int index = 0;
+    int                   index = 0;
 
     for (const auto& argument: node.arguments) {
         auto& parameter = calledFunction->params.at(index);
@@ -180,7 +185,8 @@ void TypeCheckerVisitor::visit(FunctionCall& node) {
             if (parameter.name != argName) {
                 if (calledFunction->getParameterByName(argName)) {
                     // invalid pos
-                    logError(SemanticErrorType::InvalidArgumentPosition, node, ArgumentPositionData(node.arguments, calledFunction->params));
+                    logError(SemanticErrorType::InvalidArgumentPosition, node,
+                             ArgumentPositionData(node.arguments, calledFunction->params));
                     return;
                 }
 
@@ -191,19 +197,19 @@ void TypeCheckerVisitor::visit(FunctionCall& node) {
             // nameless argument
             if (!parameter.isImplicit) {
                 logError(SemanticErrorType::MissingArgumentLabel, node, parameter.name
-);
+                );
             }
         }
         // Check for duplicate named arguments
         if (seenParams.contains(parameter.name
-)) {
+        )) {
             logError(SemanticErrorType::DuplicateParameterName, node, parameter.name
-);
+            );
             return;
         }
         seenParams.insert(parameter.name
-);
-        
+        );
+
         // Visit the argument expression to resolve its type
         argument.value->accept(*this);
 
@@ -256,14 +262,23 @@ void TypeCheckerVisitor::visit(BinaryExpression& node) {
 
         // Comparison and Equality Operators (=, !=, <, >, <=, >=)
         case Operator::Equal:
-        case Operator::NotEqual:
+        case Operator::NotEqual: {
+            // Comparison is valid for numerics and strings (lexicographical)
+            if (areComparableTypes(leftType, rightType) || isBoolean(leftType) && isBoolean(rightType)) {
+                node.type = Type::Boolean; // The result of comparison is always boolean
+            } else {
+                logError(SemanticErrorType::TypeMismatch, node, OperatorData(node.op, leftType, rightType));
+                return;
+            }
+            break;
+        }
         case Operator::LessThan:
         case Operator::GreaterThan:
         case Operator::LessEqual:
         case Operator::GreaterEqual: {
             // Comparison is valid for numerics and strings (lexicographical)
             if (areComparableTypes(leftType, rightType)) {
-                node.type = Type::Boolean; // Result of comparison is always boolean
+                node.type = Type::Boolean; // The result of comparison is always boolean
             } else {
                 logError(SemanticErrorType::TypeMismatch, node, OperatorData(node.op, leftType, rightType));
                 return;
@@ -272,8 +287,8 @@ void TypeCheckerVisitor::visit(BinaryExpression& node) {
         }
 
         // Logical Operators (&&, ||)
-        case Operator::And:
-        case Operator::Or: {
+        case Operator::LogicalAnd:
+        case Operator::LogicalOr: {
             // Logical operators only work on booleans
             if (isBoolean(leftType) && isBoolean(rightType)) {
                 node.type = Type::Boolean; // Result is always boolean
@@ -328,12 +343,13 @@ void TypeCheckerVisitor::visit(UnaryExpression& node) {
     }
 }
 
-void TypeCheckerVisitor::visit(IncDecExpression &node) {
+void TypeCheckerVisitor::visit(IncDecExpression& node) {
     auto operand = _symbolTable.lookup(node.variableName);
     if (!operand) {
         logError(SemanticErrorType::UndefinedIdentifier, node);
         return;
     }
+    node.symbol = operand;
 
     switch (node.op) {
         case Operator::PlusPlus:
@@ -363,6 +379,7 @@ void TypeCheckerVisitor::visit(VariableAssignment& node) {
         logError(SemanticErrorType::UndefinedIdentifier, node);
         return;
     }
+    node.symbol = symbol;
 
     if (symbol->isConst) {
         logError(SemanticErrorType::ReadOnlyAssignment, node);
@@ -404,7 +421,7 @@ void TypeCheckerVisitor::visit(BooleanLiteralNode& node) {
     node.type = Type::Boolean;
 }
 
-void TypeCheckerVisitor::visit(IdentifierNode& node) {
+void TypeCheckerVisitor::visit(VariableExpression& node) {
     if (!node.symbol) {
         // Only look up if we haven't already
         node.symbol = _symbolTable.lookup(node.name);

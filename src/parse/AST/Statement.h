@@ -29,17 +29,22 @@ struct VariableDeclaration : Statement {
     }
 
     void accept(AstVisitor& visitor) override;
+
+    llvm::Value* acceptIR(IRGeneratorLLVM& visitor) override;
 };
 
 struct VariableAssignment : Statement {
     std::string                 varName;
     std::unique_ptr<Expression> assignedValue;
+    Symbol*                     symbol = nullptr;
 
     VariableAssignment(const TokenMetadata& metadata, std::string name, std::unique_ptr<Expression> value)
         : Statement(metadata), varName(std::move(name)), assignedValue(std::move(value)) {
     }
 
     void accept(AstVisitor& visitor) override;
+
+    llvm::Value* acceptIR(IRGeneratorLLVM& visitor) override;
 };
 
 // Return statement
@@ -51,18 +56,22 @@ struct ReturnStatement : Statement {
     }
 
     void accept(AstVisitor& visitor) override;
+
+    llvm::Value* acceptIR(IRGeneratorLLVM& visitor) override;
 };
 
 // Block (compound statement)
 struct Block : Statement {
-    std::vector<std::unique_ptr<Statement> > statements;
-    Scope*                                   scope;
+    std::vector<std::unique_ptr<Statement>> statements;
+    Scope*                                  scope;
 
-    explicit Block(const TokenMetadata& metadata, std::vector<std::unique_ptr<Statement> > stmts = {})
+    explicit Block(const TokenMetadata& metadata, std::vector<std::unique_ptr<Statement>> stmts = {})
         : Statement(metadata), statements(std::move(stmts)), scope(nullptr) {
     }
 
     void accept(AstVisitor& visitor) override;
+
+    llvm::Value* acceptIR(IRGeneratorLLVM& visitor) override;
 };
 
 // While loop
@@ -75,10 +84,13 @@ struct WhileLoop : Statement {
     }
 
     void accept(AstVisitor& visitor) override;
+
+    llvm::Value* acceptIR(IRGeneratorLLVM& visitor) override;
 };
 
 struct ForLoop : Statement {
     std::string                      identifier;
+    Symbol*                          symbol = nullptr;
     std::unique_ptr<RangeExpression> range;
     std::unique_ptr<Expression>      step;
     std::unique_ptr<Statement>       body;
@@ -90,6 +102,8 @@ struct ForLoop : Statement {
     }
 
     void accept(AstVisitor& visitor) override;
+
+    llvm::Value* acceptIR(IRGeneratorLLVM& visitor) override;
 };
 
 // If statement
@@ -106,6 +120,8 @@ struct IfStatement : Statement {
     }
 
     void accept(AstVisitor& visitor) override;
+
+    llvm::Value* acceptIR(IRGeneratorLLVM& visitor) override;
 };
 
 
@@ -115,6 +131,7 @@ struct FunctionDeclaration : Statement {
         std::string name;
         Type        type;
         bool isImplicit;
+        Symbol*     symbol = nullptr;
 
         FunctionParameter(std::string name, const Type type, bool isImplicit = false)
             : name(std::move(name)), type(type), isImplicit(isImplicit) {
@@ -134,6 +151,8 @@ struct FunctionDeclaration : Statement {
     }
 
     void accept(AstVisitor& visitor) override;
+
+    llvm::Value* acceptIR(IRGeneratorLLVM& visitor) override;
 };
 
 struct ExpressionStatement : Statement {
@@ -144,6 +163,8 @@ struct ExpressionStatement : Statement {
     }
 
     void accept(AstVisitor& visitor) override;
+
+    llvm::Value* acceptIR(IRGeneratorLLVM& visitor) override;
 };
 
 

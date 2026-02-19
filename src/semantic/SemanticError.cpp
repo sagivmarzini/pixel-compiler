@@ -129,6 +129,12 @@ SemanticError::SemanticError(SemanticErrorType type, const AstNode& node, ErrorC
         default:
             prefix = "semantic error";
             break;
+        case SemanticErrorType::ParameterRedeclaration:
+            prefix = "Function parameter declared more than once";
+            break;
+        case SemanticErrorType::MissingMainFunction:
+            prefix = "No main function found";
+            break;
     }
 
     // 3. Construct the Final Message
