@@ -4,9 +4,11 @@
 #include <memory>
 #include <utility>
 #include <vector>
+#include <llvm/IR/Value.h>
+
 #include "lex/Token.h"
 
-
+class IRGeneratorLLVM;
 class Scope;
 class Statement;
 class AstVisitor;
@@ -18,7 +20,8 @@ struct AstNode {
 
     virtual ~AstNode() = default;
 
-    virtual void accept(AstVisitor& visitor) = 0; // For visitor pattern
+    virtual void         accept(AstVisitor& visitor) = 0; // For visitor pattern
+    virtual llvm::Value* acceptIR(IRGeneratorLLVM& visitor) = 0;
 
     TokenMetadata metadata;
 };
@@ -32,9 +35,10 @@ struct Program final : AstNode {
         : AstNode(metadata) {
     }
 
-    void accept(AstVisitor& visitor) override;
-
     void addDeclaration(std::unique_ptr<Statement> statement);
+
+    void accept(AstVisitor& visitor) override;
+    llvm::Value* acceptIR(IRGeneratorLLVM& visitor) override;
 };
 
 #endif //COMPILER_PROJECT_ASTNODE_H

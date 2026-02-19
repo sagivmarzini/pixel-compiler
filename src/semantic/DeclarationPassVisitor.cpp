@@ -24,21 +24,28 @@ void DeclarationPassVisitor::visit(Program& program) {
 }
 
 void DeclarationPassVisitor::visit(FunctionDeclaration& node) {
-    auto symbol = _symbolTable.declare(node.name, Symbol::SymbolKind::Function, node.returnType);
+    const auto symbol = _symbolTable.declare(node.name, Symbol::SymbolKind::Function, node.returnType);
     if (!symbol) {
         logError(SemanticErrorType::DuplicateDeclaration, node, node.name);
+        return;
     }
     node.symbol = symbol;
 
     enterScope();
-    for (const auto& param: node.parameters) {
+    for (auto& param : node.parameters) {
         symbol->params.push_back(param);
-        if (!_symbolTable.declare(param.name, Symbol::SymbolKind::Parameter, param.type)) {
-            logError(SemanticErrorType::DuplicateDeclaration, node, param.name);
+
+        Symbol* paramSymbol = _symbolTable.declare(param.name, Symbol::SymbolKind::Parameter, param.type);
+
+        if (!paramSymbol) {
+            logError(SemanticErrorType::ParameterRedeclaration, node, param.name);
+        }
+        else {
+            param.symbol = paramSymbol;
         }
     }
-    node.body->accept(*this);
 
+    node.body->accept(*this);
     exitScope();
 }
 
@@ -62,9 +69,12 @@ void DeclarationPassVisitor::visit(WhileLoop& node) {
 
 void DeclarationPassVisitor::visit(ForLoop& node) {
     enterScope();
-    if (!_symbolTable.declare(node.identifier, Symbol::SymbolKind::Variable, Type::Int)) {
+
+    const auto symbol = _symbolTable.declare(node.identifier, Symbol::SymbolKind::Variable, Type::Int);
+    if (!symbol) {
         logError(SemanticErrorType::DuplicateDeclaration, node, node.identifier);
     }
+    node.symbol = symbol;
     node.body->accept(*this);
     exitScope();
 }
@@ -72,7 +82,7 @@ void DeclarationPassVisitor::visit(ForLoop& node) {
 void DeclarationPassVisitor::visit(Block& node) {
     enterScope();
     node.scope = _symbolTable.getCurrentScope();
-    for (const auto& stmt: node.statements) {
+    for (const auto& stmt : node.statements) {
         stmt->accept(*this);
     }
     exitScope();
@@ -128,7 +138,7 @@ void DeclarationPassVisitor::visit(BooleanLiteralNode& node) {
     // nothing to do in declaration pass
 }
 
-void DeclarationPassVisitor::visit(IdentifierNode& node) {
+void DeclarationPassVisitor::visit(VariableExpression& node) {
     // nothing to do in declaration pass
 }
 

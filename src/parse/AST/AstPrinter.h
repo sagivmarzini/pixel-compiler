@@ -36,9 +36,9 @@ private:
 
     void visit(UnaryExpression& node) override;
 
-    void visit(IncDecExpression &node) override;
+    void visit(VariableExpression& node) override;
 
-    void visit(IdentifierNode& node) override;
+    void visit(IncDecExpression &node) override;
 
     void visit(FunctionCall& node) override;
 

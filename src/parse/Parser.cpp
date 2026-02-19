@@ -289,7 +289,7 @@ std::unique_ptr<Expression> Parser::parseBooleanOrExpression() {
     const auto startPosition = peek().metadata;
     auto       left          = parseBooleanAndExpression();
 
-    while (checkValue(Operator::Or)) {
+    while (checkValue(Operator::LogicalOr)) {
         auto op    = expect<Operator>();
         auto right = parseBooleanAndExpression();
 
@@ -302,7 +302,7 @@ std::unique_ptr<Expression> Parser::parseBooleanAndExpression() {
     const auto startPosition = peek().metadata;
     auto       left          = parseBooleanEqualityExpression();
 
-    while (checkValue(Operator::And)) {
+    while (checkValue(Operator::LogicalAnd)) {
         auto op    = expect<Operator>();
         auto right = parseBooleanEqualityExpression();
 
@@ -393,7 +393,7 @@ std::unique_ptr<Expression> Parser::parseIncDecExpression() {
     auto expr = parsePrimary();
 
     while (checkValue(Operator::PlusPlus) || checkValue(Operator::MinusMinus)) {
-        if (auto var = dynamic_cast<IdentifierNode*>(expr.get())) {
+        if (auto var = dynamic_cast<VariableExpression*>(expr.get())) {
             auto op     = expect<Operator>();
             auto fixPos = IncDecExpression::Fix::Postfix;
             expr        = std::make_unique<IncDecExpression>(peekPrevious().metadata, var->name, op, fixPos);
@@ -420,7 +420,15 @@ std::unique_ptr<Expression> Parser::parsePrimary() {
     if (check<Identifier>()) {
         if (checkNext<LParen>()) return parseFunctionCall();
 
-        return std::make_unique<IdentifierNode>(peekPrevious().metadata, expect<Identifier>().name);
+        auto variable = std::make_unique<VariableExpression>(peekPrevious().metadata, expect<Identifier>().name);
+
+        if (checkValue(Operator::PlusPlus) || checkValue(Operator::MinusMinus)) {
+            auto op = expect<Operator>();
+            // Wrap the identifier in a UnaryExpression if a postfix operator is found
+            return std::make_unique<UnaryExpression>(variable->metadata, std::move(variable), op);
+        }
+
+        return variable;
     }
     if (check<LParen>()) {
         expect<LParen>();

@@ -108,9 +108,9 @@ void AstPrinter::visit(IncDecExpression &node) {
     std::cout << "PostfixExpression: " << node.variableName << " " << node.op << "\n";
 }
 
-void AstPrinter::visit(IdentifierNode& node) {
+void AstPrinter::visit(VariableExpression& node) {
     printIndent();
-    std::cout << "Identifier: " << node.name << "\n";
+    std::cout << "Variable: " << node.name << "\n";
 }
 
 void AstPrinter::visit(FunctionCall& node) {

@@ -12,6 +12,8 @@ public:
     using SemanticVisitor::SemanticVisitor; // inherit constructor
 
     void run(AstNode& root) override;
+    // Returns the bigger type of the two (float > int, int > short, etc.)
+    static Type getPromotedType(Type leftType, Type rightType);
 
 private:
     Type _currentFunctionReturnType = Type::Unspecified;
@@ -28,9 +30,6 @@ private:
     static bool isBoolean(Type type);
 
     static bool isAssignableTo(Type assignedType, Type variableType);
-
-    // Returns the bigger type of the two (float > int, int > short, etc.)
-    static Type getPromotedType(Type leftType, Type rightType);
 
     void visit(Program& program) override;
 
@@ -70,7 +69,7 @@ private:
 
     void visit(BooleanLiteralNode& node) override;
 
-    void visit(IdentifierNode& node) override;
+    void visit(VariableExpression& node) override;
 };
 
 

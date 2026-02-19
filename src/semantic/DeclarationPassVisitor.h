@@ -48,7 +48,7 @@ private:
 
     void visit(BooleanLiteralNode& node) override;
 
-    void visit(IdentifierNode& node) override;
+    void visit(VariableExpression& node) override;
 
     void visit(RangeExpression& node) override;
 

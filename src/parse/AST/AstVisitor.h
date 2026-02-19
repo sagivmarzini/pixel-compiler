@@ -10,8 +10,8 @@ struct StringLiteralNode;
 struct BooleanLiteralNode;
 struct BinaryExpression;
 struct UnaryExpression;
+struct VariableExpression;
 struct IncDecExpression;
-struct IdentifierNode;
 struct FunctionCall;
 struct VariableDeclaration;
 struct VariableAssignment;
@@ -23,7 +23,6 @@ struct FunctionDeclaration;
 
 struct Program;
 
-// TODO: Templated visitor with return type - AstVisitor<void> - template<typename R> class AstVisitor
 class AstVisitor {
 public:
     virtual ~AstVisitor() = default;
@@ -62,7 +61,7 @@ public:
 
     virtual void visit(BooleanLiteralNode& node) = 0;
 
-    virtual void visit(IdentifierNode& node) = 0;
+    virtual void visit(VariableExpression& node) = 0;
 
     virtual void visit(RangeExpression& node) = 0;
 

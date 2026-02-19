@@ -43,8 +43,8 @@ std::string operatorToString(Operator op) {
         case Operator::MinusMinus: return "--";
         case Operator::Star: return "*";
         case Operator::Slash: return "/";
-        case Operator::And: return "&&";
-        case Operator::Or: return "||";
+        case Operator::LogicalAnd: return "&&";
+        case Operator::LogicalOr: return "||";
         case Operator::Equal: return "==";
         case Operator::NotEqual: return "!=";
         case Operator::Exclamation: return "!";
