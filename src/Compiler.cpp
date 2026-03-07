@@ -41,6 +41,7 @@ void Compiler::compile() const {
     // Semantic analyzing
     SymbolPool  symbols;
     SymbolTable symbolTable(symbols);
+    symbolTable.declareBuiltinFunctions(_builtinFunctions);
 
     DeclarationPassVisitor declPass(symbolTable);
     declPass.run(ast);
@@ -48,9 +49,11 @@ void Compiler::compile() const {
     TypeCheckerVisitor typeChecker(symbolTable);
     typeChecker.run(ast);
 
-    IRGeneratorLLVM generator;
+    IRGeneratorLLVM generator(_builtinFunctions);
     generator.visit(ast);
     generator.print();
+
+    generator.createExecutable("../out");
 }
 
 void Compiler::printTokens(const std::vector<Token>& tokens) {

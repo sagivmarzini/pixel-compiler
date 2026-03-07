@@ -7,6 +7,7 @@
 #include "Symbol.h"
 #include "Scope.h"
 
+struct FunctionSignature;
 class SymbolPool;
 
 class SymbolTable {
@@ -25,35 +26,15 @@ public:
 
     [[nodiscard]] Symbol* declare(const std::string& name, Symbol::SymbolKind kind, Type type,
                                   bool               isConst = false) const;
-    void declareBuiltins();
+
+    void declareBuiltinFunctions(
+        const std::unordered_map<std::string, FunctionSignature>& declarations)
+    const;
 
 private:
     Scope*                               _currentScope;
     SymbolPool&                          _pool;
     std::vector<std::unique_ptr<Scope> > _scopes;
-    std::unordered_map<std::string, std::vector<FunctionDeclaration::FunctionParameter>> _builtinFunctions = {
-        {"print", {{"str", Type::String, true}}},
-
-        {"setCanvas" , {{"width", Type::Int},
-                                {"height", Type::Int}}},
-
-        {"background", {{"r", Type::Int},
-                            {"g", Type::Int},
-                            {"b", Type::Int}}},
-
-        {"setColor", {{"r", Type::Int},
-                            {"g", Type::Int},
-                            {"b", Type::Int}}},
-
-        {"rect", {{"x", Type::Int},
-                            {"y", Type::Int},
-                            {"width", Type::Int},
-                            {"height", Type::Int}}},
-
-        {"circle", {{"x", Type::Int},
-                            {"y", Type::Int},
-                            {"radius", Type::Int}}}
-    };
 };
 
 

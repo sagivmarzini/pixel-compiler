@@ -328,11 +328,40 @@ Token Lexer::parseStringLiteral() {
             return Token{};
         }
 
+
         string += eat();
     }
     eat(); // eat closing quotes
 
+    string = processEscapeSequences(string);
     return Token(StringLiteral{string}, _line, _col - 1, string);
+}
+
+std::string Lexer::processEscapeSequences(const std::string& input) {
+    std::string result;
+    result.reserve(input.length());
+    for (size_t i = 0; i < input.length(); ++i) {
+        if (input[i] == '\\' && i + 1 < input.length()) {
+            switch (input[i + 1]) {
+                case 'n': result += '\n';
+                    break;
+                case 't': result += '\t';
+                    break;
+                case 'r': result += '\r';
+                    break;
+                case '\\': result += '\\';
+                    break;
+                case '\"': result += '\"';
+                    break;
+                default: result += input[i + 1];
+                    break;
+            }
+            i++; // Skip the character after the backslash
+        } else {
+            result += input[i];
+        }
+    }
+    return result;
 }
 
 void Lexer::error(const LexerErrorType& type, int line, int col, const std::string& lexeme) {

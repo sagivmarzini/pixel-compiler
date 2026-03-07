@@ -5,7 +5,7 @@
 #include "Statement.h"
 #include "semantic/Symbol.h"
 
-void AstPrinter::print(AstNode& root) {
+void AstPrinter::print(AST::AstNode& root) {
     _indent = 0;
     root.accept(*this);
 }
@@ -56,7 +56,7 @@ std::string AstPrinter::symbolKindToString(Symbol::SymbolKind kind) {
     }
 }
 
-void AstPrinter::visit(Program& program) {
+void AstPrinter::visit(AST::Program& program) {
     printIndent();
     std::cout << "Program\n";
     _indent++;
@@ -66,27 +66,27 @@ void AstPrinter::visit(Program& program) {
     _indent--;
 }
 
-void AstPrinter::visit(IntegerLiteralNode& node) {
+void AstPrinter::visit(AST::IntegerLiteralNode& node) {
     printIndent();
     std::cout << "IntegerLiteral: " << node.value << "\n";
 }
 
-void AstPrinter::visit(FloatLiteralNode& node) {
+void AstPrinter::visit(AST::FloatLiteralNode& node) {
     printIndent();
     std::cout << "FloatLiteral: " << node.value << "\n";
 }
 
-void AstPrinter::visit(StringLiteralNode& node) {
+void AstPrinter::visit(AST::StringLiteralNode& node) {
     printIndent();
     std::cout << "StringLiteral: \"" << node.value << "\"\n";
 }
 
-void AstPrinter::visit(BooleanLiteralNode& node) {
+void AstPrinter::visit(AST::BooleanLiteralNode& node) {
     printIndent();
     std::cout << "BooleanLiteral: " << (node.value ? "true" : "false") << "\n";
 }
 
-void AstPrinter::visit(BinaryExpression& node) {
+void AstPrinter::visit(AST::BinaryExpression& node) {
     printIndent();
     std::cout << "BinaryExpression: " << node.op << "\n";
     _indent++;
@@ -95,7 +95,7 @@ void AstPrinter::visit(BinaryExpression& node) {
     _indent--;
 }
 
-void AstPrinter::visit(UnaryExpression& node) {
+void AstPrinter::visit(AST::UnaryExpression& node) {
     printIndent();
     std::cout << "UnaryExpression: " << node.op << "\n";
     _indent++;
@@ -103,17 +103,17 @@ void AstPrinter::visit(UnaryExpression& node) {
     _indent--;
 }
 
-void AstPrinter::visit(IncDecExpression &node) {
+void AstPrinter::visit(AST::IncDecExpression& node) {
     printIndent();
     std::cout << "PostfixExpression: " << node.variableName << " " << node.op << "\n";
 }
 
-void AstPrinter::visit(VariableExpression& node) {
+void AstPrinter::visit(AST::VariableExpression& node) {
     printIndent();
     std::cout << "Variable: " << node.name << "\n";
 }
 
-void AstPrinter::visit(FunctionCall& node) {
+void AstPrinter::visit(AST::FunctionCall& node) {
     printIndent();
     std::cout << "FunctionCall: " << node.functionName << "\n";
     _indent++;
@@ -127,7 +127,7 @@ void AstPrinter::visit(FunctionCall& node) {
     _indent--;
 }
 
-void AstPrinter::visit(VariableDeclaration& node) {
+void AstPrinter::visit(AST::VariableDeclaration& node) {
     printIndent();
     std::cout << "VariableDeclaration: " << node.name << " : " << node.specifiedType << "\n";
 
@@ -148,7 +148,7 @@ void AstPrinter::visit(VariableDeclaration& node) {
     }
 }
 
-void AstPrinter::visit(VariableAssignment& node) {
+void AstPrinter::visit(AST::VariableAssignment& node) {
     printIndent();
     std::cout << "VariableAssignment: " << node.varName << "\n";
     _indent++;
@@ -156,7 +156,7 @@ void AstPrinter::visit(VariableAssignment& node) {
     _indent--;
 }
 
-void AstPrinter::visit(ReturnStatement& node) {
+void AstPrinter::visit(AST::ReturnStatement& node) {
     printIndent();
     std::cout << "ReturnStatement\n";
     _indent++;
@@ -164,7 +164,7 @@ void AstPrinter::visit(ReturnStatement& node) {
     _indent--;
 }
 
-void AstPrinter::visit(ExpressionStatement& node) {
+void AstPrinter::visit(AST::ExpressionStatement& node) {
     printIndent();
     std::cout << "ExpressionStatement\n";
     _indent++;
@@ -172,7 +172,7 @@ void AstPrinter::visit(ExpressionStatement& node) {
     _indent--;
 }
 
-void AstPrinter::visit(Block& node) {
+void AstPrinter::visit(AST::Block& node) {
     printIndent();
     std::cout << "Block\n";
     _indent++;
@@ -182,7 +182,7 @@ void AstPrinter::visit(Block& node) {
     _indent--;
 }
 
-void AstPrinter::visit(WhileLoop& node) {
+void AstPrinter::visit(AST::WhileLoop& node) {
     printIndent();
     std::cout << "WhileLoop\n";
     _indent++;
@@ -199,7 +199,7 @@ void AstPrinter::visit(WhileLoop& node) {
     _indent--;
 }
 
-void AstPrinter::visit(ForLoop& node) {
+void AstPrinter::visit(AST::ForLoop& node) {
     printIndent();
     std::cout << "ForLoop\n";
     _indent++;
@@ -228,7 +228,7 @@ void AstPrinter::visit(ForLoop& node) {
     _indent--;
 }
 
-void AstPrinter::visit(IfStatement& node) {
+void AstPrinter::visit(AST::IfStatement& node) {
     printIndent();
     std::cout << "IfStatement\n";
     _indent++;
@@ -252,7 +252,7 @@ void AstPrinter::visit(IfStatement& node) {
     _indent--;
 }
 
-void AstPrinter::visit(FunctionDeclaration& node) {
+void AstPrinter::visit(AST::FunctionDeclaration& node) {
     printIndent();
     std::cout << "FunctionDeclaration: " << node.name << " -> " << node.returnType << "\n";
 
@@ -279,7 +279,7 @@ void AstPrinter::visit(FunctionDeclaration& node) {
     _indent--;
 }
 
-void AstPrinter::visit(RangeExpression& node) {
+void AstPrinter::visit(AST::RangeExpression& node) {
     printIndent();
     std::cout << "RangeExpression\n";
     _indent++;

@@ -51,6 +51,7 @@ add_executable(compiler-project
         src/semantic/SemanticError.h
         src/IR/IRGeneratorLLVM.cpp
         src/IR/IRGeneratorLLVM.h
+        src/semantic/FunctionSignature.h
 )
 
 target_include_directories(compiler-project PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)

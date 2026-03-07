@@ -11,7 +11,8 @@ class TypeCheckerVisitor : public SemanticVisitor {
 public:
     using SemanticVisitor::SemanticVisitor; // inherit constructor
 
-    void run(AstNode& root) override;
+    void run(AST::AstNode& root) override;
+
     // Returns the bigger type of the two (float > int, int > short, etc.)
     static Type getPromotedType(Type leftType, Type rightType);
 
@@ -31,45 +32,48 @@ private:
 
     static bool isAssignableTo(Type assignedType, Type variableType);
 
-    void visit(Program& program) override;
+    static bool isReturnTypeCompatible(Type functionType, Type returnedType);
 
-    void visit(FunctionDeclaration& node) override;
+    void visit(AST::Program& program) override;
 
-    void visit(ExpressionStatement& node) override;
+    void visit(AST::FunctionDeclaration& node) override;
 
-    void visit(IfStatement& node) override;
+    void visit(AST::ExpressionStatement& node) override;
 
-    void visit(WhileLoop& node) override;
+    void visit(AST::IfStatement& node) override;
 
-    void visit(ForLoop& node) override;
+    void visit(AST::WhileLoop& node) override;
 
-    void visit(RangeExpression& node) override;
+    void visit(AST::ForLoop& node) override;
 
-    void visit(Block& node) override;
+    void visit(AST::RangeExpression& node) override;
 
-    void visit(VariableDeclaration& node) override;
+    void visit(AST::Block& node) override;
 
-    void visit(FunctionCall& node) override;
+    void visit(AST::VariableDeclaration& node) override;
 
-    void visit(BinaryExpression& node) override;
+    void visit(AST::FunctionCall& node) override;
 
-    void visit(UnaryExpression& node) override;
+    void visit(AST::BinaryExpression& node) override;
 
-    void visit(IncDecExpression &node) override;
+    void visit(AST::UnaryExpression& node) override;
 
-    void visit(VariableAssignment& node) override;
+    void visit(AST::IncDecExpression& node) override;
 
-    void visit(ReturnStatement& node) override;
+    void visit(AST::VariableAssignment& node) override;
 
-    void visit(IntegerLiteralNode& node) override;
 
-    void visit(FloatLiteralNode& node) override;
+    void visit(AST::ReturnStatement& node) override;
 
-    void visit(StringLiteralNode& node) override;
+    void visit(AST::IntegerLiteralNode& node) override;
 
-    void visit(BooleanLiteralNode& node) override;
+    void visit(AST::FloatLiteralNode& node) override;
 
-    void visit(VariableExpression& node) override;
+    void visit(AST::StringLiteralNode& node) override;
+
+    void visit(AST::BooleanLiteralNode& node) override;
+
+    void visit(AST::VariableExpression& node) override;
 };
 
 

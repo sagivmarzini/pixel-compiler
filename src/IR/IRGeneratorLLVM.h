@@ -13,78 +13,64 @@
 #include "parse/AST/Statement.h"
 #include "semantic/Scope.h"
 
+struct FunctionSignature;
 class SymbolTable;
-struct ForLoop;
-struct ExpressionStatement;
-struct FloatLiteralNode;
-struct RangeExpression;
-struct IntegerLiteralNode;
-struct StringLiteralNode;
-struct BooleanLiteralNode;
-struct BinaryExpression;
-struct UnaryExpression;
-struct VariableExpression;
-struct FunctionCall;
-struct VariableDeclaration;
-struct VariableAssignment;
-struct ReturnStatement;
-struct Block;
-struct WhileLoop;
-struct IfStatement;
-struct FunctionDeclaration;
-struct Program;
-
 
 class IRGeneratorLLVM {
 public:
     explicit IRGeneratorLLVM();
 
+    explicit IRGeneratorLLVM(
+        std::unordered_map<std::string, FunctionSignature> builtInFunctions);
+
     void print() const;
 
-    llvm::Value* visit(const Program& program);
+    void createExecutable(const std::string& outputPath) const;
 
-    llvm::Value* visit(const FunctionDeclaration& node);
+    llvm::Value* visit(const AST::Program& program);
 
-    llvm::Value* visit(const FunctionCall& node);
+    llvm::Value* visit(const AST::FunctionDeclaration& node);
 
-
-    llvm::Value* visit(const IfStatement& node);
-
-    llvm::Value* visit(const WhileLoop& node);
-
-    llvm::Value* visit(const ForLoop& node);
-
-    llvm::Value* visit(const RangeExpression& node);
-
-    llvm::Value* visit(const Block& node);
+    llvm::Value* visit(const AST::FunctionCall& node);
 
 
-    llvm::Value* visit(const VariableDeclaration& node);
+    llvm::Value* visit(const AST::IfStatement& node);
 
-    llvm::Value* visit(const VariableAssignment& node);
+    llvm::Value* visit(const AST::WhileLoop& node);
 
+    llvm::Value* visit(const AST::ForLoop& node);
 
-    llvm::Value* visit(const ExpressionStatement& node);
+    llvm::Value* visit(const AST::RangeExpression& node);
 
-    llvm::Value* visit(const ReturnStatement& node);
-
-
-    llvm::Value* visit(const BinaryExpression& node);
-
-    llvm::Value* visit(const UnaryExpression& node);
-
-    llvm::Value* visit(const IncDecExpression& node);
+    llvm::Value* visit(const AST::Block& node);
 
 
-    llvm::Value* visit(const VariableExpression& node) const;
+    llvm::Value* visit(const AST::VariableDeclaration& node);
 
-    llvm::Value* visit(const IntegerLiteralNode& node) const;
+    llvm::Value* visit(const AST::VariableAssignment& node);
 
-    llvm::Value* visit(const StringLiteralNode& node) const;
 
-    llvm::Value* visit(const BooleanLiteralNode& node) const;
+    llvm::Value* visit(const AST::ExpressionStatement& node);
 
-    llvm::Value* visit(const FloatLiteralNode& node) const;
+    llvm::Value* visit(const AST::ReturnStatement& node);
+
+
+    llvm::Value* visit(const AST::BinaryExpression& node);
+
+    llvm::Value* visit(const AST::UnaryExpression& node);
+
+    llvm::Value* visit(const AST::IncDecExpression& node);
+
+
+    llvm::Value* visit(const AST::VariableExpression& node) const;
+
+    llvm::Value* visit(const AST::IntegerLiteralNode& node) const;
+
+    llvm::Value* visit(const AST::StringLiteralNode& node) const;
+
+    llvm::Value* visit(const AST::BooleanLiteralNode& node) const;
+
+    llvm::Value* visit(const AST::FloatLiteralNode& node) const;
 
 private:
     // Owns the core LLVM data structures, such as the type and constant tables.
@@ -96,6 +82,8 @@ private:
     // Keeps track of which values (like variables) are defined in the current scope.
     std::unordered_map<Symbol*, llvm::Value*> _namedValues;
 
+    std::unordered_map<std::string, FunctionSignature> _builtinFunctions{};
+
     [[nodiscard]] llvm::Type* compilerTypeToLlvmType(const Type& type) const;
 
     [[nodiscard]] static Type llvmTypeToCompilerType(const llvm::Type& type);
@@ -103,8 +91,12 @@ private:
     // Promotes two LLVM values to have matching types, if necessary.
     void promoteToMatch(llvm::Value*& lhs, llvm::Value*& rhs) const;
 
+    [[nodiscard]] llvm::Value* castToExpectedType(llvm::Value* value, const llvm::Type* expectedType) const;
+
     llvm::Value* initLocalVariable(llvm::Type*  type, const std::string& name,
                                    llvm::Value* value) const;
+
+    llvm::Function* getOrDeclareBuiltin(const std::string& name);
 };
 
 
