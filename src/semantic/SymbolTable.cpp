@@ -2,8 +2,10 @@
 
 #include "SymbolPool.h"
 #include "Scope.h"
+#include "semantic/FunctionSignature.h"
 
 SymbolTable::SymbolTable(SymbolPool& symbolPool) : _currentScope(nullptr), _pool(symbolPool) {
+    enterScope();
 }
 
 void SymbolTable::enterScope() {
@@ -37,11 +39,14 @@ Symbol* SymbolTable::declare(const std::string& name, Symbol::SymbolKind kind, T
     return _currentScope->addSymbol(sym);
 }
 
-// here and not in ctor because we need the scope
-void SymbolTable::declareBuiltins() {
-    for (auto& [name, params] : _builtinFunctions) {
-        auto& symbol = _pool.createSymbol(name, Symbol::SymbolKind::Function, Type::Void, _currentScope, true);
-        symbol.params = params;
+// Declare the language's built-in functions in the global scope
+void SymbolTable::declareBuiltinFunctions(
+    const std::unordered_map<std::string, FunctionSignature>& declarations)
+const {
+    for (auto& [name, signature]: declarations) {
+        auto& symbol = _pool.createSymbol(name, Symbol::SymbolKind::Function, signature.returnType, _currentScope,
+                                          false);
+        symbol.params = signature.parameters;
         _currentScope->addSymbol(symbol);
     }
 }

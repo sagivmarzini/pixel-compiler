@@ -6,7 +6,9 @@
 #include "parse/AST/Expression.h"
 #include "parse/AST/Statement.h"
 
-class AstNode;
+namespace AST {
+    class Node;
+}
 
 // Define the specific data packets for different errors
 struct TypeMismatchData {
@@ -28,15 +30,15 @@ struct OperatorData {
 
 struct UnaryOperatorData {
     Operator op;
-    Type operand;
+    Type     operand;
 };
 
 struct ArgumentPositionData {
     std::string parameters;
     std::string arguments;
 
-    ArgumentPositionData(std::vector<FunctionCall::FunctionArgument>& args,
-        std::vector<FunctionDeclaration::FunctionParameter>& params) {
+    ArgumentPositionData(std::vector<AST::FunctionCall::FunctionArgument>&         args,
+                         std::vector<AST::FunctionDeclaration::FunctionParameter>& params) {
         for (int i = 0; i < args.size(); i++) {
             auto param = params[i].isImplicit ? params[i].name : "_";
             parameters.append(param + ", ");
@@ -83,6 +85,7 @@ enum class SemanticErrorType {
     NonNumericRange,     // For loops
     NonNumericStep,
     MissingReturn,
+    UnreachableCode,
 
     // Operators
     OperatorNotDefined,    // e.g. "String - String"
@@ -95,12 +98,12 @@ enum class SemanticErrorType {
 
 class SemanticError : public CompilerError {
 public:
-    SemanticError(SemanticErrorType type, const AstNode& node, ErrorContext context = std::monostate{});
+    SemanticError(SemanticErrorType type, const AST::AstNode& node, ErrorContext context = std::monostate{});
 
 private:
-    SemanticErrorType _type;
-    const AstNode*    _node;
-    ErrorContext      _context;
+    SemanticErrorType   _type;
+    const AST::AstNode* _node;
+    ErrorContext        _context;
 };
 
 

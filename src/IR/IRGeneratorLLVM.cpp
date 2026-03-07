@@ -5,13 +5,21 @@
 #include "IRGeneratorLLVM.h"
 
 #include "parse/AST/Expression.h"
-#include <llvm/IR/Module.h>
-#include <llvm/IR/Verifier.h>
-#include <vector>
-
 #include "parse/AST/Statement.h"
 #include "semantic/Symbol.h"
 #include "semantic/SymbolTable.h"
+#include "semantic/FunctionSignature.h"
+#include <llvm/IR/Module.h>
+#include <llvm/IR/Verifier.h>
+#include <vector>
+#include <llvm/Support/raw_ostream.h>
+#include <llvm/Support/TargetSelect.h>
+#include <llvm/Target/TargetMachine.h>
+#include <llvm/TargetParser/Host.h>
+#include <llvm/MC/TargetRegistry.h>
+#include <llvm/Support/FileSystem.h>
+#include <llvm/IR/LegacyPassManager.h>
+
 
 IRGeneratorLLVM::IRGeneratorLLVM() {
     _context = std::make_unique<llvm::LLVMContext>();
@@ -19,7 +27,13 @@ IRGeneratorLLVM::IRGeneratorLLVM() {
     _builder = std::make_unique<llvm::IRBuilder<> >(*_context);
 }
 
-llvm::Value* IRGeneratorLLVM::visit(const Program& program) {
+IRGeneratorLLVM::IRGeneratorLLVM(
+    std::unordered_map<std::string, FunctionSignature> builtInFunctions)
+    : IRGeneratorLLVM() {
+    _builtinFunctions = std::move(builtInFunctions);
+}
+
+llvm::Value* IRGeneratorLLVM::visit(const AST::Program& program) {
     for (const auto& stmt: program.statements) {
         stmt->acceptIR(*this);
     }
@@ -27,7 +41,7 @@ llvm::Value* IRGeneratorLLVM::visit(const Program& program) {
     return nullptr;
 }
 
-llvm::Value* IRGeneratorLLVM::visit(const FunctionDeclaration& node) {
+llvm::Value* IRGeneratorLLVM::visit(const AST::FunctionDeclaration& node) {
     using llvm::Function;
 
     std::vector<llvm::Type*> paramTypes;
@@ -64,29 +78,52 @@ llvm::Value* IRGeneratorLLVM::visit(const FunctionDeclaration& node) {
 
     node.body->acceptIR(*this);
     if (!_builder->GetInsertBlock()->getTerminator()) {
-        _builder->CreateRetVoid();
+        if (node.returnType == Type::Void) {
+            _builder->CreateRetVoid();
+        } else {
+            // Return a default "zero" value for the specific type
+            _builder->CreateRet(llvm::Constant::getNullValue(compilerTypeToLlvmType(node.returnType)));
+        }
     }
 
     return function;
 }
 
-llvm::Value* IRGeneratorLLVM::visit(const FunctionCall& node) {
-    const auto calledFunction = _module->getFunction(node.functionName);
+llvm::Value* IRGeneratorLLVM::visit(const AST::FunctionCall& node) {
+    const auto calledFunction = getOrDeclareBuiltin(node.functionName);
     if (!calledFunction) {
-        throw std::runtime_error("Function not found: " + node.functionName);
+        throw std::runtime_error("| LLVM | Function not found: " + node.functionName);
     }
 
     std::vector<llvm::Value*> args;
+    bool                      isVariadic = calledFunction->isVarArg();
+    int                       index      = 0;
     for (const auto& arg: node.arguments) {
-        args.push_back(arg.value->acceptIR(*this));
+        auto argValue = arg.value->acceptIR(*this);
+
+        // Promote argument to float if necessary
+        if (index < calledFunction->getFunctionType()->getNumParams()) {
+            // This is a fixed argument, we can safely cast to the expected type
+            argValue = castToExpectedType(argValue, calledFunction->getArg(index)->getType());
+        } else if (isVariadic) {
+            // Variadic arguments (the values after the format string)
+            // If the value is a 32-bit Float, promote it to a 64-bit Double
+            if (argValue->getType()->isFloatTy()) {
+                argValue = _builder->CreateFPExt(argValue, _builder->getDoubleTy(), "float_to_double");
+            }
+        }
+
+        args.push_back(argValue);
         if (!args.back())
             return nullptr;
+
+        index++;
     }
 
     return _builder->CreateCall(calledFunction, args);
 }
 
-llvm::Value* IRGeneratorLLVM::visit(const IfStatement& node) {
+llvm::Value* IRGeneratorLLVM::visit(const AST::IfStatement& node) {
     const auto condition = node.condition->acceptIR(*this);
 
     const auto theFunction = _builder->GetInsertBlock()->getParent();
@@ -130,7 +167,7 @@ llvm::Value* IRGeneratorLLVM::visit(const IfStatement& node) {
     return nullptr;
 }
 
-llvm::Value* IRGeneratorLLVM::visit(const WhileLoop& node) {
+llvm::Value* IRGeneratorLLVM::visit(const AST::WhileLoop& node) {
     const auto theFunction = _builder->GetInsertBlock()->getParent();
 
     // Create the blocks
@@ -162,7 +199,7 @@ llvm::Value* IRGeneratorLLVM::visit(const WhileLoop& node) {
     return nullptr;
 }
 
-llvm::Value* IRGeneratorLLVM::visit(const ForLoop& node) {
+llvm::Value* IRGeneratorLLVM::visit(const AST::ForLoop& node) {
     llvm::Value* startVal = node.range->start->acceptIR(*this);
     if (!startVal) return nullptr;
 
@@ -218,37 +255,62 @@ llvm::Value* IRGeneratorLLVM::visit(const ForLoop& node) {
     return nullptr;
 }
 
-llvm::Value* IRGeneratorLLVM::visit(const RangeExpression& node) {
+llvm::Value* IRGeneratorLLVM::visit(const AST::RangeExpression& node) {
     return nullptr;
 }
 
-llvm::Value* IRGeneratorLLVM::visit(const Block& node) {
+llvm::Value* IRGeneratorLLVM::visit(const AST::Block& node) {
     for (const auto& stmt: node.statements) {
         stmt->acceptIR(*this);
     }
     return nullptr;
 }
 
-llvm::Value* IRGeneratorLLVM::visit(const VariableDeclaration& node) {
+llvm::Value* IRGeneratorLLVM::visit(const AST::VariableDeclaration& node) {
     const auto symbol = node.symbol;
     const auto type   = compilerTypeToLlvmType(symbol->type);
 
-    if (symbol->scope->getParent() == nullptr) {
-        // Create or get the Global Variable
-        // getOrInsertGlobal returns a Constant*, so we cast to GlobalVariable*
-        auto* globalVariable = llvm::cast<llvm::GlobalVariable>(
-            _module->getOrInsertGlobal(node.name, type)
-        );
+    if (symbol->scope->getParent()->getParent() == nullptr) {
+        // Check if the value is a string literal
+        if (auto* strLit = dynamic_cast<AST::StringLiteralNode*>(node.value.get())) {
+            // 1. Create the string data
+            auto* stringData = llvm::ConstantDataArray::getString(*_context, strLit->value, true);
+
+            // 2. Create the Global Variable
+            auto* gVar = new llvm::GlobalVariable(
+                *_module, stringData->getType(), // The type is [N x i8]
+                true,                            // isConstant
+                llvm::GlobalValue::InternalLinkage,
+                stringData, // Initializer
+                node.name
+            );
+
+            _namedValues[node.symbol] = gVar;
+            return gVar;
+        }
+
+        // GLOBAL VARIABLE PATH
+        // Check if already exists, otherwise create
+        llvm::GlobalVariable* globalVariable = _module->getGlobalVariable(node.name);
+
+        if (!globalVariable) {
+            globalVariable = new llvm::GlobalVariable(
+                *_module, type, false,
+                llvm::GlobalValue::ExternalLinkage,
+                nullptr, node.name
+            );
+        }
 
         if (node.value) {
-            // If there's an assignment like 'var x = 10', we try to get a constant
-            // Note: This only works if node.value is a literal (constant)
-            if (auto* constantInit = llvm::dyn_cast<llvm::Constant>(node.value->acceptIR(*this))) {
+            auto* initValue = node.value->acceptIR(*this);
+            if (auto* constantInit = llvm::dyn_cast<llvm::Constant>(initValue)) {
+                // If types don't match exactly (e.g. i32 init for float global), cast it
+                if (constantInit->getType() != type) {
+                    constantInit = llvm::ConstantExpr::getBitCast(constantInit, type);
+                }
                 globalVariable->setInitializer(constantInit);
             } else {
-                // If it's complex (like 'var x = someFunc()'), we set to null
-                // and would need an 'init' function (advanced). For now, null it.
-                globalVariable->setInitializer(llvm::Constant::getNullValue(type));
+                throw std::runtime_error("Global variables must be initialized with a constant.");
             }
         } else {
             globalVariable->setInitializer(llvm::Constant::getNullValue(type));
@@ -258,30 +320,39 @@ llvm::Value* IRGeneratorLLVM::visit(const VariableDeclaration& node) {
         return globalVariable;
     } else {
         // LOCAL VARIABLE PATH
-        const auto alloca    = initLocalVariable(type, node.name, node.value->acceptIR(*this));
-        _namedValues[symbol] = alloca;
+        llvm::Value* val = node.value ? node.value->acceptIR(*this) : nullptr;
 
+        if (val) {
+            val = castToExpectedType(val, type); // Ensure 0 becomes 0.0 before storage
+        }
+
+        const auto alloca    = initLocalVariable(type, node.name, val);
+        _namedValues[symbol] = alloca;
         return alloca;
     }
 }
 
-llvm::Value* IRGeneratorLLVM::visit(const VariableAssignment& node) {
+llvm::Value* IRGeneratorLLVM::visit(const AST::VariableAssignment& node) {
     const auto variableAddress = _namedValues.at(node.symbol);
     _builder->CreateStore(node.assignedValue->acceptIR(*this), variableAddress);
 
     return nullptr;
 }
 
-llvm::Value* IRGeneratorLLVM::visit(const ExpressionStatement& node) {
+llvm::Value* IRGeneratorLLVM::visit(const AST::ExpressionStatement& node) {
     return node.expression->acceptIR(*this);
 }
 
-llvm::Value* IRGeneratorLLVM::visit(const ReturnStatement& node) {
+llvm::Value* IRGeneratorLLVM::visit(const AST::ReturnStatement& node) {
     llvm::Value* value = node.value->acceptIR(*this);
+
+    llvm::Type* expectedType = _builder->GetInsertBlock()->getParent()->getReturnType();
+    value                    = castToExpectedType(value, expectedType);
+
     return _builder->CreateRet(value);
 }
 
-llvm::Value* IRGeneratorLLVM::visit(const BinaryExpression& node) {
+llvm::Value* IRGeneratorLLVM::visit(const AST::BinaryExpression& node) {
     llvm::Value* lhs = node.left->acceptIR(*this);
     llvm::Value* rhs = node.right->acceptIR(*this);
 
@@ -345,19 +416,41 @@ llvm::Value* IRGeneratorLLVM::visit(const BinaryExpression& node) {
     return nullptr;
 }
 
-llvm::Value* IRGeneratorLLVM::visit(const UnaryExpression& node) {
+llvm::Value* IRGeneratorLLVM::visit(const AST::UnaryExpression& node) {
     const auto operand = node.operand->acceptIR(*this);
 
+    // 1. CONSTANT PATH (For Global Initializers)
+    if (auto* c = llvm::dyn_cast<llvm::ConstantFP>(operand)) {
+        if (node.op == Operator::Minus) {
+            llvm::APFloat val = c->getValueAPF();
+            val.changeSign();
+            return llvm::ConstantFP::get(c->getContext(), val);
+        }
+    }
+
+    // For Integers
+    if (auto* c = llvm::dyn_cast<llvm::ConstantInt>(operand)) {
+        if (node.op == Operator::Minus) {
+            return llvm::ConstantInt::get(c->getContext(), -c->getValue());
+        }
+    }
+
+    // 2. INSTRUCTION PATH (For Local Variables / Functions)
     switch (node.op) {
         case Operator::Minus:
+            if (operand->getType()->isFloatingPointTy()) {
+                return _builder->CreateFNeg(operand, "fnegtmp");
+            }
             return _builder->CreateNeg(operand, "negtmp");
+
         case Operator::Exclamation:
+            // CreateNot works for i1 (booleans)
             return _builder->CreateNot(operand, "lognottmp");
     }
     return nullptr;
 }
 
-llvm::Value* IRGeneratorLLVM::visit(const IncDecExpression& node) {
+llvm::Value* IRGeneratorLLVM::visit(const AST::IncDecExpression& node) {
     llvm::Value* addr = _namedValues[node.symbol];
     if (!addr) {
         // Handle error: Variable not defined
@@ -382,33 +475,60 @@ llvm::Value* IRGeneratorLLVM::visit(const IncDecExpression& node) {
 
     // Prefix: return the value AFTER the change (++x)
     // Postfix: return the value BEFORE the change (x++)
-    if (node.fix == IncDecExpression::Prefix) {
+    if (node.fix == AST::IncDecExpression::Prefix) {
         return newValue;
     } else {
         return oldValue;
     }
 }
 
-llvm::Value* IRGeneratorLLVM::visit(const VariableExpression& node) const {
+llvm::Value* IRGeneratorLLVM::visit(const AST::VariableExpression& node) const {
     llvm::Value* variableAddress = _namedValues.at(node.symbol);
     llvm::Type*  varType         = compilerTypeToLlvmType(node.symbol->type);
 
+    // Strings are arrays in memory; we want the pointer to the first element
+    if (node.symbol->type == Type::String) {
+        // If it's a GlobalVariable, it has an 'allocated' or 'value' type (the array)
+        if (auto* gVar = llvm::dyn_cast<llvm::GlobalVariable>(variableAddress)) {
+            llvm::Type* gType = gVar->getValueType();
+            if (gType->isArrayTy()) {
+                // Decay the array [N x i8] to a simple ptr
+                // In modern LLVM, CreateGEP requires the source element type explicitly
+                return _builder->CreateInBoundsGEP(
+                    gType,
+                    variableAddress,
+                    {_builder->getInt64(0), _builder->getInt64(0)},
+                    "strdecay"
+                );
+            }
+        }
+        // If it's already a ptr (like a function argument), just return it
+        return variableAddress;
+    }
+
+    // For non-strings, perform a standard load
     return _builder->CreateLoad(varType, variableAddress, node.name + '_');
 }
 
-llvm::Value* IRGeneratorLLVM::visit(const IntegerLiteralNode& node) const {
+llvm::Value* IRGeneratorLLVM::visit(const AST::IntegerLiteralNode& node) const {
     return llvm::ConstantInt::get(*_context, llvm::APInt(32, node.value, true));
 }
 
-llvm::Value* IRGeneratorLLVM::visit(const StringLiteralNode& node) const {
+llvm::Value* IRGeneratorLLVM::visit(const AST::StringLiteralNode& node) const {
+    // If we are inside a function, this is safe
+    if (_builder->GetInsertBlock()) {
+        return _builder->CreateGlobalString(node.value, "strtmp");
+    }
+
+    // If we are NOT in a function (Global Init), return the raw constant array
     return llvm::ConstantDataArray::getString(*_context, node.value, true);
 }
 
-llvm::Value* IRGeneratorLLVM::visit(const BooleanLiteralNode& node) const {
+llvm::Value* IRGeneratorLLVM::visit(const AST::BooleanLiteralNode& node) const {
     return llvm::ConstantInt::get(*_context, llvm::APInt(1, node.value));
 }
 
-llvm::Value* IRGeneratorLLVM::visit(const FloatLiteralNode& node) const {
+llvm::Value* IRGeneratorLLVM::visit(const AST::FloatLiteralNode& node) const {
     return llvm::ConstantFP::get(*_context, llvm::APFloat(node.value));
 }
 
@@ -425,7 +545,8 @@ llvm::Type* IRGeneratorLLVM::compilerTypeToLlvmType(const Type& type) const {
         case Type::Ptr:
             throw std::runtime_error("Not Implemented: pointers");
         case Type::String:
-            throw std::runtime_error("Not Implemented: strings");
+            // throw std::runtime_error("Not Implemented: strings");
+            return _builder->getPtrTy();
         case Type::Color:
             throw std::runtime_error("Not Implemented: colors");
         default:
@@ -457,7 +578,6 @@ Type IRGeneratorLLVM::llvmTypeToCompilerType(const llvm::Type& type) {
     throw std::runtime_error("Internal error: unsupported LLVM type: ");
 }
 
-
 void IRGeneratorLLVM::promoteToMatch(llvm::Value*& lhs, llvm::Value*& rhs) const {
     const Type leftType  = llvmTypeToCompilerType(*lhs->getType());
     const Type rightType = llvmTypeToCompilerType(*rhs->getType());
@@ -478,6 +598,16 @@ void IRGeneratorLLVM::promoteToMatch(llvm::Value*& lhs, llvm::Value*& rhs) const
     throw std::runtime_error("Internal error: Invalid operand types for binary operation");
 }
 
+llvm::Value* IRGeneratorLLVM::castToExpectedType(llvm::Value* value, const llvm::Type* expectedType) const {
+    if (value->getType() == expectedType)
+        return value;
+
+    if (value->getType() == _builder->getInt32Ty() && expectedType == _builder->getFloatTy())
+        return _builder->CreateSIToFP(value, _builder->getFloatTy());
+
+    return nullptr;
+}
+
 llvm::Value* IRGeneratorLLVM::initLocalVariable(llvm::Type*  type, const std::string& name,
                                                 llvm::Value* value) const {
     const auto alloca = _builder->CreateAlloca(type, nullptr, name);
@@ -488,10 +618,116 @@ llvm::Value* IRGeneratorLLVM::initLocalVariable(llvm::Type*  type, const std::st
     return alloca;
 }
 
+llvm::Function* IRGeneratorLLVM::getOrDeclareBuiltin(const std::string& name) {
+    std::string actualName = name;
+
+    // 1. SILENT MAPPING LOGIC
+    // Check if it's a math function that needs the 'f' suffix for returning 32-bit floats
+    // TODO: Use a list of functions that require an f suffix instead
+    if (name == "sin" || name == "cos" || name == "tan" || name == "sqrt" || name == "pow" || name == "floor") {
+        const auto it = _builtinFunctions.find(name);
+        if (it != _builtinFunctions.end()) {
+            // If the return type is Float (32-bit), use the 'f' version
+            if (it->second.returnType == Type::Float) {
+                actualName += "f";
+            }
+        }
+    }
+
+    // 2. Look up using the actualName
+    if (auto* function = _module->getFunction(actualName)) {
+        return function;
+    }
+
+    const auto it = _builtinFunctions.find(name); // Still find metadata by original name
+    if (it == _builtinFunctions.end()) {
+        return nullptr;
+    }
+
+    const auto               [parameters, returnType] = it->second;
+    std::vector<llvm::Type*> paramTypes;
+    for (const auto& parameter: parameters) {
+        paramTypes.push_back(compilerTypeToLlvmType(parameter.type));
+    }
+
+    llvm::Type* retType    = compilerTypeToLlvmType(returnType);
+    bool        isVariadic = (name == "printf");
+    auto*       funcType   = llvm::FunctionType::get(retType, paramTypes, isVariadic);
+
+    // 3. Create the function with the 'actualName' (e.g., sinf)
+    return llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, actualName, _module.get());
+}
+
 
 void IRGeneratorLLVM::print() const {
     _module->print(llvm::outs(), nullptr);
     if (llvm::verifyModule(*_module, &llvm::errs())) {
         std::cerr << "LLVM Module is broken! See errors above." << std::endl;
     }
+}
+
+void IRGeneratorLLVM::createExecutable(const std::string& outputPath) const {
+    // 1. Initialize LLVM targets for the native architecture (x86_64)
+    llvm::InitializeNativeTarget();
+    llvm::InitializeNativeTargetAsmPrinter();
+    llvm::InitializeNativeTargetAsmParser();
+
+    // 2. Get the target triple (e.g., "x86_64-pc-linux-gnu")
+    auto         targetTripleStr = llvm::sys::getDefaultTargetTriple();
+    llvm::Triple targetTriple(targetTripleStr);
+
+    _module->setTargetTriple(targetTriple);
+
+    std::string error;
+    auto        target = llvm::TargetRegistry::lookupTarget(targetTriple, error);
+    if (!target) {
+        throw std::runtime_error("| LLVM | Failed to find target: " + error);
+    }
+
+    // 3. Configure the Target Machine
+    auto                cpu      = "generic";
+    auto                features = "";
+    llvm::TargetOptions opt;
+    auto                targetMachine = target->createTargetMachine(
+        targetTriple, cpu, features, opt, llvm::Reloc::PIC_
+    );
+
+    _module->setDataLayout(targetMachine->createDataLayout());
+
+    // 4. Emit the Object File (.o)
+    std::string          objFilename = outputPath + ".o";
+    std::error_code      ec;
+    llvm::raw_fd_ostream dest(objFilename, ec, llvm::sys::fs::OF_None);
+
+    if (ec) {
+        throw std::runtime_error("| LLVM | Could not open output file: " + ec.message());
+    }
+
+    llvm::legacy::PassManager pass;
+
+    auto fileType = llvm::CodeGenFileType::ObjectFile;
+
+    if (targetMachine->addPassesToEmitFile(pass, dest, nullptr, fileType)) {
+        throw std::runtime_error("| LLVM | TargetMachine can't emit a file of this type");
+    }
+
+    // Run the passes to generate machine code
+    pass.run(*_module);
+    dest.flush();
+
+    // 5. Link the Object File into an Executable using Clang
+    // We add -lm to link the math library (for sin, cos, sqrt, pow)
+    std::string linkCommand = "clang " + objFilename + " -o " + outputPath + " -lm";
+
+    // If you are ready to link your Bridge and SDL3, uncomment this:
+    // linkCommand += " bridge.o -lSDL3";
+
+    std::cout << "Linking..." << std::endl;
+    int linkResult = std::system(linkCommand.c_str());
+
+    if (linkResult != 0) {
+        throw std::runtime_error("| LLVM | Linking failed! Check if clang is installed.");
+    }
+
+    std::cout << "Successfully compiled executable: " << outputPath << std::endl;
 }

@@ -63,6 +63,7 @@ set(COMPILER_SOURCES
         src/semantic/SemanticError.h
         src/IR/IRGeneratorLLVM.cpp
         src/IR/IRGeneratorLLVM.h
+        src/semantic/FunctionSignature.h
 )
 
 add_executable(pxl-compiler ${COMPILER_SOURCES})

@@ -10,35 +10,39 @@
 
 class IRGeneratorLLVM;
 class Scope;
-class Statement;
 class AstVisitor;
 
-struct AstNode {
-    explicit AstNode(TokenMetadata metadata)
-        : metadata{std::move(metadata)} {
-    }
+namespace AST {
+    class Statement;
 
-    virtual ~AstNode() = default;
+    struct AstNode {
+        explicit AstNode(TokenMetadata metadata)
+            : metadata{std::move(metadata)} {
+        }
 
-    virtual void         accept(AstVisitor& visitor) = 0; // For visitor pattern
-    virtual llvm::Value* acceptIR(IRGeneratorLLVM& visitor) = 0;
+        virtual ~AstNode() = default;
 
-    TokenMetadata metadata;
-};
+        virtual void         accept(AstVisitor& visitor) = 0; // For visitor pattern
+        virtual llvm::Value* acceptIR(IRGeneratorLLVM& visitor) = 0;
 
-// Program root
-struct Program final : AstNode {
-    std::vector<std::unique_ptr<AstNode> > statements;
-    Scope*                                 scope = nullptr;
+        TokenMetadata metadata;
+    };
 
-    explicit Program(const TokenMetadata& metadata)
-        : AstNode(metadata) {
-    }
+    // Program root
+    struct Program final : AstNode {
+        std::vector<std::unique_ptr<AstNode> > statements;
+        Scope*                                 scope = nullptr;
 
-    void addDeclaration(std::unique_ptr<Statement> statement);
+        explicit Program(const TokenMetadata& metadata)
+            : AstNode(metadata) {
+        }
 
-    void accept(AstVisitor& visitor) override;
-    llvm::Value* acceptIR(IRGeneratorLLVM& visitor) override;
-};
+        void addDeclaration(std::unique_ptr<AST::Statement> statement);
+
+        void accept(AstVisitor& visitor) override;
+
+        llvm::Value* acceptIR(IRGeneratorLLVM& visitor) override;
+    };
+}
 
 #endif //COMPILER_PROJECT_ASTNODE_H

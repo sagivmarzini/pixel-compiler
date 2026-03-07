@@ -8,11 +8,21 @@
 #include "parse/AST/Expression.h"
 #include "parse/AST/Statement.h"
 
-void TypeCheckerVisitor::run(AstNode& root) {
+void TypeCheckerVisitor::run(AST::AstNode& root) {
     root.accept(*this);
 
     if (!_errors.empty())
         throw CompilerException(_errors);
+}
+
+Type TypeCheckerVisitor::getPromotedType(Type leftType, Type rightType) {
+    if (leftType == rightType) return leftType;
+
+    if (leftType == Type::Float || rightType == Type::Float) {
+        return Type::Float;
+    }
+
+    return Type::Error;
 }
 
 bool TypeCheckerVisitor::isNumeric(Type type) {
@@ -35,17 +45,11 @@ bool TypeCheckerVisitor::isAssignableTo(Type assignedType, Type variableType) {
     return assignedType == variableType || (isNumeric(assignedType) && isNumeric(variableType));
 }
 
-Type TypeCheckerVisitor::getPromotedType(Type leftType, Type rightType) {
-    if (leftType == rightType) return leftType;
-
-    if (leftType == Type::Float || rightType == Type::Float) {
-        return Type::Float;
-    }
-
-    return Type::Error;
+bool TypeCheckerVisitor::isReturnTypeCompatible(Type functionType, Type returnedType) {
+    return functionType == returnedType || (functionType == Type::Float && returnedType == Type::Int);
 }
 
-void TypeCheckerVisitor::visit(Program& program) {
+void TypeCheckerVisitor::visit(AST::Program& program) {
     _symbolTable.setCurrentScope(program.scope);
     for (const auto& stmt: program.statements) {
         stmt->accept(*this);
@@ -56,7 +60,7 @@ void TypeCheckerVisitor::visit(Program& program) {
     }
 }
 
-void TypeCheckerVisitor::visit(FunctionDeclaration& node) {
+void TypeCheckerVisitor::visit(AST::FunctionDeclaration& node) {
     _currentFunctionReturnType = node.returnType;
     _foundReturn               = false;
 
@@ -66,25 +70,36 @@ void TypeCheckerVisitor::visit(FunctionDeclaration& node) {
     }
 }
 
-void TypeCheckerVisitor::visit(ExpressionStatement& node) {
+void TypeCheckerVisitor::visit(AST::ExpressionStatement& node) {
     node.expression->accept(*this);
 }
 
-void TypeCheckerVisitor::visit(IfStatement& node) {
+void TypeCheckerVisitor::visit(AST::IfStatement& node) {
     node.condition->accept(*this);
-
-    // Ensure condition returns a boolean
     if (node.condition->type != Type::Boolean) {
         logError(SemanticErrorType::NonBooleanCondition, node);
     }
 
+    // Check the 'then' branch
+    bool originalStatus = _foundReturn;
+    _foundReturn        = false;
     node.thenBranch->accept(*this);
+    bool thenReturns = _foundReturn;
 
-    if (node.elseBranch)
+    // Check the 'else' branch
+    bool elseReturns = false;
+    _foundReturn     = false;
+    if (node.elseBranch) {
         node.elseBranch->accept(*this);
+        elseReturns = _foundReturn;
+    }
+
+    // Logic: The whole IF is terminated ONLY if both paths return
+    // If there is no else branch, elseReturns is false, so foundReturn becomes false.
+    _foundReturn = originalStatus || (thenReturns && elseReturns);
 }
 
-void TypeCheckerVisitor::visit(WhileLoop& node) {
+void TypeCheckerVisitor::visit(AST::WhileLoop& node) {
     node.condition->accept(*this);
 
     // Ensure condition returns a boolean
@@ -95,7 +110,7 @@ void TypeCheckerVisitor::visit(WhileLoop& node) {
     node.body->accept(*this);
 }
 
-void TypeCheckerVisitor::visit(ForLoop& node) {
+void TypeCheckerVisitor::visit(AST::ForLoop& node) {
     node.range->accept(*this);
 
     if (node.step) {
@@ -109,7 +124,7 @@ void TypeCheckerVisitor::visit(ForLoop& node) {
     node.body->accept(*this);
 }
 
-void TypeCheckerVisitor::visit(RangeExpression& node) {
+void TypeCheckerVisitor::visit(AST::RangeExpression& node) {
     node.start->accept(*this);
     node.end->accept(*this);
 
@@ -124,18 +139,24 @@ void TypeCheckerVisitor::visit(RangeExpression& node) {
     node.type = getPromotedType(startType, endType);
 }
 
-void TypeCheckerVisitor::visit(Block& node) {
+void TypeCheckerVisitor::visit(AST::Block& node) {
     _symbolTable.setCurrentScope(node.scope);
     for (const auto& stmt: node.statements) {
+        if (_foundReturn) {
+            // Found a statement after a return!
+            logError(SemanticErrorType::UnreachableCode, *stmt);
+            break;
+        }
+
         stmt->accept(*this);
     }
 }
 
-void TypeCheckerVisitor::visit(VariableDeclaration& node) {
+void TypeCheckerVisitor::visit(AST::VariableDeclaration& node) {
     if (node.value) {
         node.value->accept(*this);
 
-        if (node.specifiedType != Type::Unspecified && node.value->type != node.specifiedType) {
+        if (node.specifiedType != Type::Unspecified && !isAssignableTo(node.value->type, node.specifiedType)) {
             logError(SemanticErrorType::IncompatibleAssignment, node,
                      TypeMismatchData(node.specifiedType, node.value->type));
             return;
@@ -156,8 +177,7 @@ void TypeCheckerVisitor::visit(VariableDeclaration& node) {
     }
 }
 
-
-void TypeCheckerVisitor::visit(FunctionCall& node) {
+void TypeCheckerVisitor::visit(AST::FunctionCall& node) {
     const auto calledFunction = _symbolTable.lookup(node.functionName);
     if (!calledFunction) {
         logError(SemanticErrorType::UndefinedFunction, node, node.functionName);
@@ -165,7 +185,10 @@ void TypeCheckerVisitor::visit(FunctionCall& node) {
     }
 
     // Check if the number of arguments matches
-    if (const auto expectedArgAmount = calledFunction->params.size(); node.arguments.size() != expectedArgAmount) {
+    if (const auto expectedArgAmount = calledFunction->params.size();
+        node.arguments.size() != expectedArgAmount &&
+        // printf has a variable number of arguments
+        node.functionName != "printf") {
         logError(SemanticErrorType::ArgumentCountMismatch, node,
                  ParamMismatchData(node.functionName, expectedArgAmount, node.arguments.size()));
         return;
@@ -176,54 +199,49 @@ void TypeCheckerVisitor::visit(FunctionCall& node) {
     int                   index = 0;
 
     for (const auto& argument: node.arguments) {
-        auto& parameter = calledFunction->params.at(index);
+        if (index < calledFunction->params.size()) {
+            auto& parameter = calledFunction->params.at(index);
 
-        if (argument.name.has_value()) {
-            // named arument
-            auto argName = argument.name.value();
+            if (argument.name.has_value()) {
+                // named argument
+                auto argName = argument.name.value();
 
-            if (parameter.name != argName) {
-                if (calledFunction->getParameterByName(argName)) {
-                    // invalid pos
-                    logError(SemanticErrorType::InvalidArgumentPosition, node,
-                             ArgumentPositionData(node.arguments, calledFunction->params));
+                if (parameter.name != argName) {
+                    if (calledFunction->getParameterByName(argName)) {
+                        // invalid pos
+                        logError(SemanticErrorType::InvalidArgumentPosition, node,
+                                 ArgumentPositionData(node.arguments, calledFunction->params));
+                        return;
+                    }
+
+                    logError(SemanticErrorType::UndefinedArgument, node, argName);
                     return;
                 }
+            } else if (!parameter.isImplicit) {
+                logError(SemanticErrorType::MissingArgumentLabel, node, parameter.name);
+            }
 
-                logError(SemanticErrorType::UndefinedArgument, node, argName);
+            // Validate type against the formal parameter
+            argument.value->accept(*this);
+            if (!isAssignableTo(argument.value->type, parameter.type)) {
+                logError(SemanticErrorType::ArgumentTypeMismatch, node,
+                         TypeMismatchData(parameter.type, argument.value->type));
                 return;
             }
         } else {
-            // nameless argument
-            if (!parameter.isImplicit) {
-                logError(SemanticErrorType::MissingArgumentLabel, node, parameter.name
-                );
-            }
-        }
-        // Check for duplicate named arguments
-        if (seenParams.contains(parameter.name
-        )) {
-            logError(SemanticErrorType::DuplicateParameterName, node, parameter.name
-            );
-            return;
-        }
-        seenParams.insert(parameter.name
-        );
+            // 2. Extra arguments for printf path
+            // Just resolve the type of the extra expression so the compiler doesn't crash
+            argument.value->accept(*this);
 
-        // Visit the argument expression to resolve its type
-        argument.value->accept(*this);
-
-        // Compare the expression type to the expected parameter type
-        if (argument.value->type != parameter.type) {
-            logError(SemanticErrorType::ArgumentTypeMismatch, node,
-                     TypeMismatchData(parameter.type, argument.value->type));
-            return;
+            // Optional: In a real variadic system, you'd check if these are "basic" types
+            // (int, float, ptr) since printf can't handle complex structs.
         }
+
         index++;
     }
 }
 
-void TypeCheckerVisitor::visit(BinaryExpression& node) {
+void TypeCheckerVisitor::visit(AST::BinaryExpression& node) {
     node.left->accept(*this);
     node.right->accept(*this);
     if (node.left->type == Type::Error || node.right->type == Type::Error) return;
@@ -306,7 +324,7 @@ void TypeCheckerVisitor::visit(BinaryExpression& node) {
     }
 }
 
-void TypeCheckerVisitor::visit(UnaryExpression& node) {
+void TypeCheckerVisitor::visit(AST::UnaryExpression& node) {
     node.operand->accept(*this);
 
     const Type operandType = node.operand->type;
@@ -343,7 +361,7 @@ void TypeCheckerVisitor::visit(UnaryExpression& node) {
     }
 }
 
-void TypeCheckerVisitor::visit(IncDecExpression& node) {
+void TypeCheckerVisitor::visit(AST::IncDecExpression& node) {
     auto operand = _symbolTable.lookup(node.variableName);
     if (!operand) {
         logError(SemanticErrorType::UndefinedIdentifier, node);
@@ -370,7 +388,7 @@ void TypeCheckerVisitor::visit(IncDecExpression& node) {
     }
 }
 
-void TypeCheckerVisitor::visit(VariableAssignment& node) {
+void TypeCheckerVisitor::visit(AST::VariableAssignment& node) {
     node.assignedValue->accept(*this);
     const Type assignedType = node.assignedValue->type;
 
@@ -393,35 +411,35 @@ void TypeCheckerVisitor::visit(VariableAssignment& node) {
     }
 }
 
-void TypeCheckerVisitor::visit(ReturnStatement& node) {
+void TypeCheckerVisitor::visit(AST::ReturnStatement& node) {
     _foundReturn = true;
 
     node.value->accept(*this);
 
     if (const auto returnedType = node.value->type;
-        !isAssignableTo(_currentFunctionReturnType, returnedType)) {
+        !isReturnTypeCompatible(_currentFunctionReturnType, returnedType)) {
         logError(SemanticErrorType::TypeMismatch, node, TypeMismatchData(_currentFunctionReturnType, returnedType));
         return;
     }
 }
 
-void TypeCheckerVisitor::visit(IntegerLiteralNode& node) {
+void TypeCheckerVisitor::visit(AST::IntegerLiteralNode& node) {
     node.type = Type::Int;
 }
 
-void TypeCheckerVisitor::visit(FloatLiteralNode& node) {
+void TypeCheckerVisitor::visit(AST::FloatLiteralNode& node) {
     node.type = Type::Float;
 }
 
-void TypeCheckerVisitor::visit(StringLiteralNode& node) {
+void TypeCheckerVisitor::visit(AST::StringLiteralNode& node) {
     node.type = Type::String;
 }
 
-void TypeCheckerVisitor::visit(BooleanLiteralNode& node) {
+void TypeCheckerVisitor::visit(AST::BooleanLiteralNode& node) {
     node.type = Type::Boolean;
 }
 
-void TypeCheckerVisitor::visit(VariableExpression& node) {
+void TypeCheckerVisitor::visit(AST::VariableExpression& node) {
     if (!node.symbol) {
         // Only look up if we haven't already
         node.symbol = _symbolTable.lookup(node.name);

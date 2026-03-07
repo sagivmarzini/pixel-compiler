@@ -4,9 +4,8 @@
 #include "Symbol.h"
 #include "SymbolTable.h"
 #include "parse/AST/AstNode.h"
-#include "parse/AST/Statement.h"
 
-void DeclarationPassVisitor::run(AstNode& root) {
+void DeclarationPassVisitor::run(AST::AstNode& root) {
     enterScope(); // Push the global scope
     root.accept(*this);
     exitScope();
@@ -15,15 +14,14 @@ void DeclarationPassVisitor::run(AstNode& root) {
         throw CompilerException(_errors);
 }
 
-void DeclarationPassVisitor::visit(Program& program) {
+void DeclarationPassVisitor::visit(AST::Program& program) {
     program.scope = _symbolTable.getCurrentScope();
-    _symbolTable.declareBuiltins();
     for (const auto& stmt: program.statements) {
         stmt->accept(*this);
     }
 }
 
-void DeclarationPassVisitor::visit(FunctionDeclaration& node) {
+void DeclarationPassVisitor::visit(AST::FunctionDeclaration& node) {
     const auto symbol = _symbolTable.declare(node.name, Symbol::SymbolKind::Function, node.returnType);
     if (!symbol) {
         logError(SemanticErrorType::DuplicateDeclaration, node, node.name);
@@ -32,15 +30,14 @@ void DeclarationPassVisitor::visit(FunctionDeclaration& node) {
     node.symbol = symbol;
 
     enterScope();
-    for (auto& param : node.parameters) {
+    for (auto& param: node.parameters) {
         symbol->params.push_back(param);
 
         Symbol* paramSymbol = _symbolTable.declare(param.name, Symbol::SymbolKind::Parameter, param.type);
 
         if (!paramSymbol) {
             logError(SemanticErrorType::ParameterRedeclaration, node, param.name);
-        }
-        else {
+        } else {
             param.symbol = paramSymbol;
         }
     }
@@ -49,7 +46,7 @@ void DeclarationPassVisitor::visit(FunctionDeclaration& node) {
     exitScope();
 }
 
-void DeclarationPassVisitor::visit(IfStatement& node) {
+void DeclarationPassVisitor::visit(AST::IfStatement& node) {
     enterScope();
     node.thenBranch->accept(*this);
     exitScope();
@@ -61,13 +58,13 @@ void DeclarationPassVisitor::visit(IfStatement& node) {
     }
 }
 
-void DeclarationPassVisitor::visit(WhileLoop& node) {
+void DeclarationPassVisitor::visit(AST::WhileLoop& node) {
     enterScope();
     node.body->accept(*this);
     exitScope();
 }
 
-void DeclarationPassVisitor::visit(ForLoop& node) {
+void DeclarationPassVisitor::visit(AST::ForLoop& node) {
     enterScope();
 
     const auto symbol = _symbolTable.declare(node.identifier, Symbol::SymbolKind::Variable, Type::Int);
@@ -79,16 +76,16 @@ void DeclarationPassVisitor::visit(ForLoop& node) {
     exitScope();
 }
 
-void DeclarationPassVisitor::visit(Block& node) {
+void DeclarationPassVisitor::visit(AST::Block& node) {
     enterScope();
     node.scope = _symbolTable.getCurrentScope();
-    for (const auto& stmt : node.statements) {
+    for (const auto& stmt: node.statements) {
         stmt->accept(*this);
     }
     exitScope();
 }
 
-void DeclarationPassVisitor::visit(VariableDeclaration& node) {
+void DeclarationPassVisitor::visit(AST::VariableDeclaration& node) {
     const auto symbolPtr = _symbolTable.declare(node.name, Symbol::SymbolKind::Variable, node.specifiedType,
                                                 node.isConst);
     if (!symbolPtr) {
@@ -98,54 +95,54 @@ void DeclarationPassVisitor::visit(VariableDeclaration& node) {
     node.symbol = symbolPtr;
 }
 
-void DeclarationPassVisitor::visit(FunctionCall& node) {
+void DeclarationPassVisitor::visit(AST::FunctionCall& node) {
     // nothing to do in declaration pass
 }
 
-void DeclarationPassVisitor::visit(BinaryExpression& node) {
+void DeclarationPassVisitor::visit(AST::BinaryExpression& node) {
     // nothing to do in declaration pass
 }
 
-void DeclarationPassVisitor::visit(UnaryExpression& node) {
+void DeclarationPassVisitor::visit(AST::UnaryExpression& node) {
     // nothing to do in declaration pass
 }
 
-void DeclarationPassVisitor::visit(IncDecExpression &node) {
+void DeclarationPassVisitor::visit(AST::IncDecExpression& node) {
     // nothing to do in decleration pass
 }
 
-void DeclarationPassVisitor::visit(VariableAssignment& node) {
+void DeclarationPassVisitor::visit(AST::VariableAssignment& node) {
     // nothing to do in declaration pass
 }
 
-void DeclarationPassVisitor::visit(ReturnStatement& node) {
+void DeclarationPassVisitor::visit(AST::ReturnStatement& node) {
     // nothing to do in declaration pass
 }
 
-void DeclarationPassVisitor::visit(IntegerLiteralNode& node) {
+void DeclarationPassVisitor::visit(AST::IntegerLiteralNode& node) {
     // nothing to do in declaration pass
 }
 
-void DeclarationPassVisitor::visit(FloatLiteralNode& node) {
+void DeclarationPassVisitor::visit(AST::FloatLiteralNode& node) {
     // nothing to do in declaration pass
 }
 
-void DeclarationPassVisitor::visit(StringLiteralNode& node) {
+void DeclarationPassVisitor::visit(AST::StringLiteralNode& node) {
     // nothing to do in declaration pass
 }
 
-void DeclarationPassVisitor::visit(BooleanLiteralNode& node) {
+void DeclarationPassVisitor::visit(AST::BooleanLiteralNode& node) {
     // nothing to do in declaration pass
 }
 
-void DeclarationPassVisitor::visit(VariableExpression& node) {
+void DeclarationPassVisitor::visit(AST::VariableExpression& node) {
     // nothing to do in declaration pass
 }
 
-void DeclarationPassVisitor::visit(RangeExpression& node) {
+void DeclarationPassVisitor::visit(AST::RangeExpression& node) {
     // nothing to do in declaration pass
 }
 
-void DeclarationPassVisitor::visit(ExpressionStatement& node) {
+void DeclarationPassVisitor::visit(AST::ExpressionStatement& node) {
     // nothing to do in declaration pass
 }

@@ -6,14 +6,13 @@
 #include "parse/AST/AstVisitor.h"
 #include "SymbolTable.h"
 
-class AstNode;
 class SymbolPool;
 
 class SemanticVisitor : public AstVisitor {
 public:
     explicit SemanticVisitor(SymbolTable& symbolTable);
 
-    virtual void run(AstNode& root) = 0;
+    virtual void run(AST::AstNode& root) = 0;
 
 protected:
     SymbolTable&               _symbolTable;
@@ -24,12 +23,12 @@ protected:
     void exitScope() const;
 
     template<typename T>
-    void logError(SemanticErrorType type, const AstNode& node, T&& contextData) {
+    void logError(SemanticErrorType type, const AST::AstNode& node, T&& contextData) {
         _errors.push_back(SemanticError(type, node, ErrorContext(std::forward<T>(contextData))));
     }
 
     // Overload for errors with no extra data
-    void logError(SemanticErrorType type, const AstNode& node);
+    void logError(SemanticErrorType type, const AST::AstNode& node);
 };
 
 

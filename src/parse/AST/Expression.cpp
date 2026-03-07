@@ -3,82 +3,82 @@
 #include "AstVisitor.h"
 #include "IR/IRGeneratorLLVM.h"
 
-void IntegerLiteralNode::accept(AstVisitor& visitor) {
+void AST::IntegerLiteralNode::accept(AstVisitor& visitor) {
     visitor.visit(*this);
 }
 
-llvm::Value* IntegerLiteralNode::acceptIR(IRGeneratorLLVM& visitor) {
+llvm::Value* AST::IntegerLiteralNode::acceptIR(IRGeneratorLLVM& visitor) {
     return visitor.visit(*this);
 }
 
-void FloatLiteralNode::accept(AstVisitor& visitor) {
+void AST::FloatLiteralNode::accept(AstVisitor& visitor) {
     visitor.visit(*this);
 }
 
-llvm::Value* FloatLiteralNode::acceptIR(IRGeneratorLLVM& visitor) {
+llvm::Value* AST::FloatLiteralNode::acceptIR(IRGeneratorLLVM& visitor) {
     return visitor.visit(*this);
 }
 
-void StringLiteralNode::accept(AstVisitor& visitor) {
+void AST::StringLiteralNode::accept(AstVisitor& visitor) {
     visitor.visit(*this);
 }
 
-llvm::Value* StringLiteralNode::acceptIR(IRGeneratorLLVM& visitor) {
+llvm::Value* AST::StringLiteralNode::acceptIR(IRGeneratorLLVM& visitor) {
     return visitor.visit(*this);
 }
 
-void BooleanLiteralNode::accept(AstVisitor& visitor) {
+void AST::BooleanLiteralNode::accept(AstVisitor& visitor) {
     visitor.visit(*this);
 }
 
-llvm::Value* BooleanLiteralNode::acceptIR(IRGeneratorLLVM& visitor) {
+llvm::Value* AST::BooleanLiteralNode::acceptIR(IRGeneratorLLVM& visitor) {
     return visitor.visit(*this);
 }
 
-void BinaryExpression::accept(AstVisitor& visitor) {
+void AST::BinaryExpression::accept(AstVisitor& visitor) {
     visitor.visit(*this);
 }
 
-llvm::Value* BinaryExpression::acceptIR(IRGeneratorLLVM& visitor) {
+llvm::Value* AST::BinaryExpression::acceptIR(IRGeneratorLLVM& visitor) {
     return visitor.visit(*this);
 }
 
-void UnaryExpression::accept(AstVisitor& visitor) {
+void AST::UnaryExpression::accept(AstVisitor& visitor) {
     visitor.visit(*this);
 }
 
-llvm::Value* UnaryExpression::acceptIR(IRGeneratorLLVM& visitor) {
+llvm::Value* AST::UnaryExpression::acceptIR(IRGeneratorLLVM& visitor) {
     return visitor.visit(*this);
 }
 
-void VariableExpression::accept(AstVisitor& visitor) {
+void AST::VariableExpression::accept(AstVisitor& visitor) {
     visitor.visit(*this);
 }
 
-llvm::Value* VariableExpression::acceptIR(IRGeneratorLLVM& visitor) {
+llvm::Value* AST::VariableExpression::acceptIR(IRGeneratorLLVM& visitor) {
     return visitor.visit(*this);
 }
 
-void IncDecExpression::accept(AstVisitor &visitor) {
+void AST::IncDecExpression::accept(AstVisitor& visitor) {
     visitor.visit(*this);
 }
 
-llvm::Value* IncDecExpression::acceptIR(IRGeneratorLLVM& visitor) {
+llvm::Value* AST::IncDecExpression::acceptIR(IRGeneratorLLVM& visitor) {
     return visitor.visit(*this);
 }
 
-void FunctionCall::accept(AstVisitor& visitor) {
+void AST::FunctionCall::accept(AstVisitor& visitor) {
     visitor.visit(*this);
 }
 
-llvm::Value* FunctionCall::acceptIR(IRGeneratorLLVM& visitor) {
+llvm::Value* AST::FunctionCall::acceptIR(IRGeneratorLLVM& visitor) {
     return visitor.visit(*this);
 }
 
-void RangeExpression::accept(AstVisitor& visitor) {
+void AST::RangeExpression::accept(AstVisitor& visitor) {
     visitor.visit(*this);
 }
 
-llvm::Value* RangeExpression::acceptIR(IRGeneratorLLVM& visitor) {
+llvm::Value* AST::RangeExpression::acceptIR(IRGeneratorLLVM& visitor) {
     return visitor.visit(*this);
 }

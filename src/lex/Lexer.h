@@ -32,6 +32,7 @@ private:
 
     Token parseNumber();
 
+
     std::string parseIdentifierOrKeyword();
 
     void skipSingleLineComment();
@@ -39,6 +40,8 @@ private:
     void skipMultiLineComment();
 
     Token parseStringLiteral();
+
+    static std::string processEscapeSequences(const std::string& input);
 
     void error(const LexerErrorType& type, int line, int col, const std::string& lexeme);
 };

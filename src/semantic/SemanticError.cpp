@@ -10,7 +10,7 @@ struct overloaded : Ts... {
     using Ts::operator()...;
 };
 
-SemanticError::SemanticError(SemanticErrorType type, const AstNode& node, ErrorContext context)
+SemanticError::SemanticError(SemanticErrorType type, const AST::AstNode& node, ErrorContext context)
     : CompilerError(node.metadata), _type(type), _node(&node), _context(std::move(context)) {
     // 1. Format the specific details (The "Why")
     // We format these to be grammatically smooth when appended to the prefix.
@@ -134,6 +134,9 @@ SemanticError::SemanticError(SemanticErrorType type, const AstNode& node, ErrorC
             break;
         case SemanticErrorType::MissingMainFunction:
             prefix = "No main function found";
+            break;
+        case SemanticErrorType::UnreachableCode:
+            prefix = "Unreachable code";
             break;
     }
 

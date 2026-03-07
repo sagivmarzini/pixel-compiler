@@ -11,7 +11,7 @@ class Parser {
 public:
     Parser(std::vector<Token> tokens);
 
-    Program parseProgram();
+    AST::Program parseProgram();
 
     struct ParseUnwindException : std::runtime_error {
         ParseUnwindException() : std::runtime_error("") {
@@ -26,51 +26,51 @@ private:
     // A flag to prevent multiple errors from one single mistake
     bool _isPanicMode = false;
 
-    std::unique_ptr<Statement> parseDeclaration();
+    std::unique_ptr<AST::Statement> parseDeclaration();
 
-    std::unique_ptr<Statement> parseStatement();
+    std::unique_ptr<AST::Statement> parseStatement();
 
-    std::unique_ptr<Block> parseBlock();
+    std::unique_ptr<AST::Block> parseBlock();
 
-    std::vector<FunctionCall::FunctionArgument> parseFunctionArguments();
+    std::vector<AST::FunctionCall::FunctionArgument> parseFunctionArguments();
 
-    std::unique_ptr<Statement> parseFunctionDeclaration();
+    std::unique_ptr<AST::Statement> parseFunctionDeclaration();
 
-    std::unique_ptr<Statement> parseVariableDeclaration();
+    std::unique_ptr<AST::Statement> parseVariableDeclaration();
 
-    std::unique_ptr<Statement> parseVariableAssignment();
+    std::unique_ptr<AST::Statement> parseVariableAssignment();
 
-    std::unique_ptr<Expression> parseFunctionCall();
+    std::unique_ptr<AST::Expression> parseFunctionCall();
 
-    std::unique_ptr<Statement> parseIfStatement();
+    std::unique_ptr<AST::Statement> parseIfStatement();
 
-    std::unique_ptr<Statement> parseWhileLoop();
+    std::unique_ptr<AST::Statement> parseWhileLoop();
 
-    std::unique_ptr<RangeExpression> parseRangeExpression();
+    std::unique_ptr<AST::RangeExpression> parseRangeExpression();
 
-    std::unique_ptr<Statement> parseForLoop();
+    std::unique_ptr<AST::Statement> parseForLoop();
 
-    std::unique_ptr<Statement> parseReturnStatement();
+    std::unique_ptr<AST::Statement> parseReturnStatement();
 
-    std::unique_ptr<Expression> parseExpression();
+    std::unique_ptr<AST::Expression> parseExpression();
 
-    std::unique_ptr<Expression> parseBooleanOrExpression();
+    std::unique_ptr<AST::Expression> parseBooleanOrExpression();
 
-    std::unique_ptr<Expression> parseBooleanAndExpression();
+    std::unique_ptr<AST::Expression> parseBooleanAndExpression();
 
-    std::unique_ptr<Expression> parseBooleanEqualityExpression();
+    std::unique_ptr<AST::Expression> parseBooleanEqualityExpression();
 
-    std::unique_ptr<Expression> parseComparisonExpression();
+    std::unique_ptr<AST::Expression> parseComparisonExpression();
 
-    std::unique_ptr<Expression> parseAdditiveExpression();
+    std::unique_ptr<AST::Expression> parseAdditiveExpression();
 
-    std::unique_ptr<Expression> parseMultiplicativeExpression();
+    std::unique_ptr<AST::Expression> parseMultiplicativeExpression();
 
-    std::unique_ptr<Expression> parseUnaryExpression();
+    std::unique_ptr<AST::Expression> parseUnaryExpression();
 
-    std::unique_ptr<Expression> parseIncDecExpression();
+    std::unique_ptr<AST::Expression> parseIncDecExpression();
 
-    std::unique_ptr<Expression> parsePrimary();
+    std::unique_ptr<AST::Expression> parsePrimary();
 
     Token& peek();
 
