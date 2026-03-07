@@ -1,16 +1,29 @@
 cmake_minimum_required(VERSION 3.16)
-project(compiler-project)
+project(pxl-lang VERSION 0.1.0)
 
 set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# --- Dependencies ---
+#find_package(SDL3 REQUIRED)
 find_package(LLVM REQUIRED CONFIG)
 
-include_directories(${LLVM_INCLUDE_DIRS})
-add_definitions(${LLVM_DEFINITIONS})
+# --- Runtime Library (The "Standard Library" for your language) ---
+# We build this, but we DON'T link it to the compiler executable.
+add_library(pxl_runtime SHARED
+        runtime/pxl_string.c
+        runtime/pxl_utilities.c
+        runtime/pxl_string.h
+        runtime/pxl_utilities.h
+)
+target_include_directories(pxl_runtime PUBLIC runtime)
+#target_link_libraries(pxl_runtime PRIVATE SDL3::SDL3)
 
+# --- The Compiler ---
 llvm_map_components_to_libnames(llvm_libs core support native target)
 
-add_executable(compiler-project
+# Using a variable for sources keeps add_executable clean
+set(COMPILER_SOURCES
         src/main.cpp
         src/Compiler.cpp
         src/lex/Lexer.cpp
@@ -42,7 +55,6 @@ add_executable(compiler-project
         src/semantic/TypeCheckerVisitor.h
         src/semantic/SymbolTable.cpp
         src/semantic/SymbolTable.h
-        src/semantic/SymbolTable.cpp
         src/CompilerError.cpp
         src/CompilerError.h
         src/parse/ParserError.cpp
@@ -53,5 +65,15 @@ add_executable(compiler-project
         src/IR/IRGeneratorLLVM.h
 )
 
-target_include_directories(compiler-project PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
-target_link_libraries(compiler-project PRIVATE ${llvm_libs})
+add_executable(pxl-compiler ${COMPILER_SOURCES})
+
+# Modern scoped configuration
+target_include_directories(pxl-compiler PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${LLVM_INCLUDE_DIRS}
+)
+
+target_compile_definitions(pxl-compiler PRIVATE ${LLVM_DEFINITIONS})
+
+# Link LLVM libs
+target_link_libraries(pxl-compiler PRIVATE ${llvm_libs})
