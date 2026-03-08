@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # --- Dependencies ---
-#find_package(SDL3 REQUIRED)
+find_package(SDL3 REQUIRED)
 find_package(LLVM REQUIRED CONFIG)
 
 # --- Runtime Library (The "Standard Library" for your language) ---
@@ -15,9 +15,13 @@ add_library(pxl_runtime SHARED
         runtime/pxl_utilities.c
         runtime/pxl_string.h
         runtime/pxl_utilities.h
+        runtime/pxl_graphics.h
+        runtime/pxl_graphics.c
+        runtime/pxl_draw.h
+        runtime/pxl_draw.c
 )
 target_include_directories(pxl_runtime PUBLIC runtime)
-#target_link_libraries(pxl_runtime PRIVATE SDL3::SDL3)
+target_link_libraries(pxl_runtime PRIVATE SDL3::SDL3)
 
 # --- The Compiler ---
 llvm_map_components_to_libnames(llvm_libs core support native target)
