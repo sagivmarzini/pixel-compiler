@@ -5,12 +5,13 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # --- Dependencies ---
-find_package(SDL3 REQUIRED)
+#find_package(SDL3 REQUIRED)
 find_package(LLVM REQUIRED CONFIG)
 
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/libs)
 # --- Runtime Library (The "Standard Library" for your language) ---
 # We build this, but we DON'T link it to the compiler executable.
-add_library(pxl_runtime SHARED
+add_library(pxl_runtime STATIC
         runtime/pxl_string.c
         runtime/pxl_utilities.c
         runtime/pxl_string.h
@@ -21,7 +22,7 @@ add_library(pxl_runtime SHARED
         runtime/pxl_draw.c
 )
 target_include_directories(pxl_runtime PUBLIC runtime)
-target_link_libraries(pxl_runtime PRIVATE SDL3::SDL3)
+#target_link_libraries(pxl_runtime PRIVATE SDL3::SDL3)
 
 # --- The Compiler ---
 llvm_map_components_to_libnames(llvm_libs core support native target)
@@ -69,8 +70,8 @@ set(COMPILER_SOURCES
         src/IR/IRGeneratorLLVM.h
         src/semantic/FunctionSignature.h
 )
-
 add_executable(pxl-compiler ${COMPILER_SOURCES})
+add_dependencies(pxl-compiler pxl_runtime)
 
 # Modern scoped configuration
 target_include_directories(pxl-compiler PRIVATE
@@ -82,3 +83,7 @@ target_compile_definitions(pxl-compiler PRIVATE ${LLVM_DEFINITIONS})
 
 # Link LLVM libs
 target_link_libraries(pxl-compiler PRIVATE ${llvm_libs})
+# Tell the C++ code where the runtime library is located
+target_compile_definitions(pxl-compiler PRIVATE
+        PXL_RUNTIME_LIB_PATH="${CMAKE_BINARY_DIR}/libs/libpxl_runtime.a"
+)

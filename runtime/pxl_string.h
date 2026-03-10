@@ -9,7 +9,7 @@ typedef struct {
     char data[];
 } pxl_string;
 
-pxl_string* pxl_create_string(const char* data, size_t size);
+pxl_string* pxl_create_string(const char* data, int size);
 
 void pxl_destroy_string(pxl_string* str);
 
@@ -18,6 +18,8 @@ pxl_string* pxl_concat_string(const pxl_string* a, const pxl_string* b);
 void pxl_copy(pxl_string** dest, const pxl_string* src);
 
 char pxl_char_at(const pxl_string* str, size_t index);
+
+const char* pxl_get_string_data(const pxl_string* str);
 
 bool pxl_string_equals(const pxl_string* a, const pxl_string* b);
 

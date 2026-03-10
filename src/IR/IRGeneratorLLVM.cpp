@@ -8,7 +8,6 @@
 #include "parse/AST/Statement.h"
 #include "semantic/Symbol.h"
 #include "semantic/SymbolTable.h"
-#include "semantic/FunctionSignature.h"
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Verifier.h>
 #include <vector>
@@ -20,10 +19,9 @@
 #include <llvm/Support/FileSystem.h>
 #include <llvm/IR/LegacyPassManager.h>
 
-
 IRGeneratorLLVM::IRGeneratorLLVM() {
     _context = std::make_unique<llvm::LLVMContext>();
-    _module  = std::make_unique<llvm::Module>("pixel_compiler", *_context);
+    _module = std::make_unique<llvm::Module>("pixel_compiler", *_context);
     _builder = std::make_unique<llvm::IRBuilder<> >(*_context);
 }
 
@@ -44,7 +42,7 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::Program& program) {
 llvm::Value* IRGeneratorLLVM::visit(const AST::FunctionDeclaration& node) {
     using llvm::Function;
 
-    std::vector<llvm::Type*> paramTypes;
+    std::vector<llvm::Type *> paramTypes;
     paramTypes.reserve(node.parameters.size());
     for (const auto& param: node.parameters) {
         paramTypes.push_back(compilerTypeToLlvmType(param.type));
@@ -66,7 +64,7 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::FunctionDeclaration& node) {
         arg.setName(param.name);
 
         // Create an alloca for the parameter
-        llvm::Type*       type   = arg.getType();
+        llvm::Type* type = arg.getType();
         llvm::AllocaInst* alloca = _builder->CreateAlloca(type, nullptr, std::string(arg.getName()) + "_addr");
 
         // Store the initial value (the argument) into the alloca
@@ -95,22 +93,29 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::FunctionCall& node) {
         throw std::runtime_error("| LLVM | Function not found: " + node.functionName);
     }
 
-    std::vector<llvm::Value*> args;
-    bool                      isVariadic = calledFunction->isVarArg();
-    int                       index      = 0;
+    std::vector<llvm::Value *> args;
+    bool isVariadic = calledFunction->isVarArg();
+    bool isBuiltin = _builtinFunctions.contains(node.functionName);
+    int index = 0;
     for (const auto& arg: node.arguments) {
         auto argValue = arg.value->acceptIR(*this);
 
         // Promote argument to float if necessary
         if (index < calledFunction->getFunctionType()->getNumParams()) {
             // This is a fixed argument, we can safely cast to the expected type
-            argValue = castToExpectedType(argValue, calledFunction->getArg(index)->getType());
+            argValue = castToType(argValue, calledFunction->getArg(index)->getType());
         } else if (isVariadic) {
             // Variadic arguments (the values after the format string)
             // If the value is a 32-bit Float, promote it to a 64-bit Double
             if (argValue->getType()->isFloatTy()) {
                 argValue = _builder->CreateFPExt(argValue, _builder->getDoubleTy(), "float_to_double");
             }
+        }
+
+        // When passing strings to built-in functions, pass the pointer to the string data
+        if (isBuiltin && arg.value->type == Type::String) {
+            llvm::Function* getStrFunc = getOrDeclareRuntime("pxl_get_string_data");
+            argValue = _builder->CreateCall(getStrFunc, {argValue}, "raw_str_tmp");
         }
 
         args.push_back(argValue);
@@ -129,8 +134,8 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::IfStatement& node) {
     const auto theFunction = _builder->GetInsertBlock()->getParent();
 
     // Create basic blocks for the `then` and `else` cases
-    const auto thenBlock  = llvm::BasicBlock::Create(*_context, "then", theFunction);
-    const auto elseBlock  = llvm::BasicBlock::Create(*_context, "else");
+    const auto thenBlock = llvm::BasicBlock::Create(*_context, "then", theFunction);
+    const auto elseBlock = llvm::BasicBlock::Create(*_context, "else");
     const auto mergeBlock = llvm::BasicBlock::Create(*_context, "ifcont");
 
     _builder->CreateCondBr(condition, thenBlock, elseBlock);
@@ -171,8 +176,8 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::WhileLoop& node) {
     const auto theFunction = _builder->GetInsertBlock()->getParent();
 
     // Create the blocks
-    const auto condBB  = llvm::BasicBlock::Create(*_context, "whilecond", theFunction);
-    const auto bodyBB  = llvm::BasicBlock::Create(*_context, "whilebody", theFunction);
+    const auto condBB = llvm::BasicBlock::Create(*_context, "whilecond", theFunction);
+    const auto bodyBB = llvm::BasicBlock::Create(*_context, "whilebody", theFunction);
     const auto afterBB = llvm::BasicBlock::Create(*_context, "whileafter");
 
     // Jump from the current location to the condition check
@@ -206,9 +211,9 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::ForLoop& node) {
     llvm::Value* variableAddr = initLocalVariable(startVal->getType(), node.identifier, startVal);
     _namedValues[node.symbol] = variableAddr;
 
-    llvm::Function*   theFunction = _builder->GetInsertBlock()->getParent();
-    llvm::BasicBlock* loopBB      = llvm::BasicBlock::Create(*_context, "loop", theFunction);
-    llvm::BasicBlock* afterBB     = llvm::BasicBlock::Create(*_context, "afterloop", theFunction);
+    llvm::Function* theFunction = _builder->GetInsertBlock()->getParent();
+    llvm::BasicBlock* loopBB = llvm::BasicBlock::Create(*_context, "loop", theFunction);
+    llvm::BasicBlock* afterBB = llvm::BasicBlock::Create(*_context, "afterloop", theFunction);
 
     // Fall through from current block to loop start
     _builder->CreateBr(loopBB);
@@ -219,12 +224,12 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::ForLoop& node) {
     // Only continue with increment and condition if body didn't terminate
     if (!_builder->GetInsertBlock()->getTerminator()) {
         // Increment: Load, Add, Store
-        llvm::Value* stepVal    = node.step->acceptIR(*this);
+        llvm::Value* stepVal = node.step->acceptIR(*this);
         llvm::Value* currentVal = _builder->CreateLoad(compilerTypeToLlvmType(node.range->type), variableAddr,
                                                        node.identifier);
 
         llvm::Value* nextVal;
-        llvm::Type*  loopVarType = currentVal->getType();
+        llvm::Type* loopVarType = currentVal->getType();
 
         // Check if we're dealing with floats or ints
         if (loopVarType->isFloatingPointTy()) {
@@ -268,71 +273,62 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::Block& node) {
 
 llvm::Value* IRGeneratorLLVM::visit(const AST::VariableDeclaration& node) {
     const auto symbol = node.symbol;
-    const auto type   = compilerTypeToLlvmType(symbol->type);
+    const auto llvmType = compilerTypeToLlvmType(symbol->type);
 
-    if (symbol->scope->getParent()->getParent() == nullptr) {
-        // Check if the value is a string literal
-        if (auto* strLit = dynamic_cast<AST::StringLiteralNode*>(node.value.get())) {
-            // 1. Create the string data
-            auto* stringData = llvm::ConstantDataArray::getString(*_context, strLit->value, true);
-
-            // 2. Create the Global Variable
-            auto* gVar = new llvm::GlobalVariable(
-                *_module, stringData->getType(), // The type is [N x i8]
-                true,                            // isConstant
-                llvm::GlobalValue::InternalLinkage,
-                stringData, // Initializer
-                node.name
-            );
-
-            _namedValues[node.symbol] = gVar;
-            return gVar;
-        }
-
-        // GLOBAL VARIABLE PATH
-        // Check if already exists, otherwise create
-        llvm::GlobalVariable* globalVariable = _module->getGlobalVariable(node.name);
-
-        if (!globalVariable) {
-            globalVariable = new llvm::GlobalVariable(
-                *_module, type, false,
-                llvm::GlobalValue::ExternalLinkage,
-                nullptr, node.name
-            );
-        }
+    if (bool isGlobal = (symbol->scope->getParent()->getParent() == nullptr)) {
+        llvm::Constant* initializer = nullptr;
 
         if (node.value) {
-            auto* initValue = node.value->acceptIR(*this);
-            if (auto* constantInit = llvm::dyn_cast<llvm::Constant>(initValue)) {
-                // If types don't match exactly (e.g. i32 init for float global), cast it
-                if (constantInit->getType() != type) {
-                    constantInit = llvm::ConstantExpr::getBitCast(constantInit, type);
-                }
-                globalVariable->setInitializer(constantInit);
+            llvm::Value* val = node.value->acceptIR(*this);
+
+            // Check if this a constant (number/bool) or a runtime instruction
+            if (auto* constVal = llvm::dyn_cast<llvm::Constant>(val)) {
+                initializer = constVal;
             } else {
-                throw std::runtime_error("Global variables must be initialized with a constant.");
+                // TODO: Write a __pxl_global_init() function where runtime constructors are initialized
+                throw std::runtime_error(
+                    "| LLVM | Global '" + node.name + "' requires a runtime "
+                    "constructor (like a String or Function call), which is not yet supported."
+                );
             }
         } else {
-            globalVariable->setInitializer(llvm::Constant::getNullValue(type));
+            // If no value provided, default to zero/null
+            initializer = llvm::Constant::getNullValue(llvmType);
         }
 
-        _namedValues[symbol] = globalVariable;
-        return globalVariable;
-    } else {
-        // LOCAL VARIABLE PATH
-        llvm::Value* val = node.value ? node.value->acceptIR(*this) : nullptr;
+        auto* globalVar = new llvm::GlobalVariable(
+            *_module, llvmType, false, llvm::GlobalValue::InternalLinkage,
+            initializer, node.name
+        );
 
-        if (val) {
-            val = castToExpectedType(val, type); // Ensure 0 becomes 0.0 before storage
-        }
-
-        const auto alloca    = initLocalVariable(type, node.name, val);
-        _namedValues[symbol] = alloca;
-        return alloca;
+        _namedValues[symbol] = globalVar;
+        return globalVar;
     }
+    // --- Local Variable Path ---
+    llvm::Value* initVal = nullptr;
+    if (node.value) {
+        initVal = node.value->acceptIR(*this);
+        initVal = castToType(initVal, llvmType);
+    } else
+        initVal = llvm::Constant::getNullValue(llvmType);
+
+    const auto alloca = initLocalVariable(llvmType, node.name, initVal);
+    _namedValues[symbol] = alloca;
+    return alloca;
 }
 
 llvm::Value* IRGeneratorLLVM::visit(const AST::VariableAssignment& node) {
+    if (node.symbol->type == Type::String) {
+        // Load the source
+        auto value = node.assignedValue->acceptIR(*this);
+        auto strCopyFunc = getOrDeclareRuntime(_runtimeStringOperations.at(Operator::Assignment));
+
+        // Get the pointer to the destination (without loading it)
+        auto dest = _namedValues.at(node.symbol);
+
+        return _builder->CreateCall(strCopyFunc, {dest, value});
+    }
+
     const auto variableAddress = _namedValues.at(node.symbol);
     _builder->CreateStore(node.assignedValue->acceptIR(*this), variableAddress);
 
@@ -347,7 +343,7 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::ReturnStatement& node) {
     llvm::Value* value = node.value->acceptIR(*this);
 
     llvm::Type* expectedType = _builder->GetInsertBlock()->getParent()->getReturnType();
-    value                    = castToExpectedType(value, expectedType);
+    value = castToType(value, expectedType);
 
     return _builder->CreateRet(value);
 }
@@ -359,51 +355,47 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::BinaryExpression& node) {
     promoteToMatch(lhs, rhs);
 
     const bool isFloat = lhs->getType()->isFloatingPointTy();
+    const bool isInt = lhs->getType()->isIntegerTy();
+    if (node.left->type == Type::String && node.right->type == Type::String) {
+        const auto funcName = _runtimeStringOperations.at(node.op);
+        auto* operationFunc = getOrDeclareRuntime(funcName);
+        return _builder->CreateCall(operationFunc, {lhs, rhs}, "binop");
+    }
 
     switch (node.op) {
         case Operator::Plus:
-            return isFloat
-                       ? _builder->CreateFAdd(lhs, rhs, "addtmp")
-                       : _builder->CreateAdd(lhs, rhs, "addtmp");
+            if (isFloat) return _builder->CreateFAdd(lhs, rhs, "addtmp");
+            if (isInt) return _builder->CreateAdd(lhs, rhs, "addtmp");
         case Operator::Minus:
-            return isFloat
-                       ? _builder->CreateFSub(lhs, rhs, "subtmp")
-                       : _builder->CreateSub(lhs, rhs, "subtmp");
+            if (isFloat) return _builder->CreateFSub(lhs, rhs, "subtmp");
+            if (isInt) return _builder->CreateSub(lhs, rhs, "subtmp");
         case Operator::Star:
-            return isFloat
-                       ? _builder->CreateFMul(lhs, rhs, "multmp")
-                       : _builder->CreateMul(lhs, rhs, "multmp");
+            if (isFloat) return _builder->CreateFMul(lhs, rhs, "multmp");
+            if (isInt) return _builder->CreateMul(lhs, rhs, "multmp");
         case Operator::Slash:
-            return isFloat
-                       ? _builder->CreateFDiv(lhs, rhs, "divtmp")
-                       : _builder->CreateSDiv(lhs, rhs, "divtmp");
-
+            lhs = castToType(lhs, _builder->getFloatTy());
+            rhs = castToType(rhs, _builder->getFloatTy());
+            return _builder->CreateFDiv(lhs, rhs, "divtmp");
         case Operator::Equal:
-            return isFloat
-                       ? _builder->CreateFCmpOEQ(lhs, rhs, "eqtmp")
-                       : _builder->CreateICmpEQ(lhs, rhs, "eqtmp");
+            if (isFloat) return _builder->CreateFCmpOEQ(lhs, rhs, "eqtmp");
+            if (isInt) return _builder->CreateICmpEQ(lhs, rhs, "eqtmp");
         case Operator::NotEqual:
-            return isFloat
-                       ? _builder->CreateFCmpONE(lhs, rhs, "neqtmp")
-                       : _builder->CreateICmpNE(lhs, rhs, "neqtmp");
+            if (isFloat) return _builder->CreateFCmpONE(lhs, rhs, "neqtmp");
+            if (isInt) return _builder->CreateICmpNE(lhs, rhs, "neqtmp");
         case Operator::GreaterThan:
             // Integers use ICmp, Floats use FCmp
             // UGT = Unsigned Greater Than, SGT = Signed Greater Than, OGT = Ordered Greater Than
-            return isFloat
-                       ? _builder->CreateFCmpOGT(lhs, rhs, "cmptmp")
-                       : _builder->CreateICmpSGT(lhs, rhs, "cmptmp");
+            if (isFloat) return _builder->CreateFCmpOGT(lhs, rhs, "cmptmp");
+            if (isInt) return _builder->CreateICmpSGT(lhs, rhs, "cmptmp");
         case Operator::GreaterEqual:
-            return isFloat
-                       ? _builder->CreateFCmpOGE(lhs, rhs, "cmptmp")
-                       : _builder->CreateICmpSGE(lhs, rhs, "cmptmp");
+            if (isFloat) return _builder->CreateFCmpOGE(lhs, rhs, "cmptmp");
+            if (isInt) return _builder->CreateICmpSGE(lhs, rhs, "cmptmp");
         case Operator::LessThan:
-            return isFloat
-                       ? _builder->CreateFCmpOLT(lhs, rhs, "cmptmp")
-                       : _builder->CreateICmpSLT(lhs, rhs, "cmptmp");
+            if (isFloat) return _builder->CreateFCmpOLT(lhs, rhs, "cmptmp");
+            if (isInt) return _builder->CreateICmpSLT(lhs, rhs, "cmptmp");
         case Operator::LessEqual:
-            return isFloat
-                       ? _builder->CreateFCmpOLE(lhs, rhs, "cmptmp")
-                       : _builder->CreateICmpSLE(lhs, rhs, "cmptmp");
+            if (isFloat) return _builder->CreateFCmpOLE(lhs, rhs, "cmptmp");
+            if (isInt) return _builder->CreateICmpSLE(lhs, rhs, "cmptmp");
 
         case Operator::LogicalAnd:
             return _builder->CreateLogicalAnd(lhs, rhs, "logandtmp");
@@ -417,25 +409,31 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::BinaryExpression& node) {
 }
 
 llvm::Value* IRGeneratorLLVM::visit(const AST::UnaryExpression& node) {
-    const auto operand = node.operand->acceptIR(*this);
+    llvm::Value* operand = node.operand->acceptIR(*this);
+    if (!operand) return nullptr;
 
-    // 1. CONSTANT PATH (For Global Initializers)
-    if (auto* c = llvm::dyn_cast<llvm::ConstantFP>(operand)) {
+    // CONSTANT PATH
+    if (auto* constOp = llvm::dyn_cast<llvm::Constant>(operand)) {
         if (node.op == Operator::Minus) {
-            llvm::APFloat val = c->getValueAPF();
-            val.changeSign();
-            return llvm::ConstantFP::get(c->getContext(), val);
+            if (auto* cfp = llvm::dyn_cast<llvm::ConstantFP>(constOp)) {
+                llvm::APFloat val = cfp->getValueAPF();
+                val.changeSign();
+                return llvm::ConstantFP::get(cfp->getContext(), val);
+            }
+            if (auto* cint = llvm::dyn_cast<llvm::ConstantInt>(constOp)) {
+                return llvm::ConstantInt::get(cint->getContext(), -cint->getValue());
+            }
+        } else if (node.op == Operator::Exclamation) {
+            // For booleans (i1), flip the bit manually
+            if (auto* cint = llvm::dyn_cast<llvm::ConstantInt>(constOp)) {
+                bool isTrue = cint->getZExtValue() != 0;
+                return llvm::ConstantInt::get(llvm::Type::getInt1Ty(constOp->getContext()), !isTrue);
+            }
         }
+        throw std::runtime_error("| LLVM | Unknown/Invalid constant unary expression");
     }
 
-    // For Integers
-    if (auto* c = llvm::dyn_cast<llvm::ConstantInt>(operand)) {
-        if (node.op == Operator::Minus) {
-            return llvm::ConstantInt::get(c->getContext(), -c->getValue());
-        }
-    }
-
-    // 2. INSTRUCTION PATH (For Local Variables / Functions)
+    // INSTRUCTION PATH (For Local Variables / Functions)
     switch (node.op) {
         case Operator::Minus:
             if (operand->getType()->isFloatingPointTy()) {
@@ -444,11 +442,13 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::UnaryExpression& node) {
             return _builder->CreateNeg(operand, "negtmp");
 
         case Operator::Exclamation:
-            // CreateNot works for i1 (booleans)
             return _builder->CreateNot(operand, "lognottmp");
+
+        default:
+            throw std::runtime_error("| LLVM | Unknown unary operator");
     }
-    return nullptr;
 }
+
 
 llvm::Value* IRGeneratorLLVM::visit(const AST::IncDecExpression& node) {
     llvm::Value* addr = _namedValues[node.symbol];
@@ -484,29 +484,8 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::IncDecExpression& node) {
 
 llvm::Value* IRGeneratorLLVM::visit(const AST::VariableExpression& node) const {
     llvm::Value* variableAddress = _namedValues.at(node.symbol);
-    llvm::Type*  varType         = compilerTypeToLlvmType(node.symbol->type);
+    llvm::Type* varType = compilerTypeToLlvmType(node.symbol->type);
 
-    // Strings are arrays in memory; we want the pointer to the first element
-    if (node.symbol->type == Type::String) {
-        // If it's a GlobalVariable, it has an 'allocated' or 'value' type (the array)
-        if (auto* gVar = llvm::dyn_cast<llvm::GlobalVariable>(variableAddress)) {
-            llvm::Type* gType = gVar->getValueType();
-            if (gType->isArrayTy()) {
-                // Decay the array [N x i8] to a simple ptr
-                // In modern LLVM, CreateGEP requires the source element type explicitly
-                return _builder->CreateInBoundsGEP(
-                    gType,
-                    variableAddress,
-                    {_builder->getInt64(0), _builder->getInt64(0)},
-                    "strdecay"
-                );
-            }
-        }
-        // If it's already a ptr (like a function argument), just return it
-        return variableAddress;
-    }
-
-    // For non-strings, perform a standard load
     return _builder->CreateLoad(varType, variableAddress, node.name + '_');
 }
 
@@ -514,14 +493,8 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::IntegerLiteralNode& node) const {
     return llvm::ConstantInt::get(*_context, llvm::APInt(32, node.value, true));
 }
 
-llvm::Value* IRGeneratorLLVM::visit(const AST::StringLiteralNode& node) const {
-    // If we are inside a function, this is safe
-    if (_builder->GetInsertBlock()) {
-        return _builder->CreateGlobalString(node.value, "strtmp");
-    }
-
-    // If we are NOT in a function (Global Init), return the raw constant array
-    return llvm::ConstantDataArray::getString(*_context, node.value, true);
+llvm::Value* IRGeneratorLLVM::visit(const AST::StringLiteralNode& node) {
+    return createPxlStringFromLiteral(node.value);
 }
 
 llvm::Value* IRGeneratorLLVM::visit(const AST::BooleanLiteralNode& node) const {
@@ -538,14 +511,13 @@ llvm::Type* IRGeneratorLLVM::compilerTypeToLlvmType(const Type& type) const {
             return _builder->getInt32Ty();
         case Type::Float:
             return _builder->getFloatTy();
-        case Type::Boolean:
+        case Type::Bool:
             return _builder->getInt1Ty();
         case Type::Void:
             return _builder->getVoidTy();
         case Type::Ptr:
             throw std::runtime_error("Not Implemented: pointers");
         case Type::String:
-            // throw std::runtime_error("Not Implemented: strings");
             return _builder->getPtrTy();
         case Type::Color:
             throw std::runtime_error("Not Implemented: colors");
@@ -560,7 +532,7 @@ Type IRGeneratorLLVM::llvmTypeToCompilerType(const llvm::Type& type) {
     }
 
     if (type.isIntegerTy(1)) {
-        return Type::Boolean;
+        return Type::Bool;
     }
 
     if (type.isFloatTy()) {
@@ -579,18 +551,18 @@ Type IRGeneratorLLVM::llvmTypeToCompilerType(const llvm::Type& type) {
 }
 
 void IRGeneratorLLVM::promoteToMatch(llvm::Value*& lhs, llvm::Value*& rhs) const {
-    const Type leftType  = llvmTypeToCompilerType(*lhs->getType());
-    const Type rightType = llvmTypeToCompilerType(*rhs->getType());
+    const auto leftType = lhs->getType();
+    const auto rightType = rhs->getType();
 
     if (leftType == rightType) return;
 
     // only allowed promotion: int -> float
-    if (leftType == Type::Int && rightType == Type::Float) {
+    if (leftType == _builder->getInt32Ty() && rightType == _builder->getFloatTy()) {
         lhs = _builder->CreateSIToFP(lhs, _builder->getFloatTy());
         return;
     }
 
-    if (leftType == Type::Float && rightType == Type::Int) {
+    if (leftType == _builder->getFloatTy() && rightType == _builder->getInt32Ty()) {
         rhs = _builder->CreateSIToFP(rhs, _builder->getFloatTy());
         return;
     }
@@ -598,7 +570,7 @@ void IRGeneratorLLVM::promoteToMatch(llvm::Value*& lhs, llvm::Value*& rhs) const
     throw std::runtime_error("Internal error: Invalid operand types for binary operation");
 }
 
-llvm::Value* IRGeneratorLLVM::castToExpectedType(llvm::Value* value, const llvm::Type* expectedType) const {
+llvm::Value* IRGeneratorLLVM::castToType(llvm::Value* value, const llvm::Type* expectedType) const {
     if (value->getType() == expectedType)
         return value;
 
@@ -608,7 +580,7 @@ llvm::Value* IRGeneratorLLVM::castToExpectedType(llvm::Value* value, const llvm:
     return nullptr;
 }
 
-llvm::Value* IRGeneratorLLVM::initLocalVariable(llvm::Type*  type, const std::string& name,
+llvm::Value* IRGeneratorLLVM::initLocalVariable(llvm::Type* type, const std::string& name,
                                                 llvm::Value* value) const {
     const auto alloca = _builder->CreateAlloca(type, nullptr, name);
 
@@ -623,7 +595,7 @@ llvm::Function* IRGeneratorLLVM::getOrDeclareBuiltin(const std::string& name) {
 
     // 1. SILENT MAPPING LOGIC
     // Check if it's a math function that needs the 'f' suffix for returning 32-bit floats
-    // TODO: Use a list of functions that require an f suffix instead
+    // TODO: Use a map of functions that require an f suffix instead
     if (name == "sin" || name == "cos" || name == "tan" || name == "sqrt" || name == "pow" || name == "floor") {
         const auto it = _builtinFunctions.find(name);
         if (it != _builtinFunctions.end()) {
@@ -644,18 +616,52 @@ llvm::Function* IRGeneratorLLVM::getOrDeclareBuiltin(const std::string& name) {
         return nullptr;
     }
 
-    const auto               [parameters, returnType] = it->second;
-    std::vector<llvm::Type*> paramTypes;
+    const auto [parameters, returnType] = it->second;
+    std::vector<llvm::Type *> paramTypes;
     for (const auto& parameter: parameters) {
         paramTypes.push_back(compilerTypeToLlvmType(parameter.type));
     }
 
-    llvm::Type* retType    = compilerTypeToLlvmType(returnType);
-    bool        isVariadic = (name == "printf");
-    auto*       funcType   = llvm::FunctionType::get(retType, paramTypes, isVariadic);
+    llvm::Type* retType = compilerTypeToLlvmType(returnType);
+    bool isVariadic = (name == "printf");
+    auto* funcType = llvm::FunctionType::get(retType, paramTypes, isVariadic);
 
     // 3. Create the function with the 'actualName' (e.g., sinf)
     return llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, actualName, _module.get());
+}
+
+llvm::Function* IRGeneratorLLVM::getOrDeclareRuntime(const std::string& name) {
+    if (auto* function = _module->getFunction(name)) {
+        return function;
+    }
+
+    const auto it = _runtimeFunctions.find(name);
+    if (it == _runtimeFunctions.end()) {
+        throw std::runtime_error("Fatal Compiler Error: Missing runtime hook definition for " + name);
+    }
+
+    const auto& [parameters, returnType] = it->second;
+    std::vector<llvm::Type *> paramTypes;
+    for (const auto& parameter: parameters) {
+        paramTypes.push_back(compilerTypeToLlvmType(parameter.type));
+    }
+
+    llvm::Type* retType = compilerTypeToLlvmType(returnType);
+    auto* funcType = llvm::FunctionType::get(retType, paramTypes, false);
+
+    return llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, name, _module.get());
+}
+
+llvm::Value* IRGeneratorLLVM::createPxlStringFromLiteral(const std::string& value) {
+    // Create a hidden global for the raw C-string bytes
+    auto* rawPtr = _builder->CreateGlobalStringPtr(value, ".str_raw", 0, _module.get());
+
+    // Prepare arguments for pxl_create_string(char* data, size_t size)
+    auto* sizeVal = _builder->getInt32(value.length());
+
+    // Call the runtime
+    auto* createStringFunc = getOrDeclareRuntime("pxl_create_string");
+    return _builder->CreateCall(createStringFunc, {rawPtr, sizeVal});
 }
 
 
@@ -673,30 +679,29 @@ void IRGeneratorLLVM::createExecutable(const std::string& outputPath) const {
     llvm::InitializeNativeTargetAsmParser();
 
     // 2. Get the target triple (e.g., "x86_64-pc-linux-gnu")
-    auto         targetTripleStr = llvm::sys::getDefaultTargetTriple();
-    llvm::Triple targetTriple(targetTripleStr);
+    auto targetTriple = llvm::sys::getDefaultTargetTriple();
 
     _module->setTargetTriple(targetTriple);
 
     std::string error;
-    auto        target = llvm::TargetRegistry::lookupTarget(targetTriple, error);
+    auto target = llvm::TargetRegistry::lookupTarget(targetTriple, error);
     if (!target) {
         throw std::runtime_error("| LLVM | Failed to find target: " + error);
     }
 
     // 3. Configure the Target Machine
-    auto                cpu      = "generic";
-    auto                features = "";
+    auto cpu = "generic";
+    auto features = "";
     llvm::TargetOptions opt;
-    auto                targetMachine = target->createTargetMachine(
+    auto targetMachine = target->createTargetMachine(
         targetTriple, cpu, features, opt, llvm::Reloc::PIC_
     );
 
     _module->setDataLayout(targetMachine->createDataLayout());
 
     // 4. Emit the Object File (.o)
-    std::string          objFilename = outputPath + ".o";
-    std::error_code      ec;
+    std::string objFilename = outputPath + ".o";
+    std::error_code ec;
     llvm::raw_fd_ostream dest(objFilename, ec, llvm::sys::fs::OF_None);
 
     if (ec) {
@@ -719,8 +724,11 @@ void IRGeneratorLLVM::createExecutable(const std::string& outputPath) const {
     // We add -lm to link the math library (for sin, cos, sqrt, pow)
     std::string linkCommand = "clang " + objFilename + " -o " + outputPath + " -lm";
 
-    // If you are ready to link your Bridge and SDL3, uncomment this:
-    // linkCommand += " bridge.o -lSDL3";
+    // If ready to link your Bridge, uncomment this:
+    linkCommand += std::string(" ") + PXL_RUNTIME_LIB_PATH;
+
+    // If ready to link SDL3, uncomment this:
+    // linkCommand += " -lSDL3";
 
     std::cout << "Linking..." << std::endl;
     int linkResult = std::system(linkCommand.c_str());

@@ -138,6 +138,9 @@ SemanticError::SemanticError(SemanticErrorType type, const AST::AstNode& node, E
         case SemanticErrorType::UnreachableCode:
             prefix = "Unreachable code";
             break;
+        case SemanticErrorType::NonIntForLoop:
+            prefix = "For loops are only supported for integers";
+            break;
     }
 
     // 3. Construct the Final Message

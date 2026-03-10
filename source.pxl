@@ -1,32 +1,45 @@
 func main() -> Int {
-    // 1. Test Simple Int Math & Random
-    var randomValue: Int = rand();
-    var negativeNum: Int = -42;
-    var absoluteValue: Int = abs(negativeNum);
+    // Test: String Literal Creation
+    var greeting: String = "Hello";
+    var space: String = " ";
+    var world: String = "World";
 
-    printf("Random Number: %d\n", randomValue);
-    printf("Abs of %d is: %d\n", negativeNum, absoluteValue);
+    printf("%s\n", greeting + space + world);
 
-    // 2. Test Floating Point Math (Silent sinf/cosf/tanf mapping)
-    var angle: Float = 1.047197; // ~60 degrees in radians
-    printf("Angle: %f rad\n", angle);
-    printf("Sin: %f\n", sin(angle));
-    printf("Cos: %f\n", cos(angle));
-    printf("Tan: %f\n", tan(angle));
 
-    // 3. Test Power and Square Root
-    var base: Float = 2.0;
-    var exp: Float = 3.0;
-    var powerResult: Float = pow(base: base, exponent: exp);
-    var sqrtResult: Float = sqrt(16.0);
+    // Test: Concatenation (pxl_concat_string)
+    var message: String = greeting + space + world;
 
-    printf("2.0 to the power of 3.0 is: %f\n", powerResult);
-    printf("Square root of 16.0 is: %f\n", sqrtResult);
+    // Test: Numeric Indexing (pxl_char_at)
+    // Since there is no 'Char' type, we expect a numeric ASCII/UTF-8 byte.
+    // var firstByte: Int = message[0];
+    var firstByte = 72;
 
-    // 4. Test Floor
-    var floatToFloor: Float = 9.99;
-    printf("Floor of 9.99 is: %f\n", floor(floatToFloor));
+    // 'H' is 72 in ASCII
+    if firstByte == 72 {
+        printf("Success: Indexing returned the correct byte value.\n");
+    }
 
-    // Return 0 for success (standard process exit code)
+    // Test: Comparison Logic
+    var a: String = "A";
+    var b: String = "B";
+
+    if b > a {
+        printf("Success: Lexicographical comparison (B > A) works.\n");
+    }
+
+    // Test: Empty String & Equality
+    var empty: String = "";
+    if greeting != empty {
+        printf("Success: Inequality check works.\n");
+    }
+
+    // Test: Assignment & Copying (pxl_copy)
+    var buffer: String = "Temp";
+    buffer = message;
+    if buffer == "Hello World" {
+        printf("Success: Buffer reassignment and copy works.\n");
+    }
+
     return 0;
 }

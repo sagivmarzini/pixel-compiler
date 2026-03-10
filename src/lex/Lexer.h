@@ -18,10 +18,10 @@ public:
     [[nodiscard]] std::vector<Token> lex();
 
 private:
-    std::string                _sourceCode;
-    size_t                     _position;
-    int                        _line;
-    int                        _col;
+    std::string _sourceCode;
+    size_t _position;
+    int _line;
+    int _col;
     std::vector<CompilerError> _errors;
 
     [[nodiscard]] char peek() const;
@@ -44,31 +44,6 @@ private:
     static std::string processEscapeSequences(const std::string& input);
 
     void error(const LexerErrorType& type, int line, int col, const std::string& lexeme);
-};
-
-const std::unordered_map<std::string, Keyword> Keywords = {
-    {"func", Keyword::Func},
-    {"var", Keyword::Var},
-    {"return", Keyword::Return},
-    {"if", Keyword::If},
-    {"else", Keyword::Else},
-    {"while", Keyword::While},
-    {"for", Keyword::For}
-};
-
-const std::unordered_map<std::string, Type> Types = {
-    {"int", Type::Int},
-    {"float", Type::Float},
-    {"bool", Type::Boolean},
-    {"ptr", Type::Ptr},
-    {"string", Type::String},
-    {"color", Type::Color},
-    {"void", Type::Void}
-};
-
-const std::unordered_map<std::string, BooleanLiteral> Booleans = {
-    {"true", BooleanLiteral{true}},
-    {"false", BooleanLiteral{false}}
 };
 
 

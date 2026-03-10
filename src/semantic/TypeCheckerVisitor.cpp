@@ -38,7 +38,7 @@ bool TypeCheckerVisitor::isString(Type type) {
 }
 
 bool TypeCheckerVisitor::isBoolean(Type type) {
-    return type == Type::Boolean;
+    return type == Type::Bool;
 }
 
 bool TypeCheckerVisitor::isAssignableTo(Type assignedType, Type variableType) {
@@ -62,7 +62,7 @@ void TypeCheckerVisitor::visit(AST::Program& program) {
 
 void TypeCheckerVisitor::visit(AST::FunctionDeclaration& node) {
     _currentFunctionReturnType = node.returnType;
-    _foundReturn               = false;
+    _foundReturn = false;
 
     node.body->accept(*this);
     if (!_foundReturn && node.returnType != Type::Void) {
@@ -76,19 +76,19 @@ void TypeCheckerVisitor::visit(AST::ExpressionStatement& node) {
 
 void TypeCheckerVisitor::visit(AST::IfStatement& node) {
     node.condition->accept(*this);
-    if (node.condition->type != Type::Boolean) {
+    if (node.condition->type != Type::Bool) {
         logError(SemanticErrorType::NonBooleanCondition, node);
     }
 
     // Check the 'then' branch
     bool originalStatus = _foundReturn;
-    _foundReturn        = false;
+    _foundReturn = false;
     node.thenBranch->accept(*this);
     bool thenReturns = _foundReturn;
 
     // Check the 'else' branch
     bool elseReturns = false;
-    _foundReturn     = false;
+    _foundReturn = false;
     if (node.elseBranch) {
         node.elseBranch->accept(*this);
         elseReturns = _foundReturn;
@@ -103,7 +103,7 @@ void TypeCheckerVisitor::visit(AST::WhileLoop& node) {
     node.condition->accept(*this);
 
     // Ensure condition returns a boolean
-    if (node.condition->type != Type::Boolean) {
+    if (node.condition->type != Type::Bool) {
         logError(SemanticErrorType::NonBooleanCondition, node);
     }
 
@@ -115,10 +115,10 @@ void TypeCheckerVisitor::visit(AST::ForLoop& node) {
 
     if (node.step) {
         node.step->accept(*this);
+    }
 
-        if (!isNumeric(node.step->type)) {
-            logError(SemanticErrorType::NonNumericStep, node);
-        }
+    if (node.range->type != Type::Int || node.step->type != Type::Int) {
+        logError(SemanticErrorType::NonIntForLoop, node);
     }
 
     node.body->accept(*this);
@@ -129,7 +129,7 @@ void TypeCheckerVisitor::visit(AST::RangeExpression& node) {
     node.end->accept(*this);
 
     const Type startType = node.start->type;
-    const Type endType   = node.end->type;
+    const Type endType = node.end->type;
 
     if (!isNumeric(startType) || !isNumeric(endType)) {
         logError(SemanticErrorType::NonNumericRange, node);
@@ -196,7 +196,7 @@ void TypeCheckerVisitor::visit(AST::FunctionCall& node) {
 
     node.type = calledFunction->type;
     std::set<std::string> seenParams;
-    int                   index = 0;
+    int index = 0;
 
     for (const auto& argument: node.arguments) {
         if (index < calledFunction->params.size()) {
@@ -246,7 +246,7 @@ void TypeCheckerVisitor::visit(AST::BinaryExpression& node) {
     node.right->accept(*this);
     if (node.left->type == Type::Error || node.right->type == Type::Error) return;
 
-    const Type leftType  = node.left->type;
+    const Type leftType = node.left->type;
     const Type rightType = node.right->type;
 
     switch (node.op) {
@@ -283,7 +283,7 @@ void TypeCheckerVisitor::visit(AST::BinaryExpression& node) {
         case Operator::NotEqual: {
             // Comparison is valid for numerics and strings (lexicographical)
             if (areComparableTypes(leftType, rightType) || isBoolean(leftType) && isBoolean(rightType)) {
-                node.type = Type::Boolean; // The result of comparison is always boolean
+                node.type = Type::Bool; // The result of comparison is always boolean
             } else {
                 logError(SemanticErrorType::TypeMismatch, node, OperatorData(node.op, leftType, rightType));
                 return;
@@ -296,7 +296,7 @@ void TypeCheckerVisitor::visit(AST::BinaryExpression& node) {
         case Operator::GreaterEqual: {
             // Comparison is valid for numerics and strings (lexicographical)
             if (areComparableTypes(leftType, rightType)) {
-                node.type = Type::Boolean; // The result of comparison is always boolean
+                node.type = Type::Bool; // The result of comparison is always boolean
             } else {
                 logError(SemanticErrorType::TypeMismatch, node, OperatorData(node.op, leftType, rightType));
                 return;
@@ -309,7 +309,7 @@ void TypeCheckerVisitor::visit(AST::BinaryExpression& node) {
         case Operator::LogicalOr: {
             // Logical operators only work on booleans
             if (isBoolean(leftType) && isBoolean(rightType)) {
-                node.type = Type::Boolean; // Result is always boolean
+                node.type = Type::Bool; // Result is always boolean
             } else {
                 logError(SemanticErrorType::TypeMismatch, node, OperatorData(node.op, leftType, rightType));
                 return;
@@ -350,7 +350,7 @@ void TypeCheckerVisitor::visit(AST::UnaryExpression& node) {
                 return;
             }
 
-            node.type = Type::Boolean;
+            node.type = Type::Bool;
 
             break;
         }
@@ -436,7 +436,7 @@ void TypeCheckerVisitor::visit(AST::StringLiteralNode& node) {
 }
 
 void TypeCheckerVisitor::visit(AST::BooleanLiteralNode& node) {
-    node.type = Type::Boolean;
+    node.type = Type::Bool;
 }
 
 void TypeCheckerVisitor::visit(AST::VariableExpression& node) {
