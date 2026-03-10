@@ -24,7 +24,7 @@ enum class Type {
 
     Int,
     Float,
-    Boolean,
+    Bool,
     Ptr,
     String,
     Color,
@@ -157,7 +157,7 @@ static const std::unordered_map<std::string, TokenType> keywords = {
 
     {"Int", Type::Int},
     {"Float", Type::Float},
-    {"Bool", Type::Boolean},
+    {"Bool", Type::Bool},
     {"Ptr", Type::Ptr},
     {"String", Type::String},
     {"Color", Type::Color},

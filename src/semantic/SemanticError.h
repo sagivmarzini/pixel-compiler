@@ -18,26 +18,26 @@ struct TypeMismatchData {
 
 struct ParamMismatchData {
     std::string name;
-    int         expectedCount;
-    int         actualCount;
+    int expectedCount;
+    int actualCount;
 };
 
 struct OperatorData {
     Operator op;
-    Type     left;
-    Type     right;
+    Type left;
+    Type right;
 };
 
 struct UnaryOperatorData {
     Operator op;
-    Type     operand;
+    Type operand;
 };
 
 struct ArgumentPositionData {
     std::string parameters;
     std::string arguments;
 
-    ArgumentPositionData(std::vector<AST::FunctionCall::FunctionArgument>&         args,
+    ArgumentPositionData(std::vector<AST::FunctionCall::FunctionArgument>& args,
                          std::vector<AST::FunctionDeclaration::FunctionParameter>& params) {
         for (int i = 0; i < args.size(); i++) {
             auto param = params[i].isImplicit ? params[i].name : "_";
@@ -82,13 +82,14 @@ enum class SemanticErrorType {
 
     // Control Flow
     NonBooleanCondition, // If/While
-    NonNumericRange,     // For loops
+    NonNumericRange, // For loops
     NonNumericStep,
+    NonIntForLoop,
     MissingReturn,
     UnreachableCode,
 
     // Operators
-    OperatorNotDefined,    // e.g. "String - String"
+    OperatorNotDefined, // e.g. "String - String"
     UnaryOperatorMismatch, // e.g. "!5"
 
     // Declaration pass
@@ -101,9 +102,9 @@ public:
     SemanticError(SemanticErrorType type, const AST::AstNode& node, ErrorContext context = std::monostate{});
 
 private:
-    SemanticErrorType   _type;
+    SemanticErrorType _type;
     const AST::AstNode* _node;
-    ErrorContext        _context;
+    ErrorContext _context;
 };
 
 

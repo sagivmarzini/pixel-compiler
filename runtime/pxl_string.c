@@ -4,7 +4,7 @@
 #include <string.h>
 #include <stdint.h> // for SIZE_MAX
 
-pxl_string* pxl_create_string(const char* data, const size_t size) {
+pxl_string* pxl_create_string(const char* data, int size) {
     // Avoid int overflow for the size of the new string
     if (size > SIZE_MAX - sizeof(pxl_string) - 1)
         pxl_runtime_error("String size overflow");
@@ -69,6 +69,13 @@ char pxl_char_at(const pxl_string* str, const size_t index) {
     }
 
     return str->data[index];
+}
+
+const char* pxl_get_string_data(const pxl_string* str) {
+    if (!str) {
+        pxl_runtime_error("Null string in pxl_string_data");
+    }
+    return str->data;
 }
 
 static int pxl_string_compare(const pxl_string* a, const pxl_string* b) {
