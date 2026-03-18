@@ -1,6 +1,6 @@
 #include "pxl_string.h"
 
-#include "pxl_utilities.h"
+#include "pxl_error.h"
 #include <string.h>
 #include <stdint.h> // for SIZE_MAX
 
