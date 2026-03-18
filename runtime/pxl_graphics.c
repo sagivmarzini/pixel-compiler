@@ -1,4 +1,6 @@
 #include "pxl_graphics.h"
+
+#include <stdlib.h>
 #include <SDL3/SDL.h>
 
 PxlContext pxl_context = {
@@ -16,6 +18,8 @@ void pxl_init() {
         SDL_Log("Canvas size not set before pxl_init\n");
         SDL_Quit();
     }
+    atexit(pxl_quit);
+
     if (!SDL_Init(SDL_INIT_VIDEO)) {
         SDL_Log("Failed to initialize SDL video: %s\n", SDL_GetError());
         SDL_Quit();
@@ -42,7 +46,7 @@ void pxl_run(void (*setup_ptr)(void), void (*draw_ptr)(void)) {
         SDL_Log("FPS must be greater than 0");
         return;
     }
-    // Round up the delay to a whole number
+    // Round up the delay to the closest integer
     const Uint64 target_frame_time_ms = (Uint64) (1000.0 / pxl_context.fps + 0.5);
 
     SDL_Event event;
@@ -75,6 +79,7 @@ void pxl_quit() {
     SDL_DestroyRenderer(pxl_context.renderer);
     SDL_DestroyWindow(pxl_context.window);
     SDL_Quit();
+    exit(0);
 }
 
 void pxl_set_canvas_size(int width, int height) {
