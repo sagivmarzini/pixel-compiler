@@ -122,7 +122,10 @@ void Compiler::initFunctions() {
                                   });
     _functionRegistry.registerApi("line",
                                   {
-                                      {{"x1", Type::Int}, {"y1", Type::Int}, {"x2", Type::Int}, {"y2", Type::Int}},
+                                      {
+                                          {"fromX", Type::Int}, {"fromY", Type::Int}, {"toX", Type::Int},
+                                          {"toY", Type::Int}
+                                      },
                                       Type::Void, "pxl_draw_line"
                                   });
     _functionRegistry.registerApi("point",

@@ -24,8 +24,8 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/libs)
 add_library(pxl_runtime STATIC
         runtime/pxl_string.c
         runtime/pxl_string.h
-        runtime/pxl_utilities.c
-        runtime/pxl_utilities.h
+        runtime/pxl_error.c
+        runtime/pxl_error.h
         runtime/pxl_graphics.c
         runtime/pxl_graphics.h
         runtime/pxl_draw.c
