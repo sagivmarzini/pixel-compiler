@@ -1,33 +1,87 @@
-func main() -> Int {
-    rect(x:0, y:0, w: 100, h: 100);
-    // 1. Test Simple Int Math & Random
-    var randomValue: Int = rand();
-    var negativeNum: Int = -42;
-    var absoluteValue: Int = abs(negativeNum);
+// ╔══════════════════════════════════════════╗
+// ║        Pixel Graphics — Hello Shapes     ║
+// ║   A tour of the basic drawing functions  ║
+// ╚══════════════════════════════════════════╝
 
-    printf("Random Number: %d\n", randomValue);
-    printf("Abs of %d is: %d\n", negativeNum, absoluteValue);
+func setup() -> Void {
+    setCanvas(width: 800, height: 600);
+}
 
-    // 2. Test Floating Point Math (Silent sinf/cosf/tanf mapping)
-    var angle: Float = 1.047197; // ~60 degrees in radians
-    printf("Angle: %f rad\n", angle);
-    printf("Sin: %f\n", sin(angle));
-    printf("Cos: %f\n", cos(angle));
-    printf("Tan: %f\n", tan(angle));
+func draw() -> Void {
+    // Clear the canvas each frame with a dark background
+    background(r: 18, g: 18, b: 28);
 
-    // 3. Test Power and Square Root
-    var base: Float = 2.0;
-    var exp: Float = 3.0;
-    var powerResult: Float = pow(base: base, exponent: exp);
-    var sqrtResult: Float = sqrt(16.0);
+    // ── Filled rect ─────────────────────────────────
+    setColor(r: 94, g: 234, b: 212);     // teal
+    rect(x: 60, y: 60, width: 140, height: 90);
 
-    printf("2.0 to the power of 3.0 is: %f\n", powerResult);
-    printf("Square root of 16.0 is: %f\n", sqrtResult);
+    // ── Outlined rect ───────────────────────────────
+    setColor(r: 255, g: 200, b: 80);     // amber
+    emptyRect(x: 240, y: 60, width: 140, height: 90);
 
-    // 4. Test Floor
-    var floatToFloor: Float = 9.99;
-    printf("Floor of 9.99 is: %f\n", floor(floatToFloor));
+    // ── Filled circle ───────────────────────────────
+    setColor(r: 192, g: 132, b: 252);    // purple
+    circle(x: 500, y: 105, radius: 55);
 
-    // Return 0 for success (standard process exit code)
-    return 0;
+    // ── Outlined circle ─────────────────────────────
+    setColor(r: 251, g: 113, b: 133);    // rose
+    emptyCircle(x: 680, y: 105, radius: 55);
+
+    // ── Lines — drawing a starburst ─────────────────
+    setColor(r: 99, g: 202, b: 255);     // sky blue
+    line(fromX: 140, fromY: 350, toX: 80,  toY: 280);
+    line(fromX: 140, fromY: 350, toX: 200, toY: 280);
+    line(fromX: 140, fromY: 350, toX: 60,  toY: 350);
+    line(fromX: 140, fromY: 350, toX: 220, toY: 350);
+    line(fromX: 140, fromY: 350, toX: 80,  toY: 420);
+    line(fromX: 140, fromY: 350, toX: 200, toY: 420);
+    line(fromX: 140, fromY: 350, toX: 140, toY: 270);
+    line(fromX: 140, fromY: 350, toX: 140, toY: 430);
+
+    // ── Points — drawing a dotted diagonal ──────────
+    setColor(r: 255, g: 255, b: 255);    // white
+    point(x: 320, y: 280);
+    point(x: 340, y: 300);
+    point(x: 360, y: 320);
+    point(x: 380, y: 340);
+    point(x: 400, y: 360);
+    point(x: 420, y: 380);
+    point(x: 440, y: 400);
+    point(x: 460, y: 420);
+
+    // ── A little composed scene at the bottom ───────
+    // Ground
+    setColor(r: 34, g: 197, b: 94);
+    rect(x: 540, y: 480, width: 220, height: 20);
+
+    // House body
+    setColor(r: 251, g: 191, b: 36);
+    rect(x: 580, y: 380, width: 140, height: 100);
+
+    // Door
+    setColor(r: 120, g: 60, b: 20);
+    rect(x: 635, y: 430, width: 30, height: 50);
+
+    // Window — outlined
+    setColor(r: 147, g: 210, b: 255);
+    emptyRect(x: 590, y: 400, width: 35, height: 30);
+
+    // Roof — pair of lines forming a triangle
+    setColor(r: 239, g: 68, b: 68);
+    line(fromX: 575, fromY: 380, toX: 650, toY: 310);
+    line(fromX: 650, fromY: 310, toX: 725, toY: 380);
+
+    // Sun — filled circle + rays as lines
+    setColor(r: 253, g: 224, b: 71);
+    circle(x: 720, y: 300, radius: 28);
+
+    setColor(r: 253, g: 224, b: 71);
+    line(fromX: 720, fromY: 258, toX: 720, toY: 245);
+    line(fromX: 720, fromY: 342, toX: 720, toY: 355);
+    line(fromX: 678, fromY: 300, toX: 665, toY: 300);
+    line(fromX: 762, fromY: 300, toX: 775, toY: 300);
+    line(fromX: 690, fromY: 270, toX: 680, toY: 260);
+    line(fromX: 750, fromY: 270, toX: 760, toY: 260);
+    line(fromX: 690, fromY: 330, toX: 680, toY: 340);
+    line(fromX: 750, fromY: 330, toX: 760, toY: 340);
 }
