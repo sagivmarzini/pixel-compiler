@@ -7,7 +7,7 @@
 #include "Symbol.h"
 #include "Scope.h"
 
-struct FunctionSignature;
+struct FunctionInfo;
 class SymbolPool;
 
 class SymbolTable {
@@ -25,15 +25,15 @@ public:
     [[nodiscard]] Symbol* lookup(const std::string& name) const;
 
     [[nodiscard]] Symbol* declare(const std::string& name, Symbol::SymbolKind kind, Type type,
-                                  bool               isConst = false) const;
+                                  bool isConst = false) const;
 
     void declareBuiltinFunctions(
-        const std::unordered_map<std::string, FunctionSignature>& declarations)
+        const std::unordered_map<std::string, FunctionInfo>& declarations)
     const;
 
 private:
-    Scope*                               _currentScope;
-    SymbolPool&                          _pool;
+    Scope* _currentScope;
+    SymbolPool& _pool;
     std::vector<std::unique_ptr<Scope> > _scopes;
 };
 

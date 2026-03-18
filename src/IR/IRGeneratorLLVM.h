@@ -11,16 +11,13 @@
 
 #include "parse/AST/Statement.h"
 #include "semantic/Scope.h"
-#include "semantic/FunctionSignature.h"
+#include "semantic/functions/FunctionRegistry.h"
 
 class SymbolTable;
 
 class IRGeneratorLLVM {
 public:
-    explicit IRGeneratorLLVM();
-
-    explicit IRGeneratorLLVM(
-        std::unordered_map<std::string, FunctionSignature> builtInFunctions);
+    explicit IRGeneratorLLVM(const FunctionRegistry& registry);
 
     void print() const;
 
@@ -81,28 +78,8 @@ private:
     // Keeps track of which values (like variables) are defined and their alloca address
     std::unordered_map<Symbol *, llvm::Value *> _namedValues;
 
-    std::unordered_map<std::string, FunctionSignature> _builtinFunctions{};
-    std::unordered_map<std::string, FunctionSignature> _runtimeFunctions = {
-        // Memory and Creation
-        {"pxl_create_string", {{{"data", Type::String}, {"size", Type::Int}}, Type::String}},
-        {"pxl_destroy_string", {{{"str", Type::String}}, Type::Void}},
-        {"pxl_copy", {{{"dest", Type::String}, {"src", Type::String}}, Type::Void}},
-        {"pxl_get_string_data", {{{"str", Type::String}}, Type::String}},
-
-        // Operations
-        {"pxl_concat_string", {{{"a", Type::String}, {"b", Type::String}}, Type::String}},
-        {"pxl_char_at", {{{"str", Type::String}, {"index", Type::Int}}, Type::Int}}, // Returning Int as discussed
-
-        // Comparisons
-        {"pxl_string_equals", {{{"a", Type::String}, {"b", Type::String}}, Type::Bool}},
-        {"pxl_string_not_equals", {{{"a", Type::String}, {"b", Type::String}}, Type::Bool}},
-        {"pxl_string_greater", {{{"a", Type::String}, {"b", Type::String}}, Type::Bool}},
-        {"pxl_string_smaller", {{{"a", Type::String}, {"b", Type::String}}, Type::Bool}},
-        {"pxl_string_greater_equals", {{{"a", Type::String}, {"b", Type::String}}, Type::Bool}},
-        {"pxl_string_smaller_equals", {{{"a", Type::String}, {"b", Type::String}}, Type::Bool}}
-    };
-
-    std::unordered_map<Operator, std::string> _runtimeStringOperations = {
+    const FunctionRegistry& _registry;
+    std::unordered_map<Operator, std::string> _stringOperatorLowering = {
         {Operator::Plus, "pxl_concat_string"},
         {Operator::Equal, "pxl_string_equals"},
         {Operator::NotEqual, "pxl_string_not_equals"},
@@ -126,9 +103,7 @@ private:
     llvm::Value* initLocalVariable(llvm::Type* type, const std::string& name,
                                    llvm::Value* value) const;
 
-    llvm::Function* getOrDeclareBuiltin(const std::string& name);
-
-    llvm::Function* getOrDeclareRuntime(const std::string& name);
+    llvm::Function* getOrDeclareFunction(const std::string& name) const;
 
     llvm::Value* createPxlStringFromLiteral(const std::string& value);
 };
