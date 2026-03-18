@@ -134,6 +134,21 @@ void Compiler::initFunctions() {
                                       {{"tex", Type::Pointer}, {"x", Type::Int}, {"y", Type::Int}}, Type::Void,
                                       "pxl_draw_image"
                                   });
+    // -----------------------------
+    // Graphics Lifecycle — internal
+    // -----------------------------
+    _functionRegistry.registerInternal("init",
+                                       {{}, Type::Void, "pxl_init"});
+
+    // Note: pxl_run takes two function pointers as arguments
+    _functionRegistry.registerInternal("run",
+                                       {
+                                           {{"setup", Type::Pointer}, {"draw", Type::Pointer}},
+                                           Type::Void, "pxl_run"
+                                       });
+
+    _functionRegistry.registerInternal("quit",
+                                       {{}, Type::Void, "pxl_quit"});
 
     // -----------------------------
     // Runtime string helpers — internal

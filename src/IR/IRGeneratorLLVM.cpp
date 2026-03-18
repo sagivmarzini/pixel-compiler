@@ -54,6 +54,10 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::FunctionDeclaration& node) {
 
     llvm::BasicBlock* basicBlock = llvm::BasicBlock::Create(*_context, "entry", function);
     _builder->SetInsertPoint(basicBlock);
+    if (node.name == "main") {
+        const auto func = getOrDeclareFunction("init");
+        _builder->CreateCall(func);
+    }
 
     int index = 0;
     for (auto& arg: function->args()) {
