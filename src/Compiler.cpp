@@ -69,7 +69,7 @@ void Compiler::initFunctions() {
     // -----------------------------
     // Math & IO API — user-callable
     // -----------------------------
-    _functionRegistry.registerApi("printf", // user types `print(...)`
+    _functionRegistry.registerApi("print",
                                   {{{"str", Type::String, true}}, Type::Int, "printf", true});
 
     _functionRegistry.registerApi("sin",
@@ -84,78 +84,169 @@ void Compiler::initFunctions() {
                                   {{{"base", Type::Float}, {"exponent", Type::Float}}, Type::Float, "powf"});
     _functionRegistry.registerApi("floor",
                                   {{{"value", Type::Float, true}}, Type::Float, "floorf"});
-
     _functionRegistry.registerApi("abs",
                                   {{{"value", Type::Int, true}}, Type::Int});
-    _functionRegistry.registerApi("rand",
-                                  {{}, Type::Int});
 
     // -----------------------------
-    // Graphics API — user-callable
+    // Graphics — Structure
+    // -----------------------------
+    _functionRegistry.registerApi("loop",
+                                  {{}, Type::Void, "pxl_loop"});
+    _functionRegistry.registerApi("noLoop",
+                                  {{}, Type::Void, "pxl_no_loop"});
+
+    // -----------------------------
+    // Graphics — Canvas setup
     // -----------------------------
     _functionRegistry.registerApi("canvas",
                                   {{{"width", Type::Int}, {"height", Type::Int}}, Type::Void, "pxl_set_canvas_size"});
+    _functionRegistry.registerApi("frameRate",
+                                  {{{"fps", Type::Int}}, Type::Void, "pxl_set_frames_per_second"});
+    _functionRegistry.registerApi("title",
+                                  {{{"t", Type::String}}, Type::Void, "pxl_set_window_title"});
+
+    // -----------------------------
+    // Graphics — Color / settings
+    // -----------------------------
     _functionRegistry.registerApi("background",
                                   {
-                                      {{"r", Type::Int}, {"g", Type::Int}, {"b", Type::Int}}, Type::Void,
-                                      "pxl_set_background_color"
+                                      {{"r", Type::Float}, {"g", Type::Float}, {"b", Type::Float}}, Type::Void,
+                                      "pxl_background"
                                   });
-    _functionRegistry.registerApi("setColor",
+    _functionRegistry.registerApi("fill",
                                   {
-                                      {{"r", Type::Int}, {"g", Type::Int}, {"b", Type::Int}}, Type::Void,
-                                      "pxl_set_draw_color"
+                                      {{"r", Type::Float}, {"g", Type::Float}, {"b", Type::Float}}, Type::Void,
+                                      "pxl_fill"
                                   });
+    _functionRegistry.registerApi("fillAlpha",
+                                  {
+                                      {{"r", Type::Float}, {"g", Type::Float}, {"b", Type::Float}, {"a", Type::Float}},
+                                      Type::Void, "pxl_fill_a"
+                                  });
+    _functionRegistry.registerApi("noFill",
+                                  {{}, Type::Void, "pxl_no_fill"});
+    _functionRegistry.registerApi("stroke",
+                                  {
+                                      {{"r", Type::Float}, {"g", Type::Float}, {"b", Type::Float}}, Type::Void,
+                                      "pxl_stroke"
+                                  });
+    _functionRegistry.registerApi("strokeAlpha",
+                                  {
+                                      {{"r", Type::Float}, {"g", Type::Float}, {"b", Type::Float}, {"a", Type::Float}},
+                                      Type::Void, "pxl_stroke_a"
+                                  });
+    _functionRegistry.registerApi("noStroke",
+                                  {{}, Type::Void, "pxl_no_stroke"});
+    _functionRegistry.registerApi("strokeWeight",
+                                  {{{"weight", Type::Float}}, Type::Void, "pxl_stroke_weight"});
+    _functionRegistry.registerApi("colorMode",
+                                  {{{"mode", Type::Int}}, Type::Void, "pxl_color_mode"});
 
-    _functionRegistry.registerApi("rect", // user types `rect(...)`
+    // -----------------------------
+    // Graphics — 2D Primitives
+    // -----------------------------
+    _functionRegistry.registerApi("rect",
                                   {
-                                      {{"x", Type::Int}, {"y", Type::Int}, {"w", Type::Int}, {"h", Type::Int}},
-                                      Type::Void, "pxl_draw_rect"
-                                  });
-    _functionRegistry.registerApi("rectEmpty", // user types `rectEmpty(...)`
-                                  {
-                                      {{"x", Type::Int}, {"y", Type::Int}, {"w", Type::Int}, {"h", Type::Int}},
-                                      Type::Void, "pxl_draw_empty_rect"
+                                      {{"x", Type::Float}, {"y", Type::Float}, {"w", Type::Float}, {"h", Type::Float}},
+                                      Type::Void, "pxl_rect"
                                   });
     _functionRegistry.registerApi("circle",
                                   {
-                                      {{"x", Type::Int}, {"y", Type::Int}, {"r", Type::Int}}, Type::Void,
-                                      "pxl_draw_circle_filled"
+                                      {{"x", Type::Float}, {"y", Type::Float}, {"d", Type::Float}}, Type::Void,
+                                      "pxl_circle"
                                   });
-    _functionRegistry.registerApi("circleEmpty",
+    _functionRegistry.registerApi("ellipse",
                                   {
-                                      {{"x", Type::Int}, {"y", Type::Int}, {"r", Type::Int}}, Type::Void,
-                                      "pxl_draw_circle_empty"
+                                      {{"x", Type::Float}, {"y", Type::Float}, {"w", Type::Float}, {"h", Type::Float}},
+                                      Type::Void, "pxl_ellipse"
                                   });
     _functionRegistry.registerApi("line",
                                   {
                                       {
-                                          {"fromX", Type::Int}, {"fromY", Type::Int}, {"toX", Type::Int},
-                                          {"toY", Type::Int}
+                                          {"x1", Type::Float}, {"y1", Type::Float}, {"x2", Type::Float},
+                                          {"y2", Type::Float}
                                       },
-                                      Type::Void, "pxl_draw_line"
+                                      Type::Void, "pxl_line"
+                                  });
+    _functionRegistry.registerApi("triangle",
+                                  {
+                                      {
+                                          {"x1", Type::Float}, {"y1", Type::Float}, {"x2", Type::Float},
+                                          {"y2", Type::Float}, {"x3", Type::Float}, {"y3", Type::Float}
+                                      },
+                                      Type::Void, "pxl_triangle"
                                   });
     _functionRegistry.registerApi("point",
-                                  {{{"x", Type::Int}, {"y", Type::Int}}, Type::Void, "pxl_draw_point"});
-    _functionRegistry.registerApi("loadImage",
-                                  {{{"path", Type::String}}, Type::Pointer, "pxl_load_image"});
-    _functionRegistry.registerApi("drawImage",
+                                  {{{"x", Type::Float}, {"y", Type::Float}}, Type::Void, "pxl_point"});
+
+    // -----------------------------
+    // Graphics — Transforms
+    // -----------------------------
+    _functionRegistry.registerApi("translate",
+                                  {{{"x", Type::Float}, {"y", Type::Float}}, Type::Void, "pxl_translate"});
+    _functionRegistry.registerApi("rotate",
+                                  {{{"angle", Type::Float}}, Type::Void, "pxl_rotate"});
+    _functionRegistry.registerApi("scale",
+                                  {{{"sx", Type::Float}, {"sy", Type::Float}}, Type::Void, "pxl_scale"});
+    _functionRegistry.registerApi("push",
+                                  {{}, Type::Void, "pxl_push"});
+    _functionRegistry.registerApi("pop",
+                                  {{}, Type::Void, "pxl_pop"});
+
+    // -----------------------------
+    // Graphics — Math utilities
+    // -----------------------------
+    _functionRegistry.registerApi("map",
                                   {
-                                      {{"tex", Type::Pointer}, {"x", Type::Int}, {"y", Type::Int}}, Type::Void,
-                                      "pxl_draw_image"
+                                      {
+                                          {"value", Type::Float}, {"start1", Type::Float}, {"stop1", Type::Float},
+                                          {"start2", Type::Float}, {"stop2", Type::Float}
+                                      },
+                                      Type::Float, "pxl_map"
                                   });
-    // -----------------------------
-    // Graphics Lifecycle — internal
-    // -----------------------------
-    _functionRegistry.registerInternal("init",
-                                       {{}, Type::Void, "pxl_init"});
+    _functionRegistry.registerApi("lerp",
+                                  {
+                                      {{"start", Type::Float}, {"stop", Type::Float}, {"amt", Type::Float}},
+                                      Type::Float, "pxl_lerp"
+                                  });
+    _functionRegistry.registerApi("constrain",
+                                  {
+                                      {{"n", Type::Float}, {"low", Type::Float}, {"high", Type::Float}}, Type::Float,
+                                      "pxl_constrain"
+                                  });
+    _functionRegistry.registerApi("dist",
+                                  {
+                                      {
+                                          {"x1", Type::Float}, {"y1", Type::Float}, {"x2", Type::Float},
+                                          {"y2", Type::Float}
+                                      },
+                                      Type::Float, "pxl_dist"
+                                  });
+    _functionRegistry.registerApi("random",
+                                  {{{"low", Type::Float}, {"high", Type::Float}}, Type::Float, "pxl_random"});
+    _functionRegistry.registerApi("noise",
+                                  {{{"x", Type::Float}}, Type::Float, "pxl_noise"});
+    _functionRegistry.registerApi("noise2",
+                                  {{{"x", Type::Float}, {"y", Type::Float}}, Type::Float, "pxl_noise2"});
 
-    // Note: pxl_run takes two function pointers as arguments
+    // -----------------------------
+    // Graphics — Typography
+    // -----------------------------
+    _functionRegistry.registerApi("text",
+                                  {
+                                      {{"str", Type::String}, {"x", Type::Float}, {"y", Type::Float}}, Type::Void,
+                                      "pxl_text"
+                                  });
+    _functionRegistry.registerApi("textSize",
+                                  {{{"size", Type::Float}}, Type::Void, "pxl_text_size"});
+    _functionRegistry.registerApi("textAlign",
+                                  {{{"align", Type::Int}}, Type::Void, "pxl_text_align"});
+
+    // -----------------------------
+    // Graphics — Lifecycle (internal)
+    // -----------------------------
     _functionRegistry.registerInternal("run",
-                                       {
-                                           {{"setup", Type::Pointer}, {"draw", Type::Pointer}},
-                                           Type::Void, "pxl_run"
-                                       });
-
+                                       {{{"setup", Type::Pointer}, {"draw", Type::Pointer}}, Type::Void, "pxl_run"});
     _functionRegistry.registerInternal("quit",
                                        {{}, Type::Void, "pxl_quit"});
 
