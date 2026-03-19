@@ -364,14 +364,14 @@ void pxl_set_window_title(const char* title) {
 //  Structure
 // ============================================================
 
-void loop(void) { pxl_context.looping = true; }
-void noLoop(void) { pxl_context.looping = false; }
+void pxl_loop(void) { pxl_context.looping = true; }
+void pxl_noLoop(void) { pxl_context.looping = false; }
 
 // ============================================================
 //  Color / settings
 // ============================================================
 
-void background(float r, float g, float b) {
+void pxl_background(float r, float g, float b) {
     SDL_Color c = resolve_color(r, g, b, 255);
     SDL_SetRenderDrawColor(pxl_context.renderer, c.r, c.g, c.b, 255);
     SDL_RenderClear(pxl_context.renderer);
@@ -379,39 +379,39 @@ void background(float r, float g, float b) {
     SDL_SetRenderDrawBlendMode(pxl_context.renderer, SDL_BLENDMODE_BLEND);
 }
 
-void fill(float r, float g, float b) {
+void pxl_fill(float r, float g, float b) {
     pxl_context.fill_color = resolve_color(r, g, b, 255);
     pxl_context.has_fill = true;
 }
 
-void fill_a(float r, float g, float b, float a) {
+void pxl_fill_a(float r, float g, float b, float a) {
     pxl_context.fill_color = resolve_color(r, g, b, a);
     pxl_context.has_fill = true;
 }
 
-void noFill(void) {
+void pxl_noFill(void) {
     pxl_context.has_fill = false;
 }
 
-void stroke(float r, float g, float b) {
+void pxl_stroke(float r, float g, float b) {
     pxl_context.stroke_color = resolve_color(r, g, b, 255);
     pxl_context.has_stroke = true;
 }
 
-void stroke_a(float r, float g, float b, float a) {
+void pxl_stroke_a(float r, float g, float b, float a) {
     pxl_context.stroke_color = resolve_color(r, g, b, a);
     pxl_context.has_stroke = true;
 }
 
-void noStroke(void) {
+void pxl_noStroke(void) {
     pxl_context.has_stroke = false;
 }
 
-void strokeWeight(float weight) {
+void pxl_strokeWeight(float weight) {
     pxl_context.stroke_weight = weight > 0 ? weight : 0;
 }
 
-void colorMode(PxlColorMode mode) {
+void pxl_colorMode(PxlColorMode mode) {
     pxl_context.color_mode = mode;
 }
 
@@ -419,7 +419,7 @@ void colorMode(PxlColorMode mode) {
 //  2D Primitives
 // ============================================================
 
-void rect(float x, float y, float w, float h) {
+void pxl_rect(float x, float y, float w, float h) {
     // Transform all 4 corners
     float tx0, ty0, tx1, ty1, tx2, ty2, tx3, ty3;
     transform_point(x, y, &tx0, &ty0);
@@ -453,15 +453,15 @@ void rect(float x, float y, float w, float h) {
     }
 }
 
-void circle(float x, float y, float d) {
-    ellipse(x, y, d, d);
+void pxl_circle(float x, float y, float d) {
+    pxl_ellipse(x, y, d, d);
 }
 
-void ellipse(float cx, float cy, float w, float h) {
+void pxl_ellipse(float cx, float cy, float w, float h) {
     ellipse_engine(cx, cy, w * 0.5f, h * 0.5f);
 }
 
-void line(float x1, float y1, float x2, float y2) {
+void pxl_line(float x1, float y1, float x2, float y2) {
     if (!pxl_context.has_stroke) return;
     float tx1, ty1, tx2, ty2;
     transform_point(x1, y1, &tx1, &ty1);
@@ -470,7 +470,7 @@ void line(float x1, float y1, float x2, float y2) {
     draw_thick_line(tx1, ty1, tx2, ty2, pxl_context.stroke_weight);
 }
 
-void triangle(float x1, float y1, float x2, float y2, float x3, float y3) {
+void pxl_triangle(float x1, float y1, float x2, float y2, float x3, float y3) {
     float tx1, ty1, tx2, ty2, tx3, ty3;
     transform_point(x1, y1, &tx1, &ty1);
     transform_point(x2, y2, &tx2, &ty2);
@@ -500,7 +500,7 @@ void triangle(float x1, float y1, float x2, float y2, float x3, float y3) {
     }
 }
 
-void point(float x, float y) {
+void pxl_point(float x, float y) {
     if (!pxl_context.has_stroke) return;
     float tx, ty;
     transform_point(x, y, &tx, &ty);
@@ -518,23 +518,23 @@ void point(float x, float y) {
 //  Transforms
 // ============================================================
 
-void translate(float x, float y) {
+void pxl_translate(float x, float y) {
     PxlMatrix t = {1, 0, 0, 1, x, y};
     pxl_context.current_transform = mat_mul(pxl_context.current_transform, t);
 }
 
-void rotate(float angle) {
+void pxl_rotate(float angle) {
     float c = cosf(angle), s = sinf(angle);
     PxlMatrix r = {c, s, -s, c, 0, 0};
     pxl_context.current_transform = mat_mul(pxl_context.current_transform, r);
 }
 
-void scale_xy(float sx, float sy) {
+void pxl_scale_xy(float sx, float sy) {
     PxlMatrix s = {sx, 0, 0, sy, 0, 0};
     pxl_context.current_transform = mat_mul(pxl_context.current_transform, s);
 }
 
-void push(void) {
+void pxl_push(void) {
     int top = pxl_context.transform_stack_top;
     if (top + 1 >= PXL_MAX_TRANSFORM_STACK)
         pxl_runtime_error("push(): transform stack overflow");
@@ -542,7 +542,7 @@ void push(void) {
     pxl_context.transform_stack_top = top + 1;
 }
 
-void pop(void) {
+void pxl_pop(void) {
     int top = pxl_context.transform_stack_top;
     if (top < 0)
         pxl_runtime_error("pop(): transform stack underflow");
@@ -554,26 +554,26 @@ void pop(void) {
 //  Math
 // ============================================================
 
-float map_val(float value, float start1, float stop1, float start2, float stop2) {
+float pxl_map_val(float value, float start1, float stop1, float start2, float stop2) {
     return start2 + (stop2 - start2) * ((value - start1) / (stop1 - start1));
 }
 
-float lerp_val(float start, float stop, float amt) {
+float pxl_lerp_val(float start, float stop, float amt) {
     return start + (stop - start) * amt;
 }
 
-float constrain_val(float n, float low, float high) {
+float pxl_constrain_val(float n, float low, float high) {
     if (n < low) return low;
     if (n > high) return high;
     return n;
 }
 
-float dist_val(float x1, float y1, float x2, float y2) {
+float pxl_dist_val(float x1, float y1, float x2, float y2) {
     float dx = x2 - x1, dy = y2 - y1;
     return sqrtf(dx * dx + dy * dy);
 }
 
-float random_val(float low, float high) {
+float pxl_random_val(float low, float high) {
     return low + ((float) rand() / (float) RAND_MAX) * (high - low);
 }
 
@@ -585,7 +585,7 @@ static float noise_table[PXL_NOISE_TABLE_SIZE];
 static int noise_perm[PXL_NOISE_TABLE_SIZE * 2];
 static bool noise_inited = false;
 
-static void noise_init(void) {
+static void pxl_noise_init(void) {
     if (noise_inited) return;
     for (int i = 0; i < PXL_NOISE_TABLE_SIZE; i++) {
         noise_table[i] = (float) rand() / (float) RAND_MAX;
