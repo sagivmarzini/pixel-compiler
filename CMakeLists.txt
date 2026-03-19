@@ -28,8 +28,6 @@ add_library(pxl_runtime STATIC
         runtime/pxl_error.h
         runtime/pxl_graphics.c
         runtime/pxl_graphics.h
-        runtime/pxl_draw.c
-        runtime/pxl_draw.h
 )
 
 target_include_directories(pxl_runtime PUBLIC runtime)
