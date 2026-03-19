@@ -99,7 +99,7 @@ void pxl_set_window_title(const char* title);
 // --- Structure
 void pxl_loop(void);
 
-void pxl_noLoop(void);
+void pxl_no_loop(void);
 
 // --- Color / settings
 void pxl_background(float r, float g, float b); // clears the canvas
@@ -107,17 +107,17 @@ void pxl_fill(float r, float g, float b);
 
 void pxl_fill_a(float r, float g, float b, float a);
 
-void pxl_noFill(void);
+void pxl_no_fill(void);
 
 void pxl_stroke(float r, float g, float b);
 
 void pxl_stroke_a(float r, float g, float b, float a);
 
-void pxl_noStroke(void);
+void pxl_no_stroke(void);
 
-void pxl_strokeWeight(float weight);
+void pxl_stroke_weight(float weight);
 
-void pxl_colorMode(PxlColorMode mode);
+void pxl_color_mode(PxlColorMode mode);
 
 // --- 2D Primitives
 void pxl_rect(float x, float y, float w, float h);
@@ -134,25 +134,25 @@ void pxl_point(float x, float y);
 void pxl_translate(float x, float y);
 
 void pxl_rotate(float angle); // radians
-void pxl_scale_xy(float sx, float sy);
+void pxl_scale(float sx, float sy);
 
 void pxl_push(void);
 
 void pxl_pop(void);
 
 // --- Math
-float pxl_map_val(float value, float start1, float stop1, float start2, float stop2);
+float pxl_map(float value, float start1, float stop1, float start2, float stop2);
 
-float pxl_lerp_val(float start, float stop, float amt);
+float pxl_lerp(float start, float stop, float amt);
 
-float pxl_constrain_val(float n, float low, float high);
+float pxl_constrain(float n, float low, float high);
 
-float pxl_dist_val(float x1, float y1, float x2, float y2);
+float pxl_dist(float x1, float y1, float x2, float y2);
 
-float pxl_random_val(float low, float high);
+float pxl_random(float low, float high);
 
-float pxl_noise_val(float x); // 1D Perlin-style value noise
-float pxl_noise_val2(float x, float y); // 2D
+float pxl_noise(float x); // 1D Perlin-style value noise
+float pxl_noise2(float x, float y); // 2D
 
 // ============================================================
 //  Input accessors  (read each frame inside draw())

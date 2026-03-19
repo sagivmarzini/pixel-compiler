@@ -365,7 +365,7 @@ void pxl_set_window_title(const char* title) {
 // ============================================================
 
 void pxl_loop(void) { pxl_context.looping = true; }
-void pxl_noLoop(void) { pxl_context.looping = false; }
+void pxl_no_loop(void) { pxl_context.looping = false; }
 
 // ============================================================
 //  Color / settings
@@ -389,7 +389,7 @@ void pxl_fill_a(float r, float g, float b, float a) {
     pxl_context.has_fill = true;
 }
 
-void pxl_noFill(void) {
+void pxl_no_fill(void) {
     pxl_context.has_fill = false;
 }
 
@@ -403,15 +403,15 @@ void pxl_stroke_a(float r, float g, float b, float a) {
     pxl_context.has_stroke = true;
 }
 
-void pxl_noStroke(void) {
+void pxl_no_stroke(void) {
     pxl_context.has_stroke = false;
 }
 
-void pxl_strokeWeight(float weight) {
+void pxl_stroke_weight(float weight) {
     pxl_context.stroke_weight = weight > 0 ? weight : 0;
 }
 
-void pxl_colorMode(PxlColorMode mode) {
+void pxl_color_mode(PxlColorMode mode) {
     pxl_context.color_mode = mode;
 }
 
@@ -529,7 +529,7 @@ void pxl_rotate(float angle) {
     pxl_context.current_transform = mat_mul(pxl_context.current_transform, r);
 }
 
-void pxl_scale_xy(float sx, float sy) {
+void pxl_scale(float sx, float sy) {
     PxlMatrix s = {sx, 0, 0, sy, 0, 0};
     pxl_context.current_transform = mat_mul(pxl_context.current_transform, s);
 }
@@ -554,26 +554,26 @@ void pxl_pop(void) {
 //  Math
 // ============================================================
 
-float pxl_map_val(float value, float start1, float stop1, float start2, float stop2) {
+float pxl_map(float value, float start1, float stop1, float start2, float stop2) {
     return start2 + (stop2 - start2) * ((value - start1) / (stop1 - start1));
 }
 
-float pxl_lerp_val(float start, float stop, float amt) {
+float pxl_lerp(float start, float stop, float amt) {
     return start + (stop - start) * amt;
 }
 
-float pxl_constrain_val(float n, float low, float high) {
+float pxl_constrain(float n, float low, float high) {
     if (n < low) return low;
     if (n > high) return high;
     return n;
 }
 
-float pxl_dist_val(float x1, float y1, float x2, float y2) {
+float pxl_dist(float x1, float y1, float x2, float y2) {
     float dx = x2 - x1, dy = y2 - y1;
     return sqrtf(dx * dx + dy * dy);
 }
 
-float pxl_random_val(float low, float high) {
+float pxl_random(float low, float high) {
     return low + ((float) rand() / (float) RAND_MAX) * (high - low);
 }
 
@@ -605,8 +605,8 @@ static void pxl_noise_init(void) {
 
 static float smooth(float t) { return t * t * t * (t * (t * 6.0f - 15.0f) + 10.0f); }
 
-float noise_val(float x) {
-    noise_init();
+float pxl_noise(float x) {
+    pxl_noise_init();
     int xi = (int) floorf(x) & (PXL_NOISE_TABLE_SIZE - 1);
     float xf = x - floorf(x);
     float u = smooth(xf);
@@ -615,8 +615,8 @@ float noise_val(float x) {
     return a + u * (b - a);
 }
 
-float noise_val2(float x, float y) {
-    noise_init();
+float pxl_noise2(float x, float y) {
+    pxl_noise_init();
     int xi = (int) floorf(x) & (PXL_NOISE_TABLE_SIZE - 1);
     int yi = (int) floorf(y) & (PXL_NOISE_TABLE_SIZE - 1);
     float xf = x - floorf(x), yf = y - floorf(y);
