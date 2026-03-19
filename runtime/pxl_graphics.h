@@ -97,62 +97,62 @@ void pxl_set_window_title(const char* title);
 // ============================================================
 
 // --- Structure
-void loop(void);
+void pxl_loop(void);
 
-void noLoop(void);
+void pxl_noLoop(void);
 
 // --- Color / settings
-void background(float r, float g, float b); // clears the canvas
-void fill(float r, float g, float b);
+void pxl_background(float r, float g, float b); // clears the canvas
+void pxl_fill(float r, float g, float b);
 
-void fill_a(float r, float g, float b, float a);
+void pxl_fill_a(float r, float g, float b, float a);
 
-void noFill(void);
+void pxl_noFill(void);
 
-void stroke(float r, float g, float b);
+void pxl_stroke(float r, float g, float b);
 
-void stroke_a(float r, float g, float b, float a);
+void pxl_stroke_a(float r, float g, float b, float a);
 
-void noStroke(void);
+void pxl_noStroke(void);
 
-void strokeWeight(float weight);
+void pxl_strokeWeight(float weight);
 
-void colorMode(PxlColorMode mode);
+void pxl_colorMode(PxlColorMode mode);
 
 // --- 2D Primitives
-void rect(float x, float y, float w, float h);
+void pxl_rect(float x, float y, float w, float h);
 
-void circle(float x, float y, float d); // x,y = center; d = diameter
-void ellipse(float x, float y, float w, float h); // x,y = center
-void line(float x1, float y1, float x2, float y2);
+void pxl_circle(float x, float y, float d); // x,y = center; d = diameter
+void pxl_ellipse(float x, float y, float w, float h); // x,y = center
+void pxl_line(float x1, float y1, float x2, float y2);
 
-void triangle(float x1, float y1, float x2, float y2, float x3, float y3);
+void pxl_triangle(float x1, float y1, float x2, float y2, float x3, float y3);
 
-void point(float x, float y);
+void pxl_point(float x, float y);
 
 // --- Transforms
-void translate(float x, float y);
+void pxl_translate(float x, float y);
 
-void rotate(float angle); // radians
-void scale_xy(float sx, float sy);
+void pxl_rotate(float angle); // radians
+void pxl_scale_xy(float sx, float sy);
 
-void push(void);
+void pxl_push(void);
 
-void pop(void);
+void pxl_pop(void);
 
 // --- Math
-float map_val(float value, float start1, float stop1, float start2, float stop2);
+float pxl_map_val(float value, float start1, float stop1, float start2, float stop2);
 
-float lerp_val(float start, float stop, float amt);
+float pxl_lerp_val(float start, float stop, float amt);
 
-float constrain_val(float n, float low, float high);
+float pxl_constrain_val(float n, float low, float high);
 
-float dist_val(float x1, float y1, float x2, float y2);
+float pxl_dist_val(float x1, float y1, float x2, float y2);
 
-float random_val(float low, float high);
+float pxl_random_val(float low, float high);
 
-float noise_val(float x); // 1D Perlin-style value noise
-float noise_val2(float x, float y); // 2D
+float pxl_noise_val(float x); // 1D Perlin-style value noise
+float pxl_noise_val2(float x, float y); // 2D
 
 // ============================================================
 //  Input accessors  (read each frame inside draw())
