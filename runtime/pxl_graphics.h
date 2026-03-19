@@ -28,6 +28,7 @@ void pxl_quit();
 
 
 // === Config setters
+// TODO: Change to p5.js style setting
 void pxl_set_canvas_size(int width, int height);
 
 void pxl_set_frames_per_second(Uint32 fps);

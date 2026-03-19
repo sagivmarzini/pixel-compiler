@@ -54,10 +54,6 @@ void TypeCheckerVisitor::visit(AST::Program& program) {
     for (const auto& stmt: program.statements) {
         stmt->accept(*this);
     }
-
-    if (!_symbolTable.lookup("main")) {
-        logError(SemanticErrorType::MissingMainFunction, program);
-    }
 }
 
 void TypeCheckerVisitor::visit(AST::FunctionDeclaration& node) {
@@ -178,6 +174,8 @@ void TypeCheckerVisitor::visit(AST::VariableDeclaration& node) {
 }
 
 void TypeCheckerVisitor::visit(AST::FunctionCall& node) {
+    if (node.functionName == "main") node.functionName = "__main";
+
     const auto calledFunction = _symbolTable.lookup(node.functionName);
     if (!calledFunction) {
         logError(SemanticErrorType::UndefinedFunction, node, node.functionName);

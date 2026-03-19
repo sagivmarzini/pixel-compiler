@@ -103,9 +103,11 @@ private:
     llvm::Value* initLocalVariable(llvm::Type* type, const std::string& name,
                                    llvm::Value* value) const;
 
-    llvm::Function* getOrDeclareFunction(const std::string& name) const;
+    llvm::Function* getOrDeclareBuiltinFunction(const std::string& name) const;
 
-    llvm::Value* createPxlStringFromLiteral(const std::string& value);
+    llvm::Value* createPxlStringFromLiteral(const std::string& value) const;
+
+    void createMainFunction() const;
 };
 
 

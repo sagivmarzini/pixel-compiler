@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <SDL3/SDL.h>
 
-#include "pxl_utilities.h"
+#include "pxl_error.h"
 
 PxlContext pxl_context = {
     NULL, NULL,
@@ -32,18 +32,17 @@ void pxl_init() {
 }
 
 void pxl_run(void (*setup_ptr)(void), void (*draw_ptr)(void)) {
-    if (!setup_ptr || !draw_ptr)
-        pxl_runtime_error("pxl_run: setup and draw callbacks must not be NULL");
     if (pxl_context.fps == 0)
         pxl_runtime_error("pxl_run: FPS must be greater than 0");
 
     pxl_init();
-    setup_ptr();
+    if (setup_ptr) setup_ptr();
 
     const Uint64 target_frame_time_ms = (Uint64) (1000.0 / pxl_context.fps + 0.5);
     SDL_Event event;
     bool running = true;
 
+    if (!draw_ptr) pxl_quit();
     while (running) {
         const Uint64 start_time = SDL_GetTicks();
 

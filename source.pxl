@@ -2,9 +2,13 @@
 // ║        Pixel Graphics — Hello Shapes     ║
 // ║   A tour of the basic drawing functions  ║
 // ╚══════════════════════════════════════════╝
+func main() -> Int {
+    return 0;
+}
 
 func setup() -> Void {
-    setCanvas(width: 800, height: 600);
+    canvas(width: 800, height: 600);
+    main();
 }
 
 func draw() -> Void {
@@ -13,19 +17,19 @@ func draw() -> Void {
 
     // ── Filled rect ─────────────────────────────────
     setColor(r: 94, g: 234, b: 212);     // teal
-    rect(x: 60, y: 60, width: 140, height: 90);
+    rect(x: 60, y: 60, w: 140, h: 90);
 
     // ── Outlined rect ───────────────────────────────
     setColor(r: 255, g: 200, b: 80);     // amber
-    emptyRect(x: 240, y: 60, width: 140, height: 90);
+    rectEmpty(x: 240, y: 60, w: 140, h: 90);
 
     // ── Filled circle ───────────────────────────────
     setColor(r: 192, g: 132, b: 252);    // purple
-    circle(x: 500, y: 105, radius: 55);
+    circle(x: 500, y: 105, r: 55);
 
     // ── Outlined circle ─────────────────────────────
     setColor(r: 251, g: 113, b: 133);    // rose
-    emptyCircle(x: 680, y: 105, radius: 55);
+    circle(x: 680, y: 105, r: 55);
 
     // ── Lines — drawing a starburst ─────────────────
     setColor(r: 99, g: 202, b: 255);     // sky blue
@@ -52,19 +56,19 @@ func draw() -> Void {
     // ── A little composed scene at the bottom ───────
     // Ground
     setColor(r: 34, g: 197, b: 94);
-    rect(x: 540, y: 480, width: 220, height: 20);
+    rect(x: 540, y: 480, w: 220, h: 20);
 
     // House body
     setColor(r: 251, g: 191, b: 36);
-    rect(x: 580, y: 380, width: 140, height: 100);
+    rect(x: 580, y: 380, w: 140, h: 100);
 
     // Door
     setColor(r: 120, g: 60, b: 20);
-    rect(x: 635, y: 430, width: 30, height: 50);
+    rect(x: 635, y: 430, w: 30, h: 50);
 
     // Window — outlined
     setColor(r: 147, g: 210, b: 255);
-    emptyRect(x: 590, y: 400, width: 35, height: 30);
+    rectEmpty(x: 590, y: 400, w: 35, h: 30);
 
     // Roof — pair of lines forming a triangle
     setColor(r: 239, g: 68, b: 68);
@@ -73,7 +77,7 @@ func draw() -> Void {
 
     // Sun — filled circle + rays as lines
     setColor(r: 253, g: 224, b: 71);
-    circle(x: 720, y: 300, radius: 28);
+    circle(x: 720, y: 300, r: 28);
 
     setColor(r: 253, g: 224, b: 71);
     line(fromX: 720, fromY: 258, toX: 720, toY: 245);

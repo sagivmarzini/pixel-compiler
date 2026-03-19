@@ -93,12 +93,18 @@ void Compiler::initFunctions() {
     // -----------------------------
     // Graphics API — user-callable
     // -----------------------------
-    _functionRegistry.registerApi("setCanvas",
-                                  {{{"width", Type::Int}, {"height", Type::Int}}, Type::Void});
+    _functionRegistry.registerApi("canvas",
+                                  {{{"width", Type::Int}, {"height", Type::Int}}, Type::Void, "pxl_set_canvas_size"});
     _functionRegistry.registerApi("background",
-                                  {{{"r", Type::Int}, {"g", Type::Int}, {"b", Type::Int}}, Type::Void});
+                                  {
+                                      {{"r", Type::Int}, {"g", Type::Int}, {"b", Type::Int}}, Type::Void,
+                                      "pxl_set_background_color"
+                                  });
     _functionRegistry.registerApi("setColor",
-                                  {{{"r", Type::Int}, {"g", Type::Int}, {"b", Type::Int}}, Type::Void});
+                                  {
+                                      {{"r", Type::Int}, {"g", Type::Int}, {"b", Type::Int}}, Type::Void,
+                                      "pxl_set_draw_color"
+                                  });
 
     _functionRegistry.registerApi("rect", // user types `rect(...)`
                                   {
@@ -113,12 +119,12 @@ void Compiler::initFunctions() {
     _functionRegistry.registerApi("circle",
                                   {
                                       {{"x", Type::Int}, {"y", Type::Int}, {"r", Type::Int}}, Type::Void,
-                                      "pxl_draw_circle"
+                                      "pxl_draw_circle_filled"
                                   });
     _functionRegistry.registerApi("circleEmpty",
                                   {
                                       {{"x", Type::Int}, {"y", Type::Int}, {"r", Type::Int}}, Type::Void,
-                                      "pxl_draw_empty_circle"
+                                      "pxl_draw_circle_empty"
                                   });
     _functionRegistry.registerApi("line",
                                   {

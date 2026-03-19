@@ -32,6 +32,8 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::Program& program) {
     for (const auto& stmt: program.statements) {
         stmt->acceptIR(*this);
     }
+
+    createMainFunction();
     // Return the module at the end for printing/saving
     return nullptr;
 }
@@ -54,10 +56,6 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::FunctionDeclaration& node) {
 
     llvm::BasicBlock* basicBlock = llvm::BasicBlock::Create(*_context, "entry", function);
     _builder->SetInsertPoint(basicBlock);
-    if (node.name == "main") {
-        const auto func = getOrDeclareFunction("init");
-        _builder->CreateCall(func);
-    }
 
     int index = 0;
     for (auto& arg: function->args()) {
@@ -89,12 +87,26 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::FunctionDeclaration& node) {
 }
 
 llvm::Value* IRGeneratorLLVM::visit(const AST::FunctionCall& node) {
-    const FunctionInfo* info = _registry.get(node.functionName);
+    // 1. Check if it's a user-defined function (already in the module)
+    llvm::Function* calledFunction = _module->getFunction(node.functionName);
+    const FunctionInfo* info = nullptr;
+
+    if (calledFunction) {
+        // User-defined function — build args without any registry casting/API logic
+        std::vector<llvm::Value *> args;
+        for (const auto& arg: node.arguments) {
+            args.push_back(arg.value->acceptIR(*this));
+        }
+        return _builder->CreateCall(calledFunction, args);
+    }
+
+    // 2. Fall back to the registry for built-in/API functions
+    info = _registry.get(node.functionName);
     if (!info) {
         throw std::runtime_error("Function not found: " + node.functionName);
     }
 
-    llvm::Function* calledFunction = getOrDeclareFunction(node.functionName);
+    calledFunction = getOrDeclareBuiltinFunction(node.functionName);
 
     std::vector<llvm::Value *> args;
     int index = 0;
@@ -102,7 +114,6 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::FunctionCall& node) {
     for (const auto& arg: node.arguments) {
         auto argValue = arg.value->acceptIR(*this);
 
-        // cast to expected param type (only for fixed params)
         if (index < info->params.size()) {
             argValue = castToType(argValue, compilerTypeToLlvmType(info->params[index].type));
         } else if (info->isVariadic) {
@@ -112,8 +123,7 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::FunctionCall& node) {
         }
 
         if (info->kind == FunctionKind::Api && arg.value->type == Type::String) {
-            // pass raw string to external API
-            auto* getStr = getOrDeclareFunction("pxl_get_string_data");
+            auto* getStr = getOrDeclareBuiltinFunction("pxl_get_string_data");
             argValue = _builder->CreateCall(getStr, {argValue});
         }
 
@@ -317,7 +327,7 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::VariableAssignment& node) {
     if (node.symbol->type == Type::String) {
         // Load the source
         auto value = node.assignedValue->acceptIR(*this);
-        auto strCopyFunc = getOrDeclareFunction(_stringOperatorLowering.at(Operator::Assignment));
+        auto strCopyFunc = getOrDeclareBuiltinFunction(_stringOperatorLowering.at(Operator::Assignment));
 
         // Get the pointer to the destination (without loading it)
         auto dest = _namedValues.at(node.symbol);
@@ -354,7 +364,7 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::BinaryExpression& node) {
     const bool isInt = lhs->getType()->isIntegerTy();
     if (node.left->type == Type::String && node.right->type == Type::String) {
         const auto funcName = _stringOperatorLowering.at(node.op);
-        auto* operationFunc = getOrDeclareFunction(funcName);
+        auto* operationFunc = getOrDeclareBuiltinFunction(funcName);
         return _builder->CreateCall(operationFunc, {lhs, rhs}, "binop");
     }
 
@@ -512,7 +522,7 @@ llvm::Type* IRGeneratorLLVM::compilerTypeToLlvmType(const Type& type) const {
         case Type::Void:
             return _builder->getVoidTy();
         case Type::Pointer:
-            throw std::runtime_error("Not Implemented: pointers");
+            return _builder->getPtrTy();
         case Type::String:
             return _builder->getPtrTy();
         case Type::Color:
@@ -586,7 +596,7 @@ llvm::Value* IRGeneratorLLVM::initLocalVariable(llvm::Type* type, const std::str
     return alloca;
 }
 
-llvm::Function* IRGeneratorLLVM::getOrDeclareFunction(const std::string& name) const {
+llvm::Function* IRGeneratorLLVM::getOrDeclareBuiltinFunction(const std::string& name) const {
     const FunctionInfo* info = _registry.get(name);
     if (!info) {
         throw std::runtime_error("Unknown function: " + name);
@@ -619,7 +629,7 @@ llvm::Function* IRGeneratorLLVM::getOrDeclareFunction(const std::string& name) c
     );
 }
 
-llvm::Value* IRGeneratorLLVM::createPxlStringFromLiteral(const std::string& value) {
+llvm::Value* IRGeneratorLLVM::createPxlStringFromLiteral(const std::string& value) const {
     // Create a hidden global for the raw C-string bytes
     auto* rawPtr = _builder->CreateGlobalStringPtr(value, ".str_raw", 0, _module.get());
 
@@ -627,8 +637,27 @@ llvm::Value* IRGeneratorLLVM::createPxlStringFromLiteral(const std::string& valu
     auto* sizeVal = _builder->getInt32(value.length());
 
     // Call the runtime
-    auto* createStringFunc = getOrDeclareFunction("pxl_create_string");
+    auto* createStringFunc = getOrDeclareBuiltinFunction("pxl_create_string");
     return _builder->CreateCall(createStringFunc, {rawPtr, sizeVal});
+}
+
+void IRGeneratorLLVM::createMainFunction() const {
+    const auto functionType = llvm::FunctionType::get(_builder->getInt32Ty(), false);
+    const auto main = llvm::Function::Create(functionType, llvm::Function::ExternalLinkage, "main", _module.get());
+
+    llvm::BasicBlock* basicBlock = llvm::BasicBlock::Create(*_context, "entry", main);
+    _builder->SetInsertPoint(basicBlock);
+
+    // Grab the user-defined functions
+    llvm::Function* setupFunc = _module->getFunction("setup");
+    llvm::Function* drawFunc = _module->getFunction("draw");
+
+    llvm::Value* setupArg = setupFunc ? setupFunc : llvm::Constant::getNullValue(_builder->getPtrTy());
+    llvm::Value* drawArg = drawFunc ? drawFunc : llvm::Constant::getNullValue(_builder->getPtrTy());
+
+    _builder->CreateCall(getOrDeclareBuiltinFunction("run"), {setupArg, drawArg});
+
+    _builder->CreateRet(_builder->getInt32(0));
 }
 
 
