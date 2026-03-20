@@ -40,6 +40,11 @@ PxlContext pxl_context = {
     .key_code = 0,
     .key_pressed = false,
 };
+float pxl_mouse_x = 0.0f;
+float pxl_mouse_y = 0.0f;
+bool pxl_mouse_pressed = false;
+bool pxl_key_pressed = false;
+int pxl_key_code = 0;
 
 // ============================================================
 //  Internal helpers
@@ -294,6 +299,7 @@ void pxl_run(void (*setup_fn)(void), void (*draw_fn)(void)) {
 
         // Reset per-frame input flags
         pxl_context.key_pressed = false;
+        pxl_key_pressed = false;
 
         while (SDL_PollEvent(&event)) {
             switch (event.type) {
@@ -303,16 +309,22 @@ void pxl_run(void (*setup_fn)(void), void (*draw_fn)(void)) {
                 case SDL_EVENT_MOUSE_MOTION:
                     pxl_context.mouseX = event.motion.x;
                     pxl_context.mouseY = event.motion.y;
+                    pxl_mouse_x = pxl_context.mouseX;
+                    pxl_mouse_y = pxl_context.mouseY;
                     break;
                 case SDL_EVENT_MOUSE_BUTTON_DOWN:
                     pxl_context.mouse_pressed = true;
+                    pxl_mouse_pressed = true;
                     break;
                 case SDL_EVENT_MOUSE_BUTTON_UP:
                     pxl_context.mouse_pressed = false;
+                    pxl_mouse_pressed = false;
                     break;
                 case SDL_EVENT_KEY_DOWN:
                     pxl_context.key_pressed = true;
                     pxl_context.key_code = event.key.key;
+                    pxl_key_pressed = true;
+                    pxl_key_code = event.key.key;
                     break;
                 default:
                     break;

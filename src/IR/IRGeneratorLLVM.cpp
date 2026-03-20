@@ -20,9 +20,10 @@
 #include <llvm/IR/LegacyPassManager.h>
 
 #include "semantic/functions/FunctionInfo.h"
+#include "semantic/globals/GlobalRegistry.h"
 
-IRGeneratorLLVM::IRGeneratorLLVM(const FunctionRegistry& registry)
-    : _registry(registry) {
+IRGeneratorLLVM::IRGeneratorLLVM(const FunctionRegistry& registry, const GlobalRegistry& globalRegistry)
+    : _functionRegistry(registry), _globalRegistry(globalRegistry) {
     _context = std::make_unique<llvm::LLVMContext>();
     _module = std::make_unique<llvm::Module>("pixel_compiler", *_context);
     _builder = std::make_unique<llvm::IRBuilder<> >(*_context);
@@ -44,10 +45,10 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::FunctionDeclaration& node) {
     std::vector<llvm::Type *> paramTypes;
     paramTypes.reserve(node.parameters.size());
     for (const auto& param: node.parameters) {
-        paramTypes.push_back(compilerTypeToLlvmType(param.type));
+        paramTypes.push_back(getLlvmType(param.type));
     }
 
-    const auto returnType = compilerTypeToLlvmType(node.returnType);
+    const auto returnType = getLlvmType(node.returnType);
 
     // Return type and parameter types
     const auto functionType = llvm::FunctionType::get(returnType, paramTypes, false);
@@ -79,7 +80,7 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::FunctionDeclaration& node) {
             _builder->CreateRetVoid();
         } else {
             // Return a default "zero" value for the specific type
-            _builder->CreateRet(llvm::Constant::getNullValue(compilerTypeToLlvmType(node.returnType)));
+            _builder->CreateRet(llvm::Constant::getNullValue(getLlvmType(node.returnType)));
         }
     }
 
@@ -101,7 +102,7 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::FunctionCall& node) {
     }
 
     // 2. Fall back to the registry for built-in/API functions
-    info = _registry.get(node.functionName);
+    info = _functionRegistry.get(node.functionName);
     if (!info) {
         throw std::runtime_error("Function not found: " + node.functionName);
     }
@@ -115,7 +116,7 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::FunctionCall& node) {
         auto argValue = arg.value->acceptIR(*this);
 
         if (index < info->params.size()) {
-            argValue = castToType(argValue, compilerTypeToLlvmType(info->params[index].type));
+            argValue = castToType(argValue, getLlvmType(info->params[index].type));
         } else if (info->isVariadic) {
             if (argValue->getType()->isFloatTy()) {
                 argValue = _builder->CreateFPExt(argValue, _builder->getDoubleTy());
@@ -231,7 +232,7 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::ForLoop& node) {
     if (!_builder->GetInsertBlock()->getTerminator()) {
         // Increment: Load, Add, Store
         llvm::Value* stepVal = node.step->acceptIR(*this);
-        llvm::Value* currentVal = _builder->CreateLoad(compilerTypeToLlvmType(node.range->type), variableAddr,
+        llvm::Value* currentVal = _builder->CreateLoad(getLlvmType(node.range->type), variableAddr,
                                                        node.identifier);
 
         llvm::Value* nextVal;
@@ -279,7 +280,7 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::Block& node) {
 
 llvm::Value* IRGeneratorLLVM::visit(const AST::VariableDeclaration& node) {
     const auto symbol = node.symbol;
-    const auto llvmType = compilerTypeToLlvmType(symbol->type);
+    const auto llvmType = getLlvmType(symbol->type);
 
     if (bool isGlobal = (symbol->scope->getParent()->getParent() == nullptr)) {
         llvm::Constant* initializer = nullptr;
@@ -464,7 +465,7 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::IncDecExpression& node) {
     }
 
     llvm::Value* oldValue = _builder->CreateLoad(
-        compilerTypeToLlvmType(node.type),
+        getLlvmType(node.type),
         addr,
         node.variableName
     );
@@ -489,10 +490,21 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::IncDecExpression& node) {
 }
 
 llvm::Value* IRGeneratorLLVM::visit(const AST::VariableExpression& node) const {
-    llvm::Value* variableAddress = _namedValues.at(node.symbol);
-    llvm::Type* varType = compilerTypeToLlvmType(node.symbol->type);
+    llvm::Value* variableAddress = nullptr;
+    Type varType;
 
-    return _builder->CreateLoad(varType, variableAddress, node.name + '_');
+    if (_namedValues.contains(node.symbol)) {
+        variableAddress = _namedValues.at(node.symbol);
+        varType = node.symbol->type;
+    } else if (auto* global =
+            _globalRegistry.lookup(node.name)) {
+        variableAddress = _module->getOrInsertGlobal(global->symbolName, getLlvmType(global->type));
+        varType = global->type;
+    } else {
+        throw std::runtime_error("| LLVM | Internal error. Unknown variable: " + node.name);
+    }
+
+    return _builder->CreateLoad(getLlvmType(varType), variableAddress, node.name + '_');
 }
 
 llvm::Value* IRGeneratorLLVM::visit(const AST::IntegerLiteralNode& node) const {
@@ -511,7 +523,7 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::FloatLiteralNode& node) const {
     return llvm::ConstantFP::get(*_context, llvm::APFloat(node.value));
 }
 
-llvm::Type* IRGeneratorLLVM::compilerTypeToLlvmType(const Type& type) const {
+llvm::Type* IRGeneratorLLVM::getLlvmType(const Type& type) const {
     switch (type) {
         case Type::Int:
             return _builder->getInt32Ty();
@@ -597,7 +609,7 @@ llvm::Value* IRGeneratorLLVM::initLocalVariable(llvm::Type* type, const std::str
 }
 
 llvm::Function* IRGeneratorLLVM::getOrDeclareBuiltinFunction(const std::string& name) const {
-    const FunctionInfo* info = _registry.get(name);
+    const FunctionInfo* info = _functionRegistry.get(name);
     if (!info) {
         throw std::runtime_error("Unknown function: " + name);
     }
@@ -610,10 +622,10 @@ llvm::Function* IRGeneratorLLVM::getOrDeclareBuiltinFunction(const std::string& 
 
     std::vector<llvm::Type *> paramTypes;
     for (const auto& p: info->params) {
-        paramTypes.push_back(compilerTypeToLlvmType(p.type));
+        paramTypes.push_back(getLlvmType(p.type));
     }
 
-    llvm::Type* retType = compilerTypeToLlvmType(info->returnType);
+    llvm::Type* retType = getLlvmType(info->returnType);
 
     auto* funcType = llvm::FunctionType::get(
         retType,

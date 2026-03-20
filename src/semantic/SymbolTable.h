@@ -7,6 +7,7 @@
 #include "Symbol.h"
 #include "Scope.h"
 
+struct GlobalEntry;
 struct FunctionInfo;
 class SymbolPool;
 
@@ -30,6 +31,8 @@ public:
     void declareBuiltinFunctions(
         const std::unordered_map<std::string, FunctionInfo>& declarations)
     const;
+
+    void declareBuiltinGlobals(const std::unordered_map<std::string, GlobalEntry>& pairs) const;
 
 private:
     Scope* _currentScope;

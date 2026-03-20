@@ -102,6 +102,9 @@ set(COMPILER_SOURCES
         src/semantic/functions/FunctionInfo.h
         src/IR/IRGeneratorLLVM.cpp
         src/IR/IRGeneratorLLVM.h
+        src/semantic/globals/GlobalRegistry.cpp
+        src/semantic/globals/GlobalRegistry.h
+        src/semantic/globals/GlobalEntry.h
 )
 
 add_executable(pxl-compiler ${COMPILER_SOURCES})

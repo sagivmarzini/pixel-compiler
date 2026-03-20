@@ -72,7 +72,11 @@ typedef struct {
     bool key_pressed; // true for one frame when a key goes down
 } PxlContext;
 
-extern PxlContext pxl_context;
+extern float pxl_mouse_x;
+extern float pxl_mouse_y;
+extern bool pxl_mouse_pressed;
+extern bool pxl_key_pressed;
+extern int pxl_key_code;
 
 // ============================================================
 //  Lifecycle  (called by pxl_run — users rarely touch these)

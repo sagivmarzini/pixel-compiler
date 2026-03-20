@@ -27,6 +27,7 @@ Compiler::Compiler(std::string sourceFile) : _sourceFileName(std::move(sourceFil
     _sourceCode = buffer.str();
 
     initFunctions();
+    initGlobals();
 }
 
 void Compiler::compile() const {
@@ -45,6 +46,7 @@ void Compiler::compile() const {
     SymbolPool symbols;
     SymbolTable symbolTable(symbols);
     symbolTable.declareBuiltinFunctions(_functionRegistry.getAllApiFunctions());
+    symbolTable.declareBuiltinGlobals(_globalRegistry.getAllGlobals());
 
     DeclarationPassVisitor declPass(symbolTable);
     declPass.run(ast);
@@ -52,7 +54,7 @@ void Compiler::compile() const {
     TypeCheckerVisitor typeChecker(symbolTable);
     typeChecker.run(ast);
 
-    IRGeneratorLLVM irGenerator(_functionRegistry);
+    IRGeneratorLLVM irGenerator(_functionRegistry, _globalRegistry);
     irGenerator.visit(ast);
     irGenerator.print();
 
@@ -277,4 +279,12 @@ void Compiler::initFunctions() {
                                        {{{"a", Type::String}, {"b", Type::String}}, Type::Bool});
     _functionRegistry.registerInternal("pxl_string_smaller_equals",
                                        {{{"a", Type::String}, {"b", Type::String}}, Type::Bool});
+}
+
+void Compiler::initGlobals() {
+    _globalRegistry.registerGlobal("mouseX", Type::Float, "pxl_mouse_x");
+    _globalRegistry.registerGlobal("mouseY", Type::Float, "pxl_mouse_y");
+    _globalRegistry.registerGlobal("mousePressed", Type::Bool, "pxl_mouse_pressed");
+    _globalRegistry.registerGlobal("keyPressed", Type::Bool, "pxl_key_pressed");
+    _globalRegistry.registerGlobal("keyCode", Type::Int, "pxl_key_code");
 }

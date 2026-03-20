@@ -13,11 +13,12 @@
 #include "semantic/Scope.h"
 #include "semantic/functions/FunctionRegistry.h"
 
+class GlobalRegistry;
 class SymbolTable;
 
 class IRGeneratorLLVM {
 public:
-    explicit IRGeneratorLLVM(const FunctionRegistry& registry);
+    explicit IRGeneratorLLVM(const FunctionRegistry& registry, const GlobalRegistry& globalRegistry);
 
     void print() const;
 
@@ -78,7 +79,8 @@ private:
     // Keeps track of which values (like variables) are defined and their alloca address
     std::unordered_map<Symbol *, llvm::Value *> _namedValues;
 
-    const FunctionRegistry& _registry;
+    const FunctionRegistry& _functionRegistry;
+    const GlobalRegistry& _globalRegistry;
     std::unordered_map<Operator, std::string> _stringOperatorLowering = {
         {Operator::Plus, "pxl_concat_string"},
         {Operator::Equal, "pxl_string_equals"},
@@ -91,7 +93,7 @@ private:
         {Operator::Assignment, "pxl_copy"}
     };
 
-    [[nodiscard]] llvm::Type* compilerTypeToLlvmType(const Type& type) const;
+    [[nodiscard]] llvm::Type* getLlvmType(const Type& type) const;
 
     [[nodiscard]] static Type llvmTypeToCompilerType(const llvm::Type& type);
 
