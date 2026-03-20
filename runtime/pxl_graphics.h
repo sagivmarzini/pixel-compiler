@@ -70,6 +70,8 @@ typedef struct {
     bool mouse_pressed;
     SDL_Keycode key_code; // last key pressed this frame
     bool key_pressed; // true for one frame when a key goes down
+
+    SDL_Texture* canvas;
 } PxlContext;
 
 extern float pxl_mouse_x;

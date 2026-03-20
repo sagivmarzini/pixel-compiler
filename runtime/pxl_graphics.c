@@ -273,8 +273,22 @@ void pxl_init(void) {
                                      pxl_context.width, pxl_context.height, 0,
                                      &pxl_context.window, &pxl_context.renderer))
         pxl_runtime_error(SDL_GetError());
-
     SDL_SetRenderDrawBlendMode(pxl_context.renderer, SDL_BLENDMODE_BLEND);
+
+    pxl_context.canvas = SDL_CreateTexture(
+        pxl_context.renderer,
+        SDL_PIXELFORMAT_RGBA8888,
+        SDL_TEXTUREACCESS_TARGET,
+        pxl_context.width,
+        pxl_context.height
+    );
+    SDL_SetTextureBlendMode(pxl_context.canvas, SDL_BLENDMODE_BLEND);
+
+    // Clear canvas to transparent initially:
+    SDL_SetRenderTarget(pxl_context.renderer, pxl_context.canvas);
+    SDL_SetRenderDrawColor(pxl_context.renderer, 0, 0, 0, 0);
+    SDL_RenderClear(pxl_context.renderer);
+    SDL_SetRenderTarget(pxl_context.renderer, NULL);
     srand(time(NULL));
 }
 
@@ -332,9 +346,18 @@ void pxl_run(void (*setup_fn)(void), void (*draw_fn)(void)) {
         }
 
         if (pxl_context.looping) {
-            draw_fn();
-            if (!SDL_RenderPresent(pxl_context.renderer))
-                pxl_runtime_error(SDL_GetError());
+            // 1. Direct all drawing to the canvas texture
+            SDL_SetRenderTarget(pxl_context.renderer, pxl_context.canvas);
+
+            draw_fn(); // user draws here — accumulates on canvas texture
+
+            // 2. Switch back to screen, clear it, blit the canvas
+            SDL_SetRenderTarget(pxl_context.renderer, NULL);
+            SDL_SetRenderDrawColor(pxl_context.renderer, 0, 0, 0, 255);
+            SDL_RenderClear(pxl_context.renderer);
+            SDL_RenderTexture(pxl_context.renderer, pxl_context.canvas, NULL, NULL);
+
+            SDL_RenderPresent(pxl_context.renderer);
         } else {
             SDL_Delay(16); // idle when not looping
         }
@@ -386,11 +409,13 @@ void pxl_no_loop(void) { pxl_context.looping = false; }
 // ============================================================
 
 void pxl_background(float r, float g, float b) {
+    // Always clear the canvas texture, not the screen
+    SDL_SetRenderTarget(pxl_context.renderer, pxl_context.canvas);
     SDL_Color c = resolve_color(r, g, b, 255);
     SDL_SetRenderDrawColor(pxl_context.renderer, c.r, c.g, c.b, 255);
     SDL_RenderClear(pxl_context.renderer);
-    // Restore blend mode after clear
     SDL_SetRenderDrawBlendMode(pxl_context.renderer, SDL_BLENDMODE_BLEND);
+    // Note: do NOT reset render target here — caller is mid-draw
 }
 
 void pxl_fill(float r, float g, float b) {
