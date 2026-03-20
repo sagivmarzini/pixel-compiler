@@ -2,6 +2,7 @@
 
 #include <math.h>
 #include <stdlib.h>
+#include <time.h>
 #include <SDL3/SDL.h>
 
 #include "pxl_error.h"
@@ -269,6 +270,7 @@ void pxl_init(void) {
         pxl_runtime_error(SDL_GetError());
 
     SDL_SetRenderDrawBlendMode(pxl_context.renderer, SDL_BLENDMODE_BLEND);
+    srand(time(NULL));
 }
 
 void pxl_run(void (*setup_fn)(void), void (*draw_fn)(void)) {

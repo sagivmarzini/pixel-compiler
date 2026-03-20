@@ -154,16 +154,4 @@ float pxl_random(float low, float high);
 float pxl_noise(float x); // 1D Perlin-style value noise
 float pxl_noise2(float x, float y); // 2D
 
-// ============================================================
-//  Input accessors  (read each frame inside draw())
-// ============================================================
-//  Access pxl_context.mouseX / mouseY / mouse_pressed / key_pressed / key_code
-//  directly, or use these thin macros for p5.js naming:
-// ============================================================
-#define MOUSE_X        (pxl_context.mouseX)
-#define MOUSE_Y        (pxl_context.mouseY)
-#define MOUSE_PRESSED  (pxl_context.mouse_pressed)
-#define KEY_PRESSED    (pxl_context.key_pressed)
-#define KEY_CODE       (pxl_context.key_code)
-
 #endif // COMPILER_PROJECT_PXL_GRAPHICS_H
