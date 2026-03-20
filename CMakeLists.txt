@@ -107,17 +107,17 @@ set(COMPILER_SOURCES
         src/semantic/globals/GlobalEntry.h
 )
 
-add_executable(pxl-compiler ${COMPILER_SOURCES})
-add_dependencies(pxl-compiler pxl_runtime)
+add_executable(pxl ${COMPILER_SOURCES})
+add_dependencies(pxl pxl_runtime)
 
-target_include_directories(pxl-compiler PRIVATE
+target_include_directories(pxl PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
         ${LLVM_INCLUDE_DIRS}
 )
 
-target_compile_definitions(pxl-compiler PRIVATE
+target_compile_definitions(pxl PRIVATE
         ${LLVM_DEFINITIONS}
         PXL_RUNTIME_LIB_PATH="${CMAKE_BINARY_DIR}/libs/libpxl_runtime.a"
 )
 
-target_link_libraries(pxl-compiler PRIVATE ${llvm_libs})
+target_link_libraries(pxl PRIVATE ${llvm_libs})
