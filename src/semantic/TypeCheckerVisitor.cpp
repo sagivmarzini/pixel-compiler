@@ -186,7 +186,7 @@ void TypeCheckerVisitor::visit(AST::FunctionCall& node) {
     if (const auto expectedArgAmount = calledFunction->params.size();
         node.arguments.size() != expectedArgAmount &&
         // printf has a variable number of arguments
-        node.functionName != "printf") {
+        node.functionName != "print") {
         logError(SemanticErrorType::ArgumentCountMismatch, node,
                  ParamMismatchData(node.functionName, expectedArgAmount, node.arguments.size()));
         return;
@@ -411,6 +411,9 @@ void TypeCheckerVisitor::visit(AST::VariableAssignment& node) {
 
 void TypeCheckerVisitor::visit(AST::ReturnStatement& node) {
     _foundReturn = true;
+
+    if (!node.value)
+        return;
 
     node.value->accept(*this);
 

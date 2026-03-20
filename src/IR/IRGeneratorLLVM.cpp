@@ -347,6 +347,9 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::ExpressionStatement& node) {
 }
 
 llvm::Value* IRGeneratorLLVM::visit(const AST::ReturnStatement& node) {
+    if (!node.value) {
+        return _builder->CreateRetVoid();
+    }
     llvm::Value* value = node.value->acceptIR(*this);
 
     llvm::Type* expectedType = _builder->GetInsertBlock()->getParent()->getReturnType();
