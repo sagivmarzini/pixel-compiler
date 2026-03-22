@@ -163,6 +163,31 @@ void AstPrinter::visit(AST::VariableAssignment& node) {
     _indent--;
 }
 
+void AstPrinter::visit(AST::ArrayAssignment& node) {
+    printIndent();
+    std::cout << "ArrayAssignment: " << node.varName << "\n";
+
+    _indent++;
+
+    if (node.symbol) {
+        printSymbol(*node.symbol);
+    }
+
+    printIndent();
+    std::cout << "Index:\n";
+    _indent++;
+    node.index->accept(*this);
+    _indent--;
+
+    printIndent();
+    std::cout << "Value:\n";
+    _indent++;
+    node.assignedValue->accept(*this);
+    _indent--;
+
+    _indent--;
+}
+
 void AstPrinter::visit(AST::ReturnStatement& node) {
     printIndent();
     std::cout << "ReturnStatement\n";
@@ -320,6 +345,25 @@ void AstPrinter::visit(AST::ArrayLiteral& node) {
         }
         _indent--;
     }
+
+    _indent--;
+}
+
+void AstPrinter::visit(AST::ArrayIndex& node) {
+    printIndent();
+    std::cout << "ArrayIndex: " << node.variableName << "\n";
+
+    _indent++;
+
+    if (node.symbol) {
+        printSymbol(*node.symbol);
+    }
+
+    printIndent();
+    std::cout << "Index:\n";
+    _indent++;
+    node.index->accept(*this);
+    _indent--;
 
     _indent--;
 }

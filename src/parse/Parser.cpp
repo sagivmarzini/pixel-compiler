@@ -60,15 +60,16 @@ std::unique_ptr<AST::Statement> Parser::parseStatement() {
         return parseForLoop();
     }
     if (check<Identifier>()) {
-        if (checkNextValue(Operator::Assignment)) {
-            return parseVariableAssignment();
-        }
+        if (checkNext<LeftBracket>()) return parseArrayAssignment();
+        if (checkNextValue(Operator::Assignment)) return parseVariableAssignment();
     }
 
     // Otherwise parse expression statement
     const auto startToken = peek();
     auto expression = parseExpression();
+
     expect<Semicolon>();
+
     return std::make_unique<AST::ExpressionStatement>(startToken.metadata, std::move(expression));
 }
 
@@ -213,6 +214,21 @@ std::unique_ptr<AST::Statement> Parser::parseVariableAssignment() {
     expect<Semicolon>();
 
     return std::make_unique<AST::VariableAssignment>(namePos, name.name, std::move(value));
+}
+
+std::unique_ptr<AST::Statement> Parser::parseArrayAssignment() {
+    auto name = expect<Identifier>();
+    const auto namePos = peekPrevious().metadata;
+
+    expect<LeftBracket>();
+    auto index = parseExpression();
+    expect<RightBracket>();
+
+    expectValue(Operator::Assignment);
+    auto value = parseExpression();
+    expect<Semicolon>();
+
+    return std::make_unique<AST::ArrayAssignment>(namePos, name.name, std::move(index), std::move(value));
 }
 
 std::unique_ptr<AST::Expression> Parser::parseFunctionCall() {
@@ -434,6 +450,7 @@ std::unique_ptr<AST::Expression> Parser::parsePrimary() {
     }
     if (check<Identifier>()) {
         if (checkNext<LeftParen>()) return parseFunctionCall();
+        if (checkNext<LeftBracket>()) return parseArrayIndex();
 
         auto variable = std::make_unique<AST::VariableExpression>(peekPrevious().metadata, expect<Identifier>().name);
 
@@ -462,6 +479,15 @@ std::unique_ptr<AST::Expression> Parser::parseArrayLiteral() {
     expect<RightBracket>();
 
     return std::make_unique<AST::ArrayLiteral>(peekPrevious().metadata, std::move(elements));
+}
+
+std::unique_ptr<AST::Expression> Parser::parseArrayIndex() {
+    const auto [arrayName] = expect<Identifier>();
+    expect<LeftBracket>();
+    auto index = parseExpression();
+    expect<RightBracket>();
+
+    return std::make_unique<AST::ArrayIndex>(peekPrevious().metadata, arrayName, std::move(index));
 }
 
 

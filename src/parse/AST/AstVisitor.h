@@ -23,6 +23,8 @@ namespace AST {
     struct WhileLoop;
     struct IfStatement;
     struct ArrayLiteral;
+    struct ArrayIndex;
+    struct ArrayAssignment;
 }
 
 
@@ -56,6 +58,8 @@ public:
 
     virtual void visit(AST::VariableAssignment& node) = 0;
 
+    virtual void visit(AST::ArrayAssignment& node) = 0;
+
     virtual void visit(AST::ReturnStatement& node) = 0;
 
     virtual void visit(AST::IntegerLiteralNode& node) = 0;
@@ -71,6 +75,8 @@ public:
     virtual void visit(AST::FloatLiteralNode& node) = 0;
 
     virtual void visit(AST::ArrayLiteral& node) = 0;
+
+    virtual void visit(AST::ArrayIndex& node) = 0;
 };
 
 #endif //COMPILER_PROJECT_VISITOR_H

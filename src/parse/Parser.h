@@ -28,6 +28,7 @@ private:
 
     std::unique_ptr<AST::Statement> parseDeclaration();
 
+
     std::unique_ptr<AST::Statement> parseStatement();
 
     std::unique_ptr<AST::Block> parseBlock();
@@ -39,6 +40,8 @@ private:
     std::unique_ptr<AST::Statement> parseVariableDeclaration();
 
     std::unique_ptr<AST::Statement> parseVariableAssignment();
+
+    std::unique_ptr<AST::Statement> parseArrayAssignment();
 
     std::unique_ptr<AST::Expression> parseFunctionCall();
 
@@ -70,9 +73,12 @@ private:
 
     std::unique_ptr<AST::Expression> parseIncDecExpression();
 
+
     std::unique_ptr<AST::Expression> parsePrimary();
 
     std::unique_ptr<AST::Expression> parseArrayLiteral();
+
+    std::unique_ptr<AST::Expression> parseArrayIndex();
 
     Token& peek();
 

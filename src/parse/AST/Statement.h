@@ -65,6 +65,23 @@ namespace AST {
         llvm::Value* acceptIR(IRGeneratorLLVM& visitor) override;
     };
 
+    struct ArrayAssignment : Statement {
+        std::string varName;
+        std::unique_ptr<Expression> index;
+        std::unique_ptr<Expression> assignedValue;
+        Symbol* symbol = nullptr;
+
+        ArrayAssignment(const TokenMetadata& metadata, std::string name, std::unique_ptr<Expression> index,
+                        std::unique_ptr<Expression> value)
+            : Statement(metadata), varName(std::move(name)),
+              index(std::move(index)), assignedValue(std::move(value)) {
+        }
+
+        void accept(AstVisitor& visitor) override;
+
+        llvm::Value* acceptIR(IRGeneratorLLVM& visitor) override;
+    };
+
     // Return statement
     struct ReturnStatement : Statement {
         std::unique_ptr<Expression> value; // Can be null for void returns

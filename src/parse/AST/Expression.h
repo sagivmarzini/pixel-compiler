@@ -131,12 +131,12 @@ namespace AST {
         llvm::Value* acceptIR(IRGeneratorLLVM& visitor) override;
     };
 
-    struct ArrayIndexNode final : Expression {
+    struct ArrayIndex final : Expression {
         std::string variableName; // The name of the array
         std::unique_ptr<Expression> index;
         Symbol* symbol = nullptr;
 
-        ArrayIndexNode(const TokenMetadata& metadata, std::string name, std::unique_ptr<Expression> idx)
+        ArrayIndex(const TokenMetadata& metadata, std::string name, std::unique_ptr<Expression> idx)
             : Expression(metadata), variableName(std::move(name)), index(std::move(idx)) {
         }
 

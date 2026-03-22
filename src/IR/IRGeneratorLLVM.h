@@ -46,6 +46,8 @@ public:
 
     llvm::Value* visit(const AST::VariableAssignment& node);
 
+    llvm::Value* visit(const AST::ArrayAssignment& node);
+
 
     llvm::Value* visit(const AST::ExpressionStatement& node);
 
@@ -57,6 +59,8 @@ public:
     llvm::Value* visit(const AST::UnaryExpression& node);
 
     llvm::Value* visit(const AST::IncDecExpression& node);
+
+    llvm::Value* visit(const AST::ArrayIndex& node);
 
 
     llvm::Value* visit(const AST::VariableExpression& node) const;

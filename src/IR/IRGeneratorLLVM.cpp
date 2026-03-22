@@ -342,6 +342,10 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::VariableAssignment& node) {
     return nullptr;
 }
 
+llvm::Value* IRGeneratorLLVM::visit(const AST::ArrayAssignment& node) {
+    // TODO: Implement
+}
+
 llvm::Value* IRGeneratorLLVM::visit(const AST::ExpressionStatement& node) {
     return node.expression->acceptIR(*this);
 }
@@ -492,6 +496,10 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::IncDecExpression& node) {
     }
 }
 
+llvm::Value* IRGeneratorLLVM::visit(const AST::ArrayIndex& node) {
+    // TODO: Implement this
+}
+
 llvm::Value* IRGeneratorLLVM::visit(const AST::VariableExpression& node) const {
     llvm::Value* variableAddress = nullptr;
     Type varType;
@@ -527,6 +535,7 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::FloatLiteralNode& node) const {
 }
 
 llvm::Value* IRGeneratorLLVM::visit(const AST::ArrayLiteral& node) {
+    // TODO: Implement this
 }
 
 llvm::Type* IRGeneratorLLVM::getLlvmType(const Type& type) const {
