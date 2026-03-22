@@ -18,13 +18,24 @@ namespace AST {
 
     // Variable declaration: int x = 5;
     struct VariableDeclaration : Statement {
-        bool                        isConst;
-        Type                        specifiedType;
-        std::string                 name;
-        std::unique_ptr<Expression> value; // Can be null
-        Symbol*                     symbol = nullptr;
+        struct ArrayType {
+            Type baseType;
+            int size;
 
-        VariableDeclaration(const TokenMetadata&        metadata, bool isConst, const Type type, std::string name,
+            ArrayType(const TokenMetadata& metadata, Type base, int size)
+                : baseType(base), size(size) {
+            }
+
+            llvm::Type* acceptType(IRGeneratorLLVM& visitor);
+        };
+
+        bool isConst;
+        Type specifiedType;
+        std::string name;
+        std::unique_ptr<Expression> value; // Can be null
+        Symbol* symbol = nullptr;
+
+        VariableDeclaration(const TokenMetadata& metadata, bool isConst, const Type type, std::string name,
                             std::unique_ptr<Expression> init = nullptr)
             : Statement(metadata), isConst(isConst), specifiedType(type), name(std::move(name)),
               value(std::move(init)) {
@@ -36,9 +47,9 @@ namespace AST {
     };
 
     struct VariableAssignment : Statement {
-        std::string                 varName;
+        std::string varName;
         std::unique_ptr<Expression> assignedValue;
-        Symbol*                     symbol = nullptr;
+        Symbol* symbol = nullptr;
 
         VariableAssignment(const TokenMetadata& metadata, std::string name, std::unique_ptr<Expression> value)
             : Statement(metadata), varName(std::move(name)), assignedValue(std::move(value)) {
@@ -65,7 +76,7 @@ namespace AST {
     // Block (compound statement)
     struct Block : Statement {
         std::vector<std::unique_ptr<Statement> > statements;
-        Scope*                                   scope;
+        Scope* scope;
 
         explicit Block(const TokenMetadata& metadata, std::vector<std::unique_ptr<Statement> > stmts = {})
             : Statement(metadata), statements(std::move(stmts)), scope(nullptr) {
@@ -79,7 +90,7 @@ namespace AST {
     // While loop
     struct WhileLoop : Statement {
         std::unique_ptr<Expression> condition;
-        std::unique_ptr<Statement>  body;
+        std::unique_ptr<Statement> body;
 
         WhileLoop(const TokenMetadata& metadata, std::unique_ptr<Expression> condition, std::unique_ptr<Statement> body)
             : Statement(metadata), condition(std::move(condition)), body(std::move(body)) {
@@ -91,13 +102,13 @@ namespace AST {
     };
 
     struct ForLoop : Statement {
-        std::string                      identifier;
-        Symbol*                          symbol = nullptr;
+        std::string identifier;
+        Symbol* symbol = nullptr;
         std::unique_ptr<RangeExpression> range;
-        std::unique_ptr<Expression>      step;
-        std::unique_ptr<Statement>       body;
+        std::unique_ptr<Expression> step;
+        std::unique_ptr<Statement> body;
 
-        ForLoop(const TokenMetadata&        metadata, std::string identifier, std::unique_ptr<RangeExpression> range,
+        ForLoop(const TokenMetadata& metadata, std::string identifier, std::unique_ptr<RangeExpression> range,
                 std::unique_ptr<Expression> step, std::unique_ptr<Statement> body)
             : Statement(metadata), identifier(std::move(identifier)), range(std::move(range)), step(std::move(step)),
               body(std::move(body)) {
@@ -111,10 +122,10 @@ namespace AST {
     // If statement
     struct IfStatement : Statement {
         std::unique_ptr<Expression> condition;
-        std::unique_ptr<Statement>  thenBranch;
-        std::unique_ptr<Statement>  elseBranch; // Can be null
+        std::unique_ptr<Statement> thenBranch;
+        std::unique_ptr<Statement> elseBranch; // Can be null
 
-        IfStatement(const TokenMetadata&       metadata, std::unique_ptr<Expression> condition,
+        IfStatement(const TokenMetadata& metadata, std::unique_ptr<Expression> condition,
                     std::unique_ptr<Statement> thenBranch,
                     std::unique_ptr<Statement> elseBranch = nullptr)
             : Statement(metadata), condition(std::move(condition)), thenBranch(std::move(thenBranch)),
@@ -131,22 +142,22 @@ namespace AST {
     struct FunctionDeclaration : Statement {
         struct FunctionParameter {
             std::string name;
-            Type        type;
-            bool        isImplicit;
-            Symbol*     symbol = nullptr;
+            Type type;
+            bool isImplicit;
+            Symbol* symbol = nullptr;
 
             FunctionParameter(std::string name, const Type type, bool isImplicit = false)
                 : name(std::move(name)), type(type), isImplicit(isImplicit) {
             }
         };
 
-        std::string                    name;
-        Type                           returnType;
+        std::string name;
+        Type returnType;
         std::vector<FunctionParameter> parameters;
-        std::unique_ptr<Block>         body;
-        Symbol*                        symbol = nullptr;
+        std::unique_ptr<Block> body;
+        Symbol* symbol = nullptr;
 
-        FunctionDeclaration(const TokenMetadata&           metadata, const Type returnType, std::string name,
+        FunctionDeclaration(const TokenMetadata& metadata, const Type returnType, std::string name,
                             std::vector<FunctionParameter> parameters, std::unique_ptr<Block> body)
             : Statement(metadata), name(std::move(name)), returnType(returnType), parameters(std::move(parameters)),
               body(std::move(body)) {

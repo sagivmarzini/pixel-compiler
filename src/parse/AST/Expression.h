@@ -70,10 +70,10 @@ namespace AST {
     // Binary operations (e.g., a + b, x * y)
     struct BinaryExpression final : Expression {
         std::unique_ptr<Expression> left;
-        Operator                    op;
+        Operator op;
         std::unique_ptr<Expression> right;
 
-        BinaryExpression(const TokenMetadata&        metadata, std::unique_ptr<Expression> left, const Operator op,
+        BinaryExpression(const TokenMetadata& metadata, std::unique_ptr<Expression> left, const Operator op,
                          std::unique_ptr<Expression> right)
             : Expression(metadata), left(std::move(left)), op(op), right(std::move(right)) {
         }
@@ -85,7 +85,7 @@ namespace AST {
 
     struct UnaryExpression final : Expression {
         std::unique_ptr<Expression> operand;
-        Operator                    op;
+        Operator op;
 
         UnaryExpression(const TokenMetadata& metadata, std::unique_ptr<Expression> operand, const Operator op)
             : Expression(metadata), operand(std::move(operand)), op(op) {
@@ -99,7 +99,7 @@ namespace AST {
     // increment and decrement expressions ++ and --
     struct IncDecExpression final : Expression {
         std::string variableName;
-        Operator    op;
+        Operator op;
 
         enum Fix {
             Prefix,
@@ -120,7 +120,7 @@ namespace AST {
     // Variable reference
     struct VariableExpression final : Expression {
         std::string name;
-        Symbol*     symbol = nullptr;
+        Symbol* symbol = nullptr;
 
         VariableExpression(const TokenMetadata& metadata, std::string name) : Expression(metadata),
                                                                               name(std::move(name)) {
@@ -131,18 +131,32 @@ namespace AST {
         llvm::Value* acceptIR(IRGeneratorLLVM& visitor) override;
     };
 
+    struct ArrayIndexNode final : Expression {
+        std::string variableName; // The name of the array
+        std::unique_ptr<Expression> index;
+        Symbol* symbol = nullptr;
+
+        ArrayIndexNode(const TokenMetadata& metadata, std::string name, std::unique_ptr<Expression> idx)
+            : Expression(metadata), variableName(std::move(name)), index(std::move(idx)) {
+        }
+
+        void accept(AstVisitor& visitor) override;
+
+        llvm::Value* acceptIR(IRGeneratorLLVM& visitor) override; // Returns the loaded value at index
+    };
+
     // Function call
     struct FunctionCall final : Expression {
         struct FunctionArgument {
             std::unique_ptr<Expression> value;
-            std::optional<std::string>  name;
+            std::optional<std::string> name;
 
             FunctionArgument(std::unique_ptr<Expression> value, std::optional<std::string> name)
                 : value(std::move(value)), name(std::move(name)) {
             }
         };
 
-        std::string                   functionName;
+        std::string functionName;
         std::vector<FunctionArgument> arguments;
 
         FunctionCall(const TokenMetadata& metadata, std::string name, std::vector<FunctionArgument> arguments)
@@ -158,7 +172,7 @@ namespace AST {
         std::unique_ptr<Expression> start;
         std::unique_ptr<Expression> end;
 
-        RangeExpression(const TokenMetadata&        metadata, std::unique_ptr<Expression> start,
+        RangeExpression(const TokenMetadata& metadata, std::unique_ptr<Expression> start,
                         std::unique_ptr<Expression> end)
             : Expression(metadata), start(std::move(start)), end(std::move(end)) {
         }
