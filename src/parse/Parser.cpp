@@ -40,7 +40,7 @@ std::unique_ptr<AST::Statement> Parser::parseDeclaration() {
 }
 
 std::unique_ptr<AST::Statement> Parser::parseStatement() {
-    if (check<LBrace>()) {
+    if (check<LeftBrace>()) {
         return parseBlock();
     }
     if (checkValue(Keyword::Var) || checkValue(Keyword::Const)) {
@@ -76,10 +76,10 @@ std::unique_ptr<AST::Statement> Parser::parseStatement() {
 
 std::unique_ptr<AST::Block> Parser::parseBlock() {
     const auto startToken = peek();
-    expect<LBrace>();
+    expect<LeftBrace>();
 
     AST::Block block(peekPrevious().metadata);
-    while (!check<RBrace>()) {
+    while (!check<RightBrace>()) {
         if (isAtEnd()) {
             error(ParserErrorType::MissingClosingBrace, startToken);
         }
@@ -93,14 +93,14 @@ std::unique_ptr<AST::Block> Parser::parseBlock() {
             synchronize();
         }
     }
-    expect<RBrace>();
+    expect<RightBrace>();
 
     return std::make_unique<AST::Block>(std::move(block));
 }
 
 std::vector<AST::FunctionCall::FunctionArgument> Parser::parseFunctionArguments() {
     std::vector<AST::FunctionCall::FunctionArgument> args;
-    while (!check<RParen>()) {
+    while (!check<RightParen>()) {
         if (isAtEnd()) {
             error(ParserErrorType::MissingClosingParen, peek());
         }
@@ -114,10 +114,10 @@ std::vector<AST::FunctionCall::FunctionArgument> Parser::parseFunctionArguments(
         auto param = parseExpression();
 
         args.emplace_back(std::move(param), paramName);
-        if (!check<RParen>()) {
+        if (!check<RightParen>()) {
             expect<Comma>(); // if didn't read the end, get a comma seperator
             // Check for trailing comma
-            if (check<RParen>())
+            if (check<RightParen>())
                 error(ParserErrorType::TrailingComma, peek());
         }
     }
@@ -129,11 +129,11 @@ std::unique_ptr<AST::Statement> Parser::parseFunctionDeclaration() {
     expect<Keyword>();
     auto [name] = expect<Identifier>();
     auto namePosition = peekPrevious().metadata;
-    expect<LParen>();
+    expect<LeftParen>();
 
     std::vector<AST::FunctionDeclaration::FunctionParameter> parameters;
     //parse parameters
-    while (!check<RParen>()) {
+    while (!check<RightParen>()) {
         if (isAtEnd()) {
             error(ParserErrorType::MissingClosingParen, peek());
         }
@@ -144,15 +144,15 @@ std::unique_ptr<AST::Statement> Parser::parseFunctionDeclaration() {
         auto paramType = expect<Type>();
 
         parameters.emplace_back(paramName.name, paramType, isImplicit);
-        if (!check<RParen>()) {
+        if (!check<RightParen>()) {
             expect<Comma>(); // if didn't read the end, get a comma seperator
             // Check for trailing comma
-            if (check<RParen>())
+            if (check<RightParen>())
                 error(ParserErrorType::TrailingComma, peek());
         }
     }
 
-    expect<RParen>();
+    expect<RightParen>();
     expect<Arrow>();
 
     auto returnType = expect<Type>();
@@ -205,9 +205,9 @@ std::unique_ptr<AST::Expression> Parser::parseFunctionCall() {
     auto [name] = expect<Identifier>();
     const auto namePos = peekPrevious().metadata;
 
-    expect<LParen>();
+    expect<LeftParen>();
     auto arguments = parseFunctionArguments();
-    expect<RParen>();
+    expect<RightParen>();
 
     return std::make_unique<AST::FunctionCall>(namePos, name, std::move(arguments));
 }
@@ -419,16 +419,16 @@ std::unique_ptr<AST::Expression> Parser::parsePrimary() {
         return std::make_unique<AST::StringLiteralNode>(peek().metadata, expect<StringLiteral>().value);
     }
     if (check<Identifier>()) {
-        if (checkNext<LParen>()) return parseFunctionCall();
+        if (checkNext<LeftParen>()) return parseFunctionCall();
 
         auto variable = std::make_unique<AST::VariableExpression>(peekPrevious().metadata, expect<Identifier>().name);
 
         return variable;
     }
-    if (check<LParen>()) {
-        expect<LParen>();
+    if (check<LeftParen>()) {
+        expect<LeftParen>();
         auto expression = parseExpression();
-        expect<RParen>();
+        expect<RightParen>();
         return expression;
     }
     error(ParserErrorType::ExpectedExpression, peek());
@@ -556,7 +556,7 @@ bool Parser::isAtStartOfStatement() {
                 return false;
         }
     }
-    if (check<LBrace>()) return true;
+    if (check<LeftBrace>()) return true;
     return false;
 }
 

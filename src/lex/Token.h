@@ -90,16 +90,22 @@ struct Colon {
 struct Comma {
 };
 
-struct LBrace {
+struct LeftBrace {
 };
 
-struct RBrace {
+struct RightBrace {
 };
 
-struct LParen {
+struct LeftParen {
 };
 
-struct RParen {
+struct RightParen {
+};
+
+struct LeftBracket {
+};
+
+struct RightBracket {
 };
 
 struct Arrow {
@@ -114,16 +120,20 @@ struct Underscore {
 struct EndOfFile {
 };
 
+
 // Token variant
+
 using TokenType = std::variant<
     // simple tokens
     Semicolon,
     Colon,
     Comma,
-    LBrace,
-    RBrace,
-    LParen,
-    RParen,
+    LeftBrace,
+    RightBrace,
+    LeftParen,
+    RightParen,
+    LeftBracket,
+    RightBracket,
     Arrow,
     DoubleDot,
     Underscore,
@@ -158,7 +168,6 @@ static const std::unordered_map<std::string, TokenType> keywords = {
     {"Int", Type::Int},
     {"Float", Type::Float},
     {"Bool", Type::Bool},
-    {"Ptr", Type::Pointer},
     {"String", Type::String},
     {"Color", Type::Color},
     {"Void", Type::Void},
@@ -179,9 +188,7 @@ struct Token {
 
     Token() = default;
 
-    Token(TokenType type, int line, int col, std::string lexeme)
-        : type(std::move(type)), metadata(line, col, std::move(lexeme)) {
-    }
+    Token(TokenType type, int line, int col, std::string lexeme);
 };
 
 std::ostream& operator<<(std::ostream& os, const Token& token);
