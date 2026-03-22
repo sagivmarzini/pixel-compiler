@@ -24,7 +24,7 @@ std::string typeToString(const Type type) {
         case Type::Int: return "int";
         case Type::Float: return "float";
         case Type::Bool: return "boolean";
-        case Type::Ptr: return "ptr";
+        case Type::Pointer: return "ptr";
         case Type::String: return "string";
         case Type::Color: return "color";
         case Type::Void: return "void";
