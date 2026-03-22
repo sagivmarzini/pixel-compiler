@@ -288,6 +288,8 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::VariableDeclaration& node) {
         if (node.value) {
             llvm::Value* val = node.value->acceptIR(*this);
 
+            val = castToType(val, llvmType);
+
             // Check if this a constant (number/bool) or a runtime instruction
             if (auto* constVal = llvm::dyn_cast<llvm::Constant>(val)) {
                 initializer = constVal;
