@@ -19,9 +19,9 @@ public:
     };
 
 private:
-    std::vector<Token>         _tokens;
-    size_t                     _position;
-    Token                      _endOfFileToken = Token(EndOfFile(), -1, -1, "EOF");
+    std::vector<Token> _tokens;
+    size_t _position;
+    Token _endOfFileToken = Token(EndOfFile(), -1, -1, "EOF");
     std::vector<CompilerError> _errors;
     // A flag to prevent multiple errors from one single mistake
     bool _isPanicMode = false;
@@ -72,6 +72,8 @@ private:
 
     std::unique_ptr<AST::Expression> parsePrimary();
 
+    std::unique_ptr<AST::Expression> parseArrayLiteral();
+
     Token& peek();
 
     Token& peekPrevious();
@@ -109,8 +111,8 @@ private:
 
     bool isAtStartOfStatement();
 
-    void error(const ParserErrorType& type, const Token& errorToken,
-               const TokenType&       expectedTokenType = Type::Unspecified);
+    [[noreturn]] void logError(const ParserErrorType& type, const Token& errorToken,
+                               const TokenType& expectedTokenType = Type::Unspecified);
 };
 
 

@@ -22,6 +22,7 @@ namespace AST {
     struct Block;
     struct WhileLoop;
     struct IfStatement;
+    struct ArrayLiteral;
 }
 
 
@@ -68,6 +69,8 @@ public:
     virtual void visit(AST::RangeExpression& node) = 0;
 
     virtual void visit(AST::FloatLiteralNode& node) = 0;
+
+    virtual void visit(AST::ArrayLiteral& node) = 0;
 };
 
 #endif //COMPILER_PROJECT_VISITOR_H

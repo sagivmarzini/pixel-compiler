@@ -145,6 +145,18 @@ namespace AST {
         llvm::Value* acceptIR(IRGeneratorLLVM& visitor) override; // Returns the loaded value at index
     };
 
+    struct ArrayLiteral final : Expression {
+        std::vector<std::unique_ptr<Expression> > elements;
+
+        ArrayLiteral(const TokenMetadata& metadata, std::vector<std::unique_ptr<Expression> > elems)
+            : Expression(metadata), elements(std::move(elems)) {
+        }
+
+        void accept(AstVisitor& visitor) override;
+
+        llvm::Value* acceptIR(IRGeneratorLLVM& visitor) override;
+    };
+
     // Function call
     struct FunctionCall final : Expression {
         struct FunctionArgument {

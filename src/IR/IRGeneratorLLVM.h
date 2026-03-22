@@ -69,6 +69,8 @@ public:
 
     llvm::Value* visit(const AST::FloatLiteralNode& node) const;
 
+    llvm::Value* visit(const AST::ArrayLiteral& node);
+
 private:
     // Owns the core LLVM data structures, such as the type and constant tables.
     std::unique_ptr<llvm::LLVMContext> _context;

@@ -65,6 +65,8 @@ private:
     void visit(AST::FunctionDeclaration& node) override;
 
     void visit(AST::RangeExpression& node) override;
+
+    void visit(AST::ArrayLiteral& node) override;
 };
 
 

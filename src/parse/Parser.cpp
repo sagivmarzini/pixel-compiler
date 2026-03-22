@@ -34,9 +34,7 @@ std::unique_ptr<AST::Statement> Parser::parseDeclaration() {
         return parseFunctionDeclaration();
     }
 
-    error(ParserErrorType::ExpectedDeclaration, peek());
-    // Unreachable, but keeps the compiler happy
-    throw std::runtime_error("Internal error: unreachable");
+    logError(ParserErrorType::ExpectedDeclaration, peek());
 }
 
 std::unique_ptr<AST::Statement> Parser::parseStatement() {
@@ -53,7 +51,7 @@ std::unique_ptr<AST::Statement> Parser::parseStatement() {
         return parseIfStatement();
     }
     if (matchValue(Keyword::Else)) {
-        error(ParserErrorType::ElseWithoutIf, peekPrevious());
+        logError(ParserErrorType::ElseWithoutIf, peekPrevious());
     }
     if (checkValue(Keyword::While)) {
         return parseWhileLoop();
@@ -81,7 +79,7 @@ std::unique_ptr<AST::Block> Parser::parseBlock() {
     AST::Block block(peekPrevious().metadata);
     while (!check<RightBrace>()) {
         if (isAtEnd()) {
-            error(ParserErrorType::MissingClosingBrace, startToken);
+            logError(ParserErrorType::MissingClosingBrace, startToken);
         }
         try {
             block.statements.push_back(parseStatement());
@@ -102,7 +100,7 @@ std::vector<AST::FunctionCall::FunctionArgument> Parser::parseFunctionArguments(
     std::vector<AST::FunctionCall::FunctionArgument> args;
     while (!check<RightParen>()) {
         if (isAtEnd()) {
-            error(ParserErrorType::MissingClosingParen, peek());
+            logError(ParserErrorType::MissingClosingParen, peek());
         }
         std::optional<std::string> paramName;
 
@@ -118,7 +116,7 @@ std::vector<AST::FunctionCall::FunctionArgument> Parser::parseFunctionArguments(
             expect<Comma>(); // if didn't read the end, get a comma seperator
             // Check for trailing comma
             if (check<RightParen>())
-                error(ParserErrorType::TrailingComma, peek());
+                logError(ParserErrorType::TrailingComma, peek());
         }
     }
 
@@ -135,7 +133,7 @@ std::unique_ptr<AST::Statement> Parser::parseFunctionDeclaration() {
     //parse parameters
     while (!check<RightParen>()) {
         if (isAtEnd()) {
-            error(ParserErrorType::MissingClosingParen, peek());
+            logError(ParserErrorType::MissingClosingParen, peek());
         }
         bool isImplicit = match<Underscore>();
 
@@ -148,7 +146,7 @@ std::unique_ptr<AST::Statement> Parser::parseFunctionDeclaration() {
             expect<Comma>(); // if didn't read the end, get a comma seperator
             // Check for trailing comma
             if (check<RightParen>())
-                error(ParserErrorType::TrailingComma, peek());
+                logError(ParserErrorType::TrailingComma, peek());
         }
     }
 
@@ -162,31 +160,47 @@ std::unique_ptr<AST::Statement> Parser::parseFunctionDeclaration() {
 }
 
 std::unique_ptr<AST::Statement> Parser::parseVariableDeclaration() {
-    const bool isConst = checkValue(Keyword::Const) ? true : false;
+    const bool isConst = checkValue(Keyword::Const);
     expect<Keyword>();
 
     const auto varNameToken = peek(); // for logging error on the variable
     auto [name] = expect<Identifier>();
+    AST::VariableDeclaration::ArrayType arrayType;
+    bool isArray = false;
 
-    // if initializing with inferred type set it to undefined
+    // Check if the var is an array
+    if (match<LeftBracket>()) {
+        const auto [size] = expect<IntegerLiteral>();
+        arrayType.size = size;
+        expect<RightBracket>();
+        isArray = true;
+    }
+
     Type type = Type::Unspecified;
     std::unique_ptr<AST::Expression> value = nullptr;
-    // Ff initializing with type then get it
+
+    // If a type is specified, get it
     if (match<Colon>()) {
         type = expect<Type>();
     }
+    arrayType.baseType = type;
 
     if (checkValue(Operator::Assignment)) {
         expect<Operator>();
-        value = parseExpression();
+        if (check<LeftBracket>()) {
+            value = parseArrayLiteral();
+            isArray = true;
+        } else
+            value = parseExpression();
     }
 
     if (!value && type == Type::Unspecified) {
-        error(ParserErrorType::TypelessVarDeclaration, varNameToken);
+        logError(ParserErrorType::TypelessVarDeclaration, varNameToken);
     }
     expect<Semicolon>();
 
-    return std::make_unique<AST::VariableDeclaration>(varNameToken.metadata, isConst, type, name, std::move(value));
+    return std::make_unique<AST::VariableDeclaration>(varNameToken.metadata, isConst, type, name, std::move(value),
+                                                      isArray ? std::make_optional(arrayType) : std::nullopt);
 }
 
 std::unique_ptr<AST::Statement> Parser::parseVariableAssignment() {
@@ -381,7 +395,7 @@ std::unique_ptr<AST::Expression> Parser::parseIncDecExpression() {
     // check for prefix ++ and --
     if (checkValue(Operator::PlusPlus) || checkValue(Operator::MinusMinus)) {
         if (!checkNext<Identifier>()) {
-            error(ParserErrorType::IncrementNonVariable, peek());
+            logError(ParserErrorType::IncrementNonVariable, peek());
         }
 
         auto op = expect<Operator>();
@@ -399,7 +413,7 @@ std::unique_ptr<AST::Expression> Parser::parseIncDecExpression() {
             auto fixPos = AST::IncDecExpression::Fix::Postfix;
             expr = std::make_unique<AST::IncDecExpression>(peekPrevious().metadata, var->name, op, fixPos);
         } else {
-            error(ParserErrorType::IncrementNonVariable, peek());
+            logError(ParserErrorType::IncrementNonVariable, peek());
         }
     }
     return expr;
@@ -431,9 +445,23 @@ std::unique_ptr<AST::Expression> Parser::parsePrimary() {
         expect<RightParen>();
         return expression;
     }
-    error(ParserErrorType::ExpectedExpression, peek());
+    logError(ParserErrorType::ExpectedExpression, peek());
+}
 
-    throw std::runtime_error("Internal error: unreachable");
+std::unique_ptr<AST::Expression> Parser::parseArrayLiteral() {
+    expect<LeftBracket>();
+
+    std::vector<std::unique_ptr<AST::Expression> > elements;
+    if (!check<RightBracket>()) {
+        elements.push_back(parseExpression());
+        while (check<Comma>()) {
+            expect<Comma>();
+            elements.push_back(parseExpression());
+        }
+    }
+    expect<RightBracket>();
+
+    return std::make_unique<AST::ArrayLiteral>(peekPrevious().metadata, std::move(elements));
 }
 
 
@@ -506,16 +534,13 @@ T Parser::expect() {
 
     // error() throws ParseUnwindException, so this line
     // technically never returns, but we call it to log and throw.
-    error(ParserErrorType::UnexpectedToken, peek(), T());
-
-    // Unreachable, but keeps the compiler happy
-    throw std::runtime_error("Internal error: unreachable");
+    logError(ParserErrorType::UnexpectedToken, peek(), T());
 }
 
 template<typename T>
 T Parser::expectValue(T value) {
     if (!checkValue(value)) {
-        error(ParserErrorType::UnexpectedToken, peek(), value);
+        logError(ParserErrorType::UnexpectedToken, peek(), value);
     }
     T returnValue = std::get<T>(peek().type);
     advance();
@@ -560,11 +585,7 @@ bool Parser::isAtStartOfStatement() {
     return false;
 }
 
-void Parser::error(const ParserErrorType& type, const Token& errorToken, const TokenType& expectedTokenType) {
-    if (_isPanicMode) {
-        std::cout << "There was actually a panic mode so I skipped (testing if this flag is necessary)\n";
-        return;
-    } // Don't report secondary errors
+void Parser::logError(const ParserErrorType& type, const Token& errorToken, const TokenType& expectedTokenType) {
     _isPanicMode = true;
 
     _errors.push_back(ParserError(type, errorToken, expectedTokenType));

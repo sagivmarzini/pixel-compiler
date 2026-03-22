@@ -526,6 +526,9 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::FloatLiteralNode& node) const {
     return llvm::ConstantFP::get(*_context, llvm::APFloat(node.value));
 }
 
+llvm::Value* IRGeneratorLLVM::visit(const AST::ArrayLiteral& node) {
+}
+
 llvm::Type* IRGeneratorLLVM::getLlvmType(const Type& type) const {
     switch (type) {
         case Type::Int:

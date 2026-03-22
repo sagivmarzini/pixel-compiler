@@ -129,23 +129,30 @@ void AstPrinter::visit(AST::FunctionCall& node) {
 
 void AstPrinter::visit(AST::VariableDeclaration& node) {
     printIndent();
-    std::cout << "VariableDeclaration: " << node.name << " : " << node.specifiedType << "\n";
+    std::cout << "VariableDeclaration: " << (node.isConst ? "const " : "var ")
+            << node.name << " : " << node.specifiedType << "\n";
+
+    _indent++;
 
     if (node.symbol) {
-        _indent++;
         printSymbol(*node.symbol);
-        _indent--;
+    }
+
+    if (node.arrayType) {
+        printIndent();
+        std::cout << "ArrayType: " << node.arrayType->baseType
+                << "[" << node.arrayType->size << "]\n";
     }
 
     if (node.value) {
-        _indent++;
         printIndent();
         std::cout << "InitialValue:\n";
         _indent++;
         node.value->accept(*this);
         _indent--;
-        _indent--;
     }
+
+    _indent--;
 }
 
 void AstPrinter::visit(AST::VariableAssignment& node) {
@@ -295,6 +302,24 @@ void AstPrinter::visit(AST::RangeExpression& node) {
     _indent++;
     node.end->accept(*this);
     _indent--;
+
+    _indent--;
+}
+
+void AstPrinter::visit(AST::ArrayLiteral& node) {
+    printIndent();
+    std::cout << "ArrayLiteral\n";
+    _indent++;
+
+    if (!node.elements.empty()) {
+        printIndent();
+        std::cout << "Elements:\n";
+        _indent++;
+        for (auto& elem: node.elements) {
+            elem->accept(*this);
+        }
+        _indent--;
+    }
 
     _indent--;
 }

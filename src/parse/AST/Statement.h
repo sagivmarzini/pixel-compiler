@@ -20,7 +20,9 @@ namespace AST {
     struct VariableDeclaration : Statement {
         struct ArrayType {
             Type baseType;
-            int size;
+            int size = 0;
+
+            ArrayType() = default;
 
             ArrayType(const TokenMetadata& metadata, Type base, int size)
                 : baseType(base), size(size) {
@@ -33,12 +35,15 @@ namespace AST {
         Type specifiedType;
         std::string name;
         std::unique_ptr<Expression> value; // Can be null
+        std::optional<ArrayType> arrayType;
+
         Symbol* symbol = nullptr;
 
         VariableDeclaration(const TokenMetadata& metadata, bool isConst, const Type type, std::string name,
-                            std::unique_ptr<Expression> init = nullptr)
+                            std::unique_ptr<Expression> init = nullptr,
+                            const std::optional<ArrayType> arrayType = std::nullopt)
             : Statement(metadata), isConst(isConst), specifiedType(type), name(std::move(name)),
-              value(std::move(init)) {
+              value(std::move(init)), arrayType(arrayType) {
         }
 
         void accept(AstVisitor& visitor) override;
