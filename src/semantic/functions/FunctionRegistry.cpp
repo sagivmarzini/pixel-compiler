@@ -17,7 +17,7 @@ const FunctionInfo* FunctionRegistry::get(const std::string& name) const {
 std::unordered_map<std::string, FunctionInfo> FunctionRegistry::getAllApiFunctions() const {
     std::unordered_map<std::string, FunctionInfo> apiFuncs;
     for (const auto& [name, info]: _functions) {
-        if (info.kind == FunctionKind::Api) {
+        if (info.kind == FunctionKind::Api || info.kind == FunctionKind::Intrinsic) {
             apiFuncs[name] = info;
         }
     }
@@ -32,4 +32,11 @@ void FunctionRegistry::registerApi(const std::string& name, const FunctionInfo& 
 void FunctionRegistry::registerInternal(const std::string& name, const FunctionInfo& func) {
     _functions[name] = func;
     _functions[name].kind = FunctionKind::Internal;
+}
+
+void FunctionRegistry::registerIntrinsic(const std::string& name, const FunctionInfo& func,
+                                         const llvm::Intrinsic::ID& id) {
+    _functions[name] = func;
+    _functions[name].kind = FunctionKind::Intrinsic;
+    _functions[name].intrinsicId = id;
 }

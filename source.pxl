@@ -1,259 +1,484 @@
 // ============================================================
-//  INPUT SHOWCASE — tests all 5 globals across many use cases
-//  mouseX, mouseY, mousePressed, keyPressed, keyCode
+//  BREAKOUT  —  a Pixel language implementation
 // ============================================================
 
-// --- Global state
-var trailX0: Float = 400.0;
-var trailY0: Float = 300.0;
-var trailX1: Float = 400.0;
-var trailY1: Float = 300.0;
-var trailX2: Float = 400.0;
-var trailY2: Float = 300.0;
-var trailX3: Float = 400.0;
-var trailY3: Float = 300.0;
-var trailX4: Float = 400.0;
-var trailY4: Float = 300.0;
+// ── Canvas / game constants ──────────────────────────────────
+const W         = 800;
+const H         = 600;
+const PADDLE_W  = 100.0;
+const PADDLE_H  = 14.0;
+const PADDLE_Y  = 550.0;
+const BALL_D    = 14.0;
+const BALL_R    = 7.0;
 
-var gravX: Float = 400.0;
-var gravY: Float = 300.0;
-var velX: Float = 0.0;
-var velY: Float = 0.0;
+// Brick grid  (10 columns × 6 rows)
+const COLS      = 10;
+const ROWS      = 6;
+const BRICK_W   = 70.0;
+const BRICK_H   = 22.0;
+const BRICK_GAP = 8.0;
+const GRID_X    = 40.0;      // left edge of brick field
+const GRID_Y    = 60.0;      // top  edge of brick field
 
-var hueShift: Float = 0.0;
-var t: Float = 0.0;
+// ── Game state ───────────────────────────────────────────────
+var ballX    = 400.0;
+var ballY    = 400.0;
+var ballVX   = 3.5;
+var ballVY   = -4.0;
 
-var rippleX: Float = 400.0;
-var rippleY: Float = 300.0;
-var rippleAge: Float = 999.0;
+var paddleX  = 350.0;        // left edge of paddle
 
-var lastKeyCode: Int = 0;
-var keyFlashAge: Float = 999.0;
+// Bricks: flattened 6×10 array stored as a single array of 60 Floats.
+// 1.0 = alive, 0.0 = destroyed
+var b00 = 1.0; var b01 = 1.0; var b02 = 1.0; var b03 = 1.0; var b04 = 1.0;
+var b05 = 1.0; var b06 = 1.0; var b07 = 1.0; var b08 = 1.0; var b09 = 1.0;
+var b10 = 1.0; var b11 = 1.0; var b12 = 1.0; var b13 = 1.0; var b14 = 1.0;
+var b15 = 1.0; var b16 = 1.0; var b17 = 1.0; var b18 = 1.0; var b19 = 1.0;
+var b20 = 1.0; var b21 = 1.0; var b22 = 1.0; var b23 = 1.0; var b24 = 1.0;
+var b25 = 1.0; var b26 = 1.0; var b27 = 1.0; var b28 = 1.0; var b29 = 1.0;
+var b30 = 1.0; var b31 = 1.0; var b32 = 1.0; var b33 = 1.0; var b34 = 1.0;
+var b35 = 1.0; var b36 = 1.0; var b37 = 1.0; var b38 = 1.0; var b39 = 1.0;
+var b40 = 1.0; var b41 = 1.0; var b42 = 1.0; var b43 = 1.0; var b44 = 1.0;
+var b45 = 1.0; var b46 = 1.0; var b47 = 1.0; var b48 = 1.0; var b49 = 1.0;
+var b50 = 1.0; var b51 = 1.0; var b52 = 1.0; var b53 = 1.0; var b54 = 1.0;
+var b55 = 1.0; var b56 = 1.0; var b57 = 1.0; var b58 = 1.0; var b59 = 1.0;
 
-var bgR: Float = 10.0;
-var bgG: Float = 8.0;
-var bgB: Float = 18.0;
+var score     = 0;
+var lives     = 3;
+var gameOver  = 0;   // 0 = playing, 1 = won, -1 = lost
+var launched  = 0;   // 0 = waiting for launch, 1 = in flight
+
+// ── Helpers ──────────────────────────────────────────────────
+
+// Row colors (r, g, b)  — 6 rows, warm Atari palette
+func rowR(row: Int) -> Float {
+    if row == 0 { return 255.0; }
+    if row == 1 { return 255.0; }
+    if row == 2 { return 50.0;  }
+    if row == 3 { return 50.0;  }
+    if row == 4 { return 255.0; }
+    return 255.0;
+}
+func rowG(row: Int) -> Float {
+    if row == 0 { return 60.0;  }
+    if row == 1 { return 160.0; }
+    if row == 2 { return 200.0; }
+    if row == 3 { return 120.0; }
+    if row == 4 { return 220.0; }
+    return 80.0;
+}
+func rowB(row: Int) -> Float {
+    if row == 0 { return 60.0;  }
+    if row == 1 { return 20.0;  }
+    if row == 2 { return 255.0; }
+    if row == 3 { return 255.0; }
+    if row == 4 { return 50.0;  }
+    return 200.0;
+}
+
+// Brick left-edge X for a given column
+func brickX(col: Int) -> Float {
+    var fc: Float = col * 1.0;
+    return GRID_X + fc * (BRICK_W + BRICK_GAP);
+}
+
+// Brick top-edge Y for a given row
+func brickY(row: Int) -> Float {
+    var fr: Float = row * 1.0;
+    return GRID_Y + fr * (BRICK_H + BRICK_GAP);
+}
+
+// Map flat index → alive flag
+func brickAlive(idx: Int) -> Float {
+    if idx ==  0 { return b00; }
+    if idx ==  1 { return b01; }
+    if idx ==  2 { return b02; }
+    if idx ==  3 { return b03; }
+    if idx ==  4 { return b04; }
+    if idx ==  5 { return b05; }
+    if idx ==  6 { return b06; }
+    if idx ==  7 { return b07; }
+    if idx ==  8 { return b08; }
+    if idx ==  9 { return b09; }
+    if idx == 10 { return b10; }
+    if idx == 11 { return b11; }
+    if idx == 12 { return b12; }
+    if idx == 13 { return b13; }
+    if idx == 14 { return b14; }
+    if idx == 15 { return b15; }
+    if idx == 16 { return b16; }
+    if idx == 17 { return b17; }
+    if idx == 18 { return b18; }
+    if idx == 19 { return b19; }
+    if idx == 20 { return b20; }
+    if idx == 21 { return b21; }
+    if idx == 22 { return b22; }
+    if idx == 23 { return b23; }
+    if idx == 24 { return b24; }
+    if idx == 25 { return b25; }
+    if idx == 26 { return b26; }
+    if idx == 27 { return b27; }
+    if idx == 28 { return b28; }
+    if idx == 29 { return b29; }
+    if idx == 30 { return b30; }
+    if idx == 31 { return b31; }
+    if idx == 32 { return b32; }
+    if idx == 33 { return b33; }
+    if idx == 34 { return b34; }
+    if idx == 35 { return b35; }
+    if idx == 36 { return b36; }
+    if idx == 37 { return b37; }
+    if idx == 38 { return b38; }
+    if idx == 39 { return b39; }
+    if idx == 40 { return b40; }
+    if idx == 41 { return b41; }
+    if idx == 42 { return b42; }
+    if idx == 43 { return b43; }
+    if idx == 44 { return b44; }
+    if idx == 45 { return b45; }
+    if idx == 46 { return b46; }
+    if idx == 47 { return b47; }
+    if idx == 48 { return b48; }
+    if idx == 49 { return b49; }
+    if idx == 50 { return b50; }
+    if idx == 51 { return b51; }
+    if idx == 52 { return b52; }
+    if idx == 53 { return b53; }
+    if idx == 54 { return b54; }
+    if idx == 55 { return b55; }
+    if idx == 56 { return b56; }
+    if idx == 57 { return b57; }
+    if idx == 58 { return b58; }
+    return b59;
+}
+
+// Destroy a brick by index
+func destroyBrick(idx: Int) -> Void {
+    if idx ==  0 { b00 = 0.0; }
+    if idx ==  1 { b01 = 0.0; }
+    if idx ==  2 { b02 = 0.0; }
+    if idx ==  3 { b03 = 0.0; }
+    if idx ==  4 { b04 = 0.0; }
+    if idx ==  5 { b05 = 0.0; }
+    if idx ==  6 { b06 = 0.0; }
+    if idx ==  7 { b07 = 0.0; }
+    if idx ==  8 { b08 = 0.0; }
+    if idx ==  9 { b09 = 0.0; }
+    if idx == 10 { b10 = 0.0; }
+    if idx == 11 { b11 = 0.0; }
+    if idx == 12 { b12 = 0.0; }
+    if idx == 13 { b13 = 0.0; }
+    if idx == 14 { b14 = 0.0; }
+    if idx == 15 { b15 = 0.0; }
+    if idx == 16 { b16 = 0.0; }
+    if idx == 17 { b17 = 0.0; }
+    if idx == 18 { b18 = 0.0; }
+    if idx == 19 { b19 = 0.0; }
+    if idx == 20 { b20 = 0.0; }
+    if idx == 21 { b21 = 0.0; }
+    if idx == 22 { b22 = 0.0; }
+    if idx == 23 { b23 = 0.0; }
+    if idx == 24 { b24 = 0.0; }
+    if idx == 25 { b25 = 0.0; }
+    if idx == 26 { b26 = 0.0; }
+    if idx == 27 { b27 = 0.0; }
+    if idx == 28 { b28 = 0.0; }
+    if idx == 29 { b29 = 0.0; }
+    if idx == 30 { b30 = 0.0; }
+    if idx == 31 { b31 = 0.0; }
+    if idx == 32 { b32 = 0.0; }
+    if idx == 33 { b33 = 0.0; }
+    if idx == 34 { b34 = 0.0; }
+    if idx == 35 { b35 = 0.0; }
+    if idx == 36 { b36 = 0.0; }
+    if idx == 37 { b37 = 0.0; }
+    if idx == 38 { b38 = 0.0; }
+    if idx == 39 { b39 = 0.0; }
+    if idx == 40 { b40 = 0.0; }
+    if idx == 41 { b41 = 0.0; }
+    if idx == 42 { b42 = 0.0; }
+    if idx == 43 { b43 = 0.0; }
+    if idx == 44 { b44 = 0.0; }
+    if idx == 45 { b45 = 0.0; }
+    if idx == 46 { b46 = 0.0; }
+    if idx == 47 { b47 = 0.0; }
+    if idx == 48 { b48 = 0.0; }
+    if idx == 49 { b49 = 0.0; }
+    if idx == 50 { b50 = 0.0; }
+    if idx == 51 { b51 = 0.0; }
+    if idx == 52 { b52 = 0.0; }
+    if idx == 53 { b53 = 0.0; }
+    if idx == 54 { b54 = 0.0; }
+    if idx == 55 { b55 = 0.0; }
+    if idx == 56 { b56 = 0.0; }
+    if idx == 57 { b57 = 0.0; }
+    if idx == 58 { b58 = 0.0; }
+    if idx == 59 { b59 = 0.0; }
+}
+
+// Count remaining bricks
+func bricksLeft() -> Int {
+    var n = 0;
+    for i in 0..59 {
+        if brickAlive(idx: i) > 0.5 {
+            n = n + 1;
+        }
+    }
+    return n;
+}
+
+// ── Draw helpers ─────────────────────────────────────────────
+
+func drawBricks() -> Void {
+    abs(value: -1.0);
+
+    for row in 0..5 {
+        for col in 0..9 {
+            var idx = row * 10 + col;
+            if brickAlive(idx: idx) > 0.5 {
+                var bx = brickX(col: col);
+                var by = brickY(row: row);
+                // Slight inner highlight — draw slightly smaller lighter rect on top
+                fill(r: rowR(row: row), g: rowG(row: row), b: rowB(row: row));
+                noStroke();
+                rect(x: bx, y: by, w: BRICK_W, h: BRICK_H);
+                // Shine strip
+                fillAlpha(r: 255.0, g: 255.0, b: 255.0, a: 40.0);
+                rect(x: bx + 2.0, y: by + 2.0, w: BRICK_W - 4.0, h: 5.0);
+            }
+        }
+    }
+}
+
+func drawPaddle() -> Void {
+    // Shadow
+    fillAlpha(r: 0.0, g: 0.0, b: 0.0, a: 60.0);
+    noStroke();
+    rect(x: paddleX + 4.0, y: PADDLE_Y + 4.0, w: PADDLE_W, h: PADDLE_H);
+    // Main body
+    fill(r: 220.0, g: 220.0, b: 255.0);
+    rect(x: paddleX, y: PADDLE_Y, w: PADDLE_W, h: PADDLE_H);
+    // Highlight
+    fillAlpha(r: 255.0, g: 255.0, b: 255.0, a: 120.0);
+    rect(x: paddleX + 3.0, y: PADDLE_Y + 2.0, w: PADDLE_W - 6.0, h: 4.0);
+}
+
+func drawBall() -> Void {
+    // Glow
+    fillAlpha(r: 255.0, g: 240.0, b: 100.0, a: 50.0);
+    noStroke();
+    circle(x: ballX, y: ballY, d: BALL_D + 8.0);
+    // Ball
+    fill(r: 255.0, g: 240.0, b: 100.0);
+    circle(x: ballX, y: ballY, d: BALL_D);
+}
+
+func drawHUD() -> Void {
+    // Score and lives are printed to the console each frame.
+    // On-canvas HUD uses only graphics primitives.
+
+    // Score pips (gold circles, one per point, capped at 40)
+    var si = 0;
+    while si < score {
+        fill(r: 255.0, g: 220.0, b: 60.0);
+        noStroke();
+        circle(x: 20.0 + si * 14.0, y: 22.0, d: 8.0);
+        si = si + 1;
+        if si > 40 { si = score; }
+    }
+
+    // Life hearts (right side)
+    var li = 0;
+    while li < lives {
+        fill(r: 255.0, g: 80.0, b: 80.0);
+        noStroke();
+        var lx: Float = 720.0 + li * 26.0;
+        circle(x: lx - 4.0, y: 20.0, d: 10.0);
+        circle(x: lx + 4.0, y: 20.0, d: 10.0);
+        triangle(x1: lx - 8.0, y1: 22.0, x2: lx + 8.0, y2: 22.0, x3: lx, y3: 33.0);
+        li = li + 1;
+    }
+}
+
+// ── Lifecycle ────────────────────────────────────────────────
 
 func setup() -> Void {
     canvas(width: 800, height: 600);
     frameRate(fps: 60);
+    title(t: "BREAKOUT  —  Pixel Language");
 }
 
 func draw() -> Void {
-    t = t + 0.016;
-    rippleAge = rippleAge + 0.016;
-    keyFlashAge = keyFlashAge + 0.016;
+    // ── Background ──────────────────────────────────────────
+    background(r: 8.0, g: 8.0, b: 20.0);
 
-    // --------------------------------------------------------
-    // INPUT READS — all 5 globals used every frame
-    // --------------------------------------------------------
-    var mx: Float = mouseX;
-    var my: Float = mouseY;
-    var mp: Bool = mousePressed;
-    var kp: Bool = keyPressed;
-    var kc: Int = keyCode;
-
-    // --------------------------------------------------------
-    // KEY PRESS — shift background color on any key
-    // --------------------------------------------------------
-    if kp {
-        lastKeyCode = kc;
-        keyFlashAge = 0.0;
-        // Each key shifts bg color differently based on keyCode
-        var shift: Float = kc * 0.001;
-        bgR = constrain(n: bgR + sin(angle: shift) * 15.0, low: 5.0, high: 60.0);
-        bgG = constrain(n: bgG + cos(angle: shift) * 12.0, low: 5.0, high: 60.0);
-        bgB = constrain(n: bgB + sin(angle: shift * 2.0) * 20.0, low: 10.0, high: 80.0);
-    }
-
-    // --------------------------------------------------------
-    // MOUSE PRESS — spawn ripple at click position
-    // --------------------------------------------------------
-    if mp {
-        rippleX = mx;
-        rippleY = my;
-        rippleAge = 0.0;
-    }
-
-    // --------------------------------------------------------
-    // BACKGROUND
-    // --------------------------------------------------------
-    background(r: bgR, g: bgG, b: bgB);
-
-    // --------------------------------------------------------
-    // 1. GRAVITY BALL — chases mouse with physics
-    //    Tests: mouseX/Y continuously, dist for force scaling
-    // --------------------------------------------------------
-    var dx: Float = mx - gravX;
-    var dy: Float = my - gravY;
-    var d: Float = dist(x1: gravX, y1: gravY, x2: mx, y2: my);
-    var force: Float = constrain(n: d * 0.003, low: 0.0, high: 0.4);
-
-    // Stronger pull when mouse held — tests mousePressed + mouseX/Y together
-    if mp {
-        force = constrain(n: d * 0.012, low: 0.0, high: 1.2);
-    }
-
-    if d > 1.0 {
-        velX = velX + (dx / d) * force;
-        velY = velY + (dy / d) * force;
-    }
-    velX = velX * 0.88;
-    velY = velY * 0.88;
-    gravX = gravX + velX;
-    gravY = gravY + velY;
-
-    // Trail — lerp old positions forward
-    trailX4 = lerp(start: trailX4, stop: trailX3, amt: 0.3);
-    trailY4 = lerp(start: trailY4, stop: trailY3, amt: 0.3);
-    trailX3 = lerp(start: trailX3, stop: trailX2, amt: 0.3);
-    trailY3 = lerp(start: trailY3, stop: trailY2, amt: 0.3);
-    trailX2 = lerp(start: trailX2, stop: trailX1, amt: 0.3);
-    trailY2 = lerp(start: trailY2, stop: trailY1, amt: 0.3);
-    trailX1 = lerp(start: trailX1, stop: trailX0, amt: 0.3);
-    trailY1 = lerp(start: trailY1, stop: trailY0, amt: 0.3);
-    trailX0 = lerp(start: trailX0, stop: gravX, amt: 0.3);
-    trailY0 = lerp(start: trailY0, stop: gravY, amt: 0.3);
-
-    noStroke();
-    fillAlpha(r: 120.0, g: 200.0, b: 255.0, a: 40.0);
-    circle(x: trailX4, y: trailY4, d: 10.0);
-    fillAlpha(r: 140.0, g: 210.0, b: 255.0, a: 70.0);
-    circle(x: trailX3, y: trailY3, d: 16.0);
-    fillAlpha(r: 160.0, g: 220.0, b: 255.0, a: 100.0);
-    circle(x: trailX2, y: trailY2, d: 22.0);
-    fillAlpha(r: 180.0, g: 230.0, b: 255.0, a: 140.0);
-    circle(x: trailX1, y: trailY1, d: 28.0);
-    fillAlpha(r: 200.0, g: 240.0, b: 255.0, a: 180.0);
-    circle(x: trailX0, y: trailY0, d: 34.0);
-
-    // Main ball — glows brighter when mouse held
-    var ballSize: Float = 38.0;
-    if mp {
-        ballSize = 52.0;
-    }
-    fillAlpha(r: 220.0, g: 245.0, b: 255.0, a: 230.0);
-    circle(x: gravX, y: gravY, d: ballSize);
-    fillAlpha(r: 255.0, g: 255.0, b: 255.0, a: 255.0);
-    circle(x: gravX, y: gravY, d: 10.0);
-
-    // --------------------------------------------------------
-    // 2. MOUSE RIPPLE — expands from last click
-    //    Tests: mousePressed (edge), mouseX/Y at moment of press
-    // --------------------------------------------------------
-    if rippleAge < 2.5 {
-        var rippleR: Float = rippleAge * 180.0;
-        var rippleAlpha: Float = map(value: rippleAge, start1: 0.0, stop1: 2.5, start2: 180.0, stop2: 0.0);
-        var rippleThick: Float = map(value: rippleAge, start1: 0.0, stop1: 2.5, start2: 4.0, stop2: 0.5);
-        noFill();
-        strokeWeight(weight: rippleThick);
-        stroke(r: 180.0, g: 230.0, b: 255.0);
-        circle(x: rippleX, y: rippleY, d: rippleR * 2.0);
-
-        // Second ring slightly behind
-        var rippleR2: Float = rippleAge * 110.0;
-        var rippleAlpha2: Float = map(value: rippleAge, start1: 0.0, stop1: 2.5, start2: 140.0, stop2: 0.0);
-        strokeWeight(weight: rippleThick * 0.6);
-        stroke(r: 140.0, g: 190.0, b: 255.0);
-        circle(x: rippleX, y: rippleY, d: rippleR2 * 2.0);
-    }
-
-    // --------------------------------------------------------
-    // 3. MOUSE FIELD — grid of lines pointing toward mouse
-    //    Tests: mouseX/Y read 80 times per frame, atan via sin/cos
-    // --------------------------------------------------------
-    noFill();
-    strokeWeight(weight: 1.2);
-    var gx: Int = 0;
-    while gx < 8 {
-        var gy: Int = 0;
-        while gy < 6 {
-            var px: Float = 50.0 + gx * 100.0;
-            var py: Float = 50.0 + gy * 100.0;
-            var fdx: Float = mx - px;
-            var fdy: Float = my - py;
-            var fd: Float = dist(x1: px, y1: py, x2: mx, y2: my);
-            var lineLen: Float = map(value: fd, start1: 0.0, stop1: 600.0, start2: 35.0, stop2: 5.0);
-            var fieldAlpha: Float = map(value: fd, start1: 0.0, stop1: 600.0, start2: 200.0, stop2: 40.0);
-
-            if fd > 1.0 {
-                var ux: Float = fdx / fd;
-                var uy: Float = fdy / fd;
-                var ex: Float = px + ux * lineLen;
-                var ey: Float = py + uy * lineLen;
-                stroke(r: 100.0, g: 180.0, b: 255.0);
-                line(x1: px, y1: py, x2: ex, y2: ey);
-
-                // Arrowhead dot
-                noStroke();
-                fill(r: 100.0, g: 180.0, b: 255.0);
-                circle(x: ex, y: ey, d: 3.5);
-                noFill();
-            }
-
-            gy = gy + 1;
-        }
-        gx = gx + 1;
-    }
-
-    // --------------------------------------------------------
-    // 4. KEY FLASH — full-screen color burst on keypress
-    //    Tests: keyPressed, keyCode affects burst color
-    // --------------------------------------------------------
-    if keyFlashAge < 0.6 {
-        var flashAlpha: Float = map(value: keyFlashAge, start1: 0.0, stop1: 0.6, start2: 60.0, stop2: 0.0);
-        // keyCode modulates which color channel dominates
-        var kr: Float = map(value: lastKeyCode * 37 - lastKeyCode * 36, start1: 0.0, stop1: 100.0, start2: 100.0, stop2: 255.0);
-        var kg: Float = map(value: lastKeyCode * 17 - lastKeyCode * 16, start1: 0.0, stop1: 100.0, start2: 80.0,  stop2: 220.0);
-        var kb: Float = map(value: lastKeyCode * 53 - lastKeyCode * 52, start1: 0.0, stop1: 100.0, start2: 120.0, stop2: 255.0);
+    // Subtle scanline texture
+    var row2 = 0;
+    while row2 < 600 {
+        var fr2: Float = row2 * 1.0;
+        fillAlpha(r: 0.0, g: 0.0, b: 0.0, a: 18.0);
         noStroke();
-        fillAlpha(r: kr, g: kg, b: kb, a: flashAlpha);
+        rect(x: 0.0, y: fr2, w: 800.0, h: 1.0);
+        row2 = row2 + 2;
+    }
+
+    // ── HUD divider ─────────────────────────────────────────
+    stroke(r: 60.0, g: 60.0, b: 100.0);
+    strokeWeight(weight: 1.0);
+    line(x1: 0.0, y1: 40.0, x2: 800.0, y2: 40.0);
+
+    // ── Draw bricks, paddle, ball ───────────────────────────
+    drawBricks();
+    drawPaddle();
+    drawBall();
+    drawHUD();
+
+    // ── Game Over / Win overlays ────────────────────────────
+    if (gameOver == 1) {
+        fillAlpha(r: 0.0, g: 0.0, b: 0.0, a: 160.0);
+        noStroke();
         rect(x: 0.0, y: 0.0, w: 800.0, h: 600.0);
+        // Concentric celebration rings
+        fill(r: 100.0, g: 255.0, b: 140.0);
+        noStroke();
+        circle(x: 400.0, y: 270.0, d: 160.0);
+        fill(r: 8.0, g: 8.0, b: 20.0);
+        circle(x: 400.0, y: 270.0, d: 120.0);
+        fill(r: 100.0, g: 255.0, b: 140.0);
+        circle(x: 400.0, y: 270.0, d: 80.0);
+        fill(r: 8.0, g: 8.0, b: 20.0);
+        circle(x: 400.0, y: 270.0, d: 40.0);
+        fill(r: 100.0, g: 255.0, b: 140.0);
+        circle(x: 400.0, y: 270.0, d: 16.0);
+        print("YOU WIN! Final score: %d\n", score);
+        noLoop();
+        return;
     }
 
-    // --------------------------------------------------------
-    // 5. MOUSE PROXIMITY RINGS — around cursor, scale with vel
-    //    Tests: mouseX/Y, mousePressed changes ring behavior
-    // --------------------------------------------------------
-    var speed: Float = dist(x1: 0.0, y1: 0.0, x2: velX, y2: velY);
-    var ringCount: Int = 3;
-    if mp {
-        ringCount = 6;
-    }
-
-    noFill();
-    var ri: Int = 0;
-    while ri < ringCount {
-        var ringR: Float = 20.0 + ri * 18.0 + speed * 4.0;
-        var ringAlpha: Float = map(value: ri, start1: 0.0, stop1: 6.0, start2: 120.0, stop2: 15.0);
-        var ringWeight: Float = map(value: ri, start1: 0.0, stop1: 6.0, start2: 2.0, stop2: 0.4);
-        strokeWeight(weight: ringWeight);
-        stroke(r: 255.0, g: 220.0, b: 120.0);
-
+    if gameOver == -1 {
+        fillAlpha(r: 0.0, g: 0.0, b: 0.0, a: 160.0);
+        noStroke();
+        rect(x: 0.0, y: 0.0, w: 800.0, h: 600.0);
+        // Red X
+        fill(r: 255.0, g: 80.0, b: 80.0);
+        noStroke();
         push();
-            translate(x: mx, y: my);
-            rotate(angle: t * 0.8 + ri * 1.047);
-            ellipse(x: 0.0, y: 0.0, w: ringR * 2.2, h: ringR * 1.4);
+            translate(x: 400.0, y: 280.0);
+            rotate(angle: 0.785);
+            rect(x: -60.0, y: -12.0, w: 120.0, h: 24.0);
+            rect(x: -12.0, y: -60.0, w: 24.0, h: 120.0);
         pop();
-
-        ri = ri + 1;
+        print("GAME OVER. Final score: %d\n", score);
+        noLoop();
+        return;
     }
 
-    // --------------------------------------------------------
-    // 6. CROSSHAIR — follows mouse exactly
-    //    Tests: mouseX/Y precision, changes on mousePressed
-    // --------------------------------------------------------
-    var crossSize: Float = 14.0;
-    var crossColor: Float = 200.0;
-    if mp {
-        crossSize = 22.0;
-        crossColor = 255.0;
+    // ── Launch prompt ───────────────────────────────────────
+    if launched == 0 {
+        // Pulsing ring around the ball as a visual hint
+        var pulseR = map(value: noise(x: ballY * 0.01), start1: 0.0, stop1: 1.0, start2: 20.0, stop2: 44.0);
+        strokeWeight(weight: 2.0);
+        stroke(r: 200.0, g: 200.0, b: 255.0);
+        noFill();
+        circle(x: ballX, y: ballY, d: pulseR);
+        noStroke();
+        print("Press SPACE to launch\n");
+        if keyPressed {
+            if keyCode == 32 {
+                launched = 1;
+            }
+        }
+        return;
     }
 
-    noFill();
-    strokeWeight(weight: 1.5);
-    stroke(r: crossColor, g: crossColor, b: crossColor);
-    line(x1: mx - crossSize, y1: my, x2: mx + crossSize, y2: my);
-    line(x1: mx, y1: my - crossSize, x2: mx, y2: my + crossSize);
-    circle(x: mx, y: my, d: crossSize * 1.4);
+    // ── Paddle control ──────────────────────────────────────
+    paddleX = mouseX - PADDLE_W / 2.0;
+    paddleX = constrain(n: paddleX, low: 0.0, high: 700.0);
+
+    // ── Ball physics ────────────────────────────────────────
+    ballX = ballX + ballVX;
+    ballY = ballY + ballVY;
+
+    // Wall collisions
+    if ballX - BALL_R < 0.0 {
+        ballX = BALL_R;
+        ballVX = abs(value: ballVX);  // go right
+    }
+    if ballX + BALL_R > 800.0 {
+        ballX = 800.0 - BALL_R;
+        ballVX = abs(value: ballVX) * -1.0;  // go left (negate)
+    }
+    if ballY - BALL_R < 40.0 {
+        ballY = 40.0 + BALL_R;
+        ballVY = abs(value: ballVY);   // bounce down
+    }
+
+    // ── Paddle collision ────────────────────────────────────
+    if ballY + BALL_R >= PADDLE_Y && ballY + BALL_R <= PADDLE_Y + PADDLE_H + 4.0 {
+        if ballX >= paddleX && ballX <= paddleX + PADDLE_W {
+            if ballVY > 0.0 {
+                // Angle based on hit position
+                var hitPos = (ballX - paddleX) / PADDLE_W;   // 0..1
+                var angle = map(value: hitPos, start1: 0.0, stop1: 1.0, start2: -2.2, stop2: 2.2);
+                var speed = 5.0;
+                ballVX = sin(angle: angle) * speed;
+                ballVY = cos(angle: angle) * speed * -1.0;
+                ballY = PADDLE_Y - BALL_R;
+            }
+        }
+    }
+
+    // ── Ball fell off bottom → lose a life ──────────────────
+    if ballY - BALL_R > 620.0 {
+        lives = lives - 1;
+        if lives <= 0 {
+            gameOver = -1;
+        } else {
+            // Reset ball above paddle
+            ballX = paddleX + PADDLE_W / 2.0;
+            ballY = PADDLE_Y - 30.0;
+            ballVX = 3.5;
+            ballVY = -4.0;
+            launched = 0;
+        }
+    }
+
+    // ── Brick collision ─────────────────────────────────────
+    for row in 0..5 {
+        for col in 0..9 {
+            var idx = row * 10 + col;
+            if brickAlive(idx: idx) > 0.5 {
+                var bx = brickX(col: col);
+                var by = brickY(row: row);
+
+                // AABB vs circle: find closest point on brick to ball center
+                var closestX = constrain(n: ballX, low: bx, high: bx + BRICK_W);
+                var closestY = constrain(n: ballY, low: by, high: by + BRICK_H);
+                var dx = ballX - closestX;
+                var dy = ballY - closestY;
+                var distSq = dx * dx + dy * dy;
+
+                if distSq < BALL_R * BALL_R {
+                    destroyBrick(idx: idx);
+                    score = score + 1;
+
+                    // Reflect: figure out which face was hit
+                    var overlapX = abs(value: dx);
+                    var overlapY = abs(value: dy);
+                    if overlapX < overlapY {
+                        // Vertical face → flip VX
+                        ballVX = ballVX * -1.0;
+                    } else {
+                        // Horizontal face → flip VY
+                        ballVY = ballVY * -1.0;
+                    }
+                }
+            }
+        }
+    }
+
+    // ── Win check ───────────────────────────────────────────
+    if bricksLeft() == 0 {
+        gameOver = 1;
+    }
 }

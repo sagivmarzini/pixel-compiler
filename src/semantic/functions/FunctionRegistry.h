@@ -22,6 +22,8 @@ public:
 
     void registerInternal(const std::string& name, const FunctionInfo& func);
 
+    void registerIntrinsic(const std::string& name, const FunctionInfo& func, const llvm::Intrinsic::ID& id);
+
 private:
     std::unordered_map<std::string, FunctionInfo> _functions;
 };

@@ -617,6 +617,11 @@ llvm::Function* IRGeneratorLLVM::getOrDeclareBuiltinFunction(const std::string& 
         throw std::runtime_error("Unknown function: " + name);
     }
 
+    if (info->kind == FunctionKind::Intrinsic && info->intrinsicId.has_value()) {
+        auto* f32 = llvm::Type::getFloatTy(_module->getContext());
+        return llvm::Intrinsic::getDeclaration(_module.get(), *info->intrinsicId, {f32});
+    }
+
     const std::string& llvmName = info->llvmName.empty() ? name : info->llvmName;
 
     if (auto* fn = _module->getFunction(llvmName)) {
