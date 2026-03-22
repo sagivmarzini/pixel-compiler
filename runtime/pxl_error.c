@@ -1,4 +1,4 @@
-#include "pxl_utilities.h"
+#include "pxl_error.h"
 
 #include <stdio.h>
 #include <stdlib.h>

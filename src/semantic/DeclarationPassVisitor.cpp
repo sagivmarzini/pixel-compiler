@@ -22,6 +22,7 @@ void DeclarationPassVisitor::visit(AST::Program& program) {
 }
 
 void DeclarationPassVisitor::visit(AST::FunctionDeclaration& node) {
+    if (node.name == "main") node.name = "__main";
     const auto symbol = _symbolTable.declare(node.name, Symbol::SymbolKind::Function, node.returnType);
     if (!symbol) {
         logError(SemanticErrorType::DuplicateDeclaration, node, node.name);

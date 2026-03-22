@@ -1,6 +1,5 @@
 #ifndef COMPILER_PROJECT_DECLARATIONPASSVISITOR_H
 #define COMPILER_PROJECT_DECLARATIONPASSVISITOR_H
-#include <string>
 
 #include "SemanticVisitor.h"
 
