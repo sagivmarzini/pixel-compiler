@@ -3,6 +3,7 @@
 
 #include "Expression.h"
 
+struct TypeNode;
 class Scope;
 struct Symbol;
 
@@ -18,32 +19,17 @@ namespace AST {
 
     // Variable declaration: int x = 5;
     struct VariableDeclaration : Statement {
-        struct ArrayType {
-            Type baseType;
-            int size = 0;
-
-            ArrayType() = default;
-
-            ArrayType(Type base, int size)
-                : baseType(base), size(size) {
-            }
-
-            llvm::Type* acceptType(IRGeneratorLLVM& visitor);
-        };
-
         bool isConst;
-        Type specifiedType;
+        TypeNode* type;
         std::string name;
-        std::unique_ptr<Expression> value; // Can be null
-        std::optional<ArrayType> arrayType;
+        std::unique_ptr<Expression> initializer; // Can be null
 
         Symbol* symbol = nullptr;
 
-        VariableDeclaration(const TokenMetadata& metadata, bool isConst, const Type type, std::string name,
-                            std::unique_ptr<Expression> init = nullptr,
-                            const std::optional<ArrayType> arrayType = std::nullopt)
-            : Statement(metadata), isConst(isConst), specifiedType(type), name(std::move(name)),
-              value(std::move(init)), arrayType(arrayType) {
+        VariableDeclaration(const TokenMetadata& metadata, bool isConst, TypeNode* type, std::string name,
+                            std::unique_ptr<Expression> init = nullptr)
+            : Statement(metadata), isConst(isConst), type(type), name(std::move(name)),
+              initializer(std::move(init)) {
         }
 
         void accept(AstVisitor& visitor) override;
@@ -164,22 +150,22 @@ namespace AST {
     struct FunctionDeclaration : Statement {
         struct FunctionParameter {
             std::string name;
-            Type type;
+            TypeNode* type;
             bool isImplicit;
             Symbol* symbol = nullptr;
 
-            FunctionParameter(std::string name, const Type type, bool isImplicit = false)
+            FunctionParameter(std::string name, TypeNode* type, bool isImplicit = false)
                 : name(std::move(name)), type(type), isImplicit(isImplicit) {
             }
         };
 
         std::string name;
-        Type returnType;
+        TypeNode* returnType;
         std::vector<FunctionParameter> parameters;
         std::unique_ptr<Block> body;
         Symbol* symbol = nullptr;
 
-        FunctionDeclaration(const TokenMetadata& metadata, const Type returnType, std::string name,
+        FunctionDeclaration(const TokenMetadata& metadata, TypeNode* returnType, std::string name,
                             std::vector<FunctionParameter> parameters, std::unique_ptr<Block> body)
             : Statement(metadata), name(std::move(name)), returnType(returnType), parameters(std::move(parameters)),
               body(std::move(body)) {

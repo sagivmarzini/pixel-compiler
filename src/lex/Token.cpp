@@ -6,7 +6,7 @@ std::ostream& operator<<(std::ostream& os, const Keyword& keyword) {
     return os << keywordToString(keyword);
 }
 
-std::ostream& operator<<(std::ostream& os, const Type& type) {
+std::ostream& operator<<(std::ostream& os, const ScalarKind& type) {
     return os << typeToString(type);
 }
 
@@ -23,17 +23,17 @@ std::ostream& operator<<(std::ostream& os, const Token& token) {
     return os;
 }
 
-std::string typeToString(const Type type) {
+std::string typeToString(const ScalarKind type) {
     switch (type) {
-        case Type::Int: return "int";
-        case Type::Float: return "float";
-        case Type::Bool: return "boolean";
-        case Type::Pointer: return "ptr";
-        case Type::String: return "string";
-        case Type::Color: return "color";
-        case Type::Void: return "void";
-        case Type::Unspecified: return "Type"; // for printing 'expected a 'type' token'
-        case Type::Error: return "Error";
+        case ScalarKind::Int: return "int";
+        case ScalarKind::Float: return "float";
+        case ScalarKind::Bool: return "boolean";
+        case ScalarKind::Pointer: return "ptr";
+        case ScalarKind::String: return "string";
+        case ScalarKind::Color: return "color";
+        case ScalarKind::Void: return "void";
+        case ScalarKind::Unspecified: return "Type"; // for printing 'expected a 'type' token'
+        case ScalarKind::Error: return "Error";
         default: return "unknown type";
     }
 }
@@ -97,7 +97,7 @@ std::string tokenTypeToString(const TokenType& tokenType) {
             return operatorToString(arg);
         } else if constexpr (std::is_same_v<T, Keyword>) {
             return keywordToString(arg);
-        } else if constexpr (std::is_same_v<T, Type>) {
+        } else if constexpr (std::is_same_v<T, ScalarKind>) {
             return typeToString(arg);
         } else if constexpr (std::is_same_v<T, Identifier>) {
             return "Identifier(" + arg.name + ")";

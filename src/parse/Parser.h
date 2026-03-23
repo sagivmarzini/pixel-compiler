@@ -118,7 +118,7 @@ private:
     bool isAtStartOfStatement();
 
     [[noreturn]] void logError(const ParserErrorType& type, const Token& errorToken,
-                               const TokenType& expectedTokenType = Type::Unspecified);
+                               const TokenType& expectedTokenType = ScalarKind::Unspecified);
 };
 
 

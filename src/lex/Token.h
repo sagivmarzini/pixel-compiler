@@ -19,7 +19,7 @@ enum class Keyword {
 std::ostream& operator<<(std::ostream& os, const Keyword& keyword);
 
 
-enum class Type {
+enum class ScalarKind {
     Unspecified,
 
     Int,
@@ -33,7 +33,7 @@ enum class Type {
     Error
 };
 
-std::ostream& operator<<(std::ostream& os, const Type& type);
+std::ostream& operator<<(std::ostream& os, const ScalarKind& type);
 
 
 // Token payload structs
@@ -146,7 +146,7 @@ using TokenType = std::variant<
     FloatLiteral,
     StringLiteral,
     BooleanLiteral,
-    Type,
+    ScalarKind,
     Identifier,
 
     // EOF
@@ -165,12 +165,12 @@ static const std::unordered_map<std::string, TokenType> keywords = {
     {"in", Keyword::In},
     {"step", Keyword::Step},
 
-    {"Int", Type::Int},
-    {"Float", Type::Float},
-    {"Bool", Type::Bool},
-    {"String", Type::String},
-    {"Color", Type::Color},
-    {"Void", Type::Void},
+    {"Int", ScalarKind::Int},
+    {"Float", ScalarKind::Float},
+    {"Bool", ScalarKind::Bool},
+    {"String", ScalarKind::String},
+    {"Color", ScalarKind::Color},
+    {"Void", ScalarKind::Void},
 
     {"true", BooleanLiteral{true}},
     {"false", BooleanLiteral{false}},
@@ -193,7 +193,7 @@ struct Token {
 
 std::ostream& operator<<(std::ostream& os, const Token& token);
 
-std::string typeToString(Type type);
+std::string typeToString(ScalarKind type);
 
 std::string operatorToString(Operator op);
 

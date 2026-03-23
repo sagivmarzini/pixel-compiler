@@ -34,7 +34,7 @@ Symbol* SymbolTable::lookup(const std::string& name) const {
     return nullptr;
 }
 
-Symbol* SymbolTable::declare(const std::string& name, Symbol::SymbolKind kind, Type type, bool isConst) const {
+Symbol* SymbolTable::declare(const std::string& name, Symbol::SymbolKind kind, ScalarKind type, bool isConst) const {
     if (_currentScope->localSymbolExists(name)) return nullptr;
     Symbol& sym = _pool.createSymbol(name, kind, type, _currentScope, isConst);
     return _currentScope->addSymbol(sym);

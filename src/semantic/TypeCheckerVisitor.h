@@ -5,34 +5,40 @@
 #include "lex/Token.h"
 
 
+class TypeContext;
 enum class SemanticErrorType;
 
 class TypeCheckerVisitor : public SemanticVisitor {
 public:
-    using SemanticVisitor::SemanticVisitor; // inherit constructor
+    explicit TypeCheckerVisitor(SymbolTable& symbolTable, TypeContext& typeCtx);
 
     void run(AST::AstNode& root) override;
 
     // Returns the bigger type of the two (float > int, int > short, etc.)
-    static Type getPromotedType(Type t1, Type t2);
+    static ScalarKind getPromotedType(ScalarKind t1, ScalarKind t2);
 
 private:
-    Type _currentFunctionReturnType = Type::Unspecified;
+    ScalarKind _currentFunctionReturnType = ScalarKind::Unspecified;
     bool _foundReturn = false;
+    TypeContext& _typeCtx;
+
+    static ScalarKind kindOf(TypeNode* t);
+
+    TypeNode* nodeFor(ScalarKind k) const;
 
     // Returns true if the type is an `int` or `float`
-    static bool isNumeric(Type type);
+    static bool isNumeric(ScalarKind type);
 
     // Returns true if the types are both either numeric or strings (compared lexicographically)
-    static bool areComparableTypes(Type leftType, Type rightType);
+    static bool areComparableTypes(ScalarKind leftType, ScalarKind rightType);
 
-    static bool isString(Type type);
+    static bool isString(ScalarKind type);
 
-    static bool isBoolean(Type type);
+    static bool isBoolean(ScalarKind type);
 
-    static bool isAssignableTo(Type assignedType, Type targetType);
+    static bool isAssignableTo(ScalarKind assignedType, ScalarKind targetType);
 
-    AST::VariableDeclaration::ArrayType checkArrayLiteralType(const AST::ArrayLiteral& arrayLiteral);
+    ScalarKind checkArrayLiteralType(const AST::ArrayLiteral& arrayLiteral);
 
 
     void visit(AST::Program& program) override;

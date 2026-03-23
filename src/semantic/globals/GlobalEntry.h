@@ -10,7 +10,7 @@
 
 struct GlobalEntry {
     std::string symbolName; // "pxl_mouse_x"
-    Type type;
+    ScalarKind type;
 };
 
 #endif //PXL_LANG_GLOBALENTRY_H

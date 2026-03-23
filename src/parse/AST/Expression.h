@@ -6,19 +6,20 @@
 
 #include "AstNode.h"
 #include "../../lex/Token.h"
+#include "types/TypeNode.h"
 
 struct Symbol;
 class Visitor;
 
 namespace AST {
-    struct Expression : AST::AstNode {
+    struct Expression : AstNode {
         explicit Expression(const TokenMetadata& metadata)
             : AstNode(metadata) {
         }
 
         ~Expression() override = default;
 
-        Type type = Type::Unspecified;
+        TypeNode* type = nullptr;
     };
 
     struct IntegerLiteralNode final : Expression {

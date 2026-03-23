@@ -68,7 +68,7 @@ void DeclarationPassVisitor::visit(AST::WhileLoop& node) {
 void DeclarationPassVisitor::visit(AST::ForLoop& node) {
     enterScope();
 
-    const auto symbol = _symbolTable.declare(node.identifier, Symbol::SymbolKind::Variable, Type::Int);
+    const auto symbol = _symbolTable.declare(node.identifier, Symbol::SymbolKind::Variable, ScalarKind::Int);
     if (!symbol) {
         logError(SemanticErrorType::DuplicateDeclaration, node, node.identifier);
     }

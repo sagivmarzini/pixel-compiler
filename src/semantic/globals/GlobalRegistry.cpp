@@ -4,7 +4,7 @@
 
 #include "GlobalRegistry.h"
 
-void GlobalRegistry::registerGlobal(const std::string& pixelName, Type type, const std::string& globalName) {
+void GlobalRegistry::registerGlobal(const std::string& pixelName, ScalarKind type, const std::string& globalName) {
     _globals[pixelName] = {globalName, type};
 }
 

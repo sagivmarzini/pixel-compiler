@@ -99,9 +99,9 @@ private:
         {Operator::Assignment, "pxl_copy"}
     };
 
-    [[nodiscard]] llvm::Type* getLlvmType(const Type& type) const;
+    [[nodiscard]] llvm::Type* getLlvmType(const ScalarKind& type) const;
 
-    [[nodiscard]] static Type llvmTypeToCompilerType(const llvm::Type& type);
+    [[nodiscard]] static ScalarKind llvmTypeToCompilerType(const llvm::Type& type);
 
     // Promotes two LLVM values to have matching types, if necessary.
     void promoteToMatch(llvm::Value*& lhs, llvm::Value*& rhs) const;

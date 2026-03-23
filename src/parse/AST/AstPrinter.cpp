@@ -136,19 +136,19 @@ void AstPrinter::visit(AST::VariableDeclaration& node) {
 
     if (node.symbol) {
         printSymbol(*node.symbol);
+        if (node.symbol->arrayType) {
+            printIndent();
+            std::cout << "ArrayType: " << node.symbol->arrayType->baseType
+                    << "[" << node.symbol->arrayType->size << "]\n";
+        }
     }
 
-    if (node.arrayType) {
-        printIndent();
-        std::cout << "ArrayType: " << node.arrayType->baseType
-                << "[" << node.arrayType->size << "]\n";
-    }
 
-    if (node.value) {
+    if (node.initializer) {
         printIndent();
         std::cout << "InitialValue:\n";
         _indent++;
-        node.value->accept(*this);
+        node.initializer->accept(*this);
         _indent--;
     }
 

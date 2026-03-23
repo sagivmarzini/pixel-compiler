@@ -4,6 +4,7 @@
 #include "lex/Lexer.h"
 #include "semantic/functions/FunctionRegistry.h"
 #include "semantic/globals/GlobalRegistry.h"
+#include "types/TypeContext.h"
 
 
 class Compiler {
@@ -17,6 +18,7 @@ public:
 private:
     std::string _sourceFileName;
     std::string _sourceCode;
+    TypeContext _typeContext;
 
     FunctionRegistry _functionRegistry;
     GlobalRegistry _globalRegistry;

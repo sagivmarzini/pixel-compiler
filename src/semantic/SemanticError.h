@@ -12,8 +12,8 @@ namespace AST {
 
 // Define the specific data packets for different errors
 struct TypeMismatchData {
-    Type expected;
-    Type actual;
+    ScalarKind expected;
+    ScalarKind actual;
 };
 
 struct ParamMismatchData {
@@ -24,13 +24,13 @@ struct ParamMismatchData {
 
 struct OperatorData {
     Operator op;
-    Type left;
-    Type right;
+    ScalarKind left;
+    ScalarKind right;
 };
 
 struct UnaryOperatorData {
     Operator op;
-    Type operand;
+    ScalarKind operand;
 };
 
 struct ArgumentPositionData {
@@ -63,6 +63,7 @@ enum class SemanticErrorType {
     DuplicateDeclaration,
     CannotInferType,
     ReadOnlyAssignment, // For const
+    NonIntIndex,
 
     // Function/Call Issues
     UndefinedFunction,
@@ -73,6 +74,7 @@ enum class SemanticErrorType {
     DuplicateArgumentName,
     MissingArgumentLabel,
     InvalidArgumentPosition,
+    OutOfBounds,
 
 
     // Type Logic

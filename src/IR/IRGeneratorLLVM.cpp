@@ -76,7 +76,7 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::FunctionDeclaration& node) {
 
     node.body->acceptIR(*this);
     if (!_builder->GetInsertBlock()->getTerminator()) {
-        if (node.returnType == Type::Void) {
+        if (node.returnType == ScalarKind::Void) {
             _builder->CreateRetVoid();
         } else {
             // Return a default "zero" value for the specific type
@@ -123,7 +123,7 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::FunctionCall& node) {
             }
         }
 
-        if (info->kind == FunctionKind::Api && arg.value->type == Type::String) {
+        if (info->kind == FunctionKind::Api && arg.value->type == ScalarKind::String) {
             auto* getStr = getOrDeclareBuiltinFunction("pxl_get_string_data");
             argValue = _builder->CreateCall(getStr, {argValue});
         }
@@ -285,8 +285,8 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::VariableDeclaration& node) {
     if (bool isGlobal = (symbol->scope->getParent()->getParent() == nullptr)) {
         llvm::Constant* initializer = nullptr;
 
-        if (node.value) {
-            llvm::Value* val = node.value->acceptIR(*this);
+        if (node.initializer) {
+            llvm::Value* val = node.initializer->acceptIR(*this);
 
             val = castToType(val, llvmType);
 
@@ -315,8 +315,8 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::VariableDeclaration& node) {
     }
     // --- Local Variable Path ---
     llvm::Value* initVal = nullptr;
-    if (node.value) {
-        initVal = node.value->acceptIR(*this);
+    if (node.initializer) {
+        initVal = node.initializer->acceptIR(*this);
         initVal = castToType(initVal, llvmType);
     } else
         initVal = llvm::Constant::getNullValue(llvmType);
@@ -327,7 +327,7 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::VariableDeclaration& node) {
 }
 
 llvm::Value* IRGeneratorLLVM::visit(const AST::VariableAssignment& node) {
-    if (node.symbol->type == Type::String) {
+    if (node.symbol->type == ScalarKind::String) {
         // Load the source
         auto value = node.assignedValue->acceptIR(*this);
         auto strCopyFunc = getOrDeclareBuiltinFunction(_stringOperatorLowering.at(Operator::Assignment));
@@ -372,7 +372,7 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::BinaryExpression& node) {
 
     const bool isFloat = lhs->getType()->isFloatingPointTy();
     const bool isInt = lhs->getType()->isIntegerTy();
-    if (node.left->type == Type::String && node.right->type == Type::String) {
+    if (node.left->type == ScalarKind::String && node.right->type == ScalarKind::String) {
         const auto funcName = _stringOperatorLowering.at(node.op);
         auto* operationFunc = getOrDeclareBuiltinFunction(funcName);
         return _builder->CreateCall(operationFunc, {lhs, rhs}, "binop");
@@ -504,7 +504,7 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::ArrayIndex& node) {
 
 llvm::Value* IRGeneratorLLVM::visit(const AST::VariableExpression& node) const {
     llvm::Value* variableAddress = nullptr;
-    Type varType;
+    ScalarKind varType;
 
     if (_namedValues.contains(node.symbol)) {
         variableAddress = _namedValues.at(node.symbol);
@@ -540,46 +540,46 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::ArrayLiteral& node) {
     // TODO: Implement this
 }
 
-llvm::Type* IRGeneratorLLVM::getLlvmType(const Type& type) const {
+llvm::Type* IRGeneratorLLVM::getLlvmType(const ScalarKind& type) const {
     switch (type) {
-        case Type::Int:
+        case ScalarKind::Int:
             return _builder->getInt32Ty();
-        case Type::Float:
+        case ScalarKind::Float:
             return _builder->getFloatTy();
-        case Type::Bool:
+        case ScalarKind::Bool:
             return _builder->getInt1Ty();
-        case Type::Void:
+        case ScalarKind::Void:
             return _builder->getVoidTy();
-        case Type::Pointer:
+        case ScalarKind::Pointer:
             return _builder->getPtrTy();
-        case Type::String:
+        case ScalarKind::String:
             return _builder->getPtrTy();
-        case Type::Color:
+        case ScalarKind::Color:
             throw std::runtime_error("Not Implemented: colors");
         default:
             throw std::runtime_error("Internal error: illegal type: " + typeToString(type));
     }
 }
 
-Type IRGeneratorLLVM::llvmTypeToCompilerType(const llvm::Type& type) {
+ScalarKind IRGeneratorLLVM::llvmTypeToCompilerType(const llvm::Type& type) {
     if (type.isIntegerTy(32)) {
-        return Type::Int;
+        return ScalarKind::Int;
     }
 
     if (type.isIntegerTy(1)) {
-        return Type::Bool;
+        return ScalarKind::Bool;
     }
 
     if (type.isFloatTy()) {
-        return Type::Float;
+        return ScalarKind::Float;
     }
 
     if (type.isVoidTy()) {
-        return Type::Void;
+        return ScalarKind::Void;
     }
 
     if (type.isPointerTy()) {
-        return Type::Pointer;
+        return ScalarKind::Pointer;
     }
 
     throw std::runtime_error("Internal error: unsupported LLVM type: ");

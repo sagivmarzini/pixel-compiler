@@ -11,7 +11,7 @@
 
 class GlobalRegistry {
 public:
-    void registerGlobal(const std::string& pixelName, Type type, const std::string& globalName);
+    void registerGlobal(const std::string& pixelName, ScalarKind type, const std::string& globalName);
 
     const GlobalEntry* lookup(const std::string& name) const;
 

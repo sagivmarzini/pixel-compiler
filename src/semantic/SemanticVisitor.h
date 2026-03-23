@@ -15,7 +15,7 @@ public:
     virtual void run(AST::AstNode& root) = 0;
 
 protected:
-    SymbolTable&               _symbolTable;
+    SymbolTable& _symbolTable;
     std::vector<CompilerError> _errors;
 
     void enterScope() const;

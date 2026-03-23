@@ -144,6 +144,12 @@ SemanticError::SemanticError(SemanticErrorType type, const AST::AstNode& node, E
         case SemanticErrorType::MultiTypeArray:
             prefix = "arrays cannot have multiple types";
             break;
+        case SemanticErrorType::NonIntIndex:
+            prefix = "index must be an integer";
+            break;
+        case SemanticErrorType::OutOfBounds:
+            prefix = "index out of bounds";
+            break;
     }
 
     // 3. Construct the Final Message

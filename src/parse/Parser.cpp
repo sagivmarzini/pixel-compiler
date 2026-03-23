@@ -140,7 +140,7 @@ std::unique_ptr<AST::Statement> Parser::parseFunctionDeclaration() {
 
         auto paramName = expect<Identifier>();
         expect<Colon>();
-        auto paramType = expect<Type>();
+        auto paramType = expect<ScalarKind>();
 
         parameters.emplace_back(paramName.name, paramType, isImplicit);
         if (!check<RightParen>()) {
@@ -154,7 +154,7 @@ std::unique_ptr<AST::Statement> Parser::parseFunctionDeclaration() {
     expect<RightParen>();
     expect<Arrow>();
 
-    auto returnType = expect<Type>();
+    auto returnType = expect<ScalarKind>();
     auto block = parseBlock();
 
     return std::make_unique<AST::FunctionDeclaration>(namePosition, returnType, name, parameters, std::move(block));
@@ -166,28 +166,25 @@ std::unique_ptr<AST::Statement> Parser::parseVariableDeclaration() {
 
     const auto varNameToken = peek(); // for logging error on the variable
     auto [name] = expect<Identifier>();
-    AST::VariableDeclaration::ArrayType arrayType;
     bool isArray = false;
 
     // Check if the var is an array
     if (match<LeftBracket>()) {
         if (checkValue(Operator::Minus)) logError(ParserErrorType::NonPositiveArraySize, peekPrevious());
-        const auto [size] = expect<IntegerLiteral>();
-        if (size < 1) logError(ParserErrorType::NonPositiveArraySize, peekPrevious());
+        if (const auto [size] = expect<IntegerLiteral>(); size < 1)
+            logError(ParserErrorType::NonPositiveArraySize, peekPrevious());
 
-        arrayType.size = size;
         expect<RightBracket>();
         isArray = true;
     }
 
-    Type type = Type::Unspecified;
+    ScalarKind type = ScalarKind::Unspecified;
     std::unique_ptr<AST::Expression> value = nullptr;
 
     // If a type is specified, get it
     if (match<Colon>()) {
-        type = expect<Type>();
+        type = expect<ScalarKind>();
     }
-    arrayType.baseType = type;
 
     if (checkValue(Operator::Assignment)) {
         expect<Operator>();
@@ -198,13 +195,12 @@ std::unique_ptr<AST::Statement> Parser::parseVariableDeclaration() {
             value = parseExpression();
     }
 
-    if (!value && type == Type::Unspecified) {
+    if (!value && type == ScalarKind::Unspecified) {
         logError(ParserErrorType::TypelessVarDeclaration, varNameToken);
     }
     expect<Semicolon>();
 
-    return std::make_unique<AST::VariableDeclaration>(varNameToken.metadata, isConst, type, name, std::move(value),
-                                                      isArray ? std::make_optional(arrayType) : std::nullopt);
+    return std::make_unique<AST::VariableDeclaration>(varNameToken.metadata, isConst, type, name, std::move(value));
 }
 
 std::unique_ptr<AST::Statement> Parser::parseVariableAssignment() {
