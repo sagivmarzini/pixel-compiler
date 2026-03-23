@@ -49,6 +49,21 @@ bool TypeCheckerVisitor::isReturnTypeCompatible(Type functionType, Type returned
     return functionType == returnedType || (functionType == Type::Float && returnedType == Type::Int);
 }
 
+Type TypeCheckerVisitor::checkArrayLiteralType(const AST::ArrayLiteral& arrayLiteral) {
+    if (arrayLiteral.elements.empty()) return Type::Unspecified;
+
+    arrayLiteral.elements[0]->accept(*this);
+    const Type baseType = arrayLiteral.elements[0]->type;
+    for (const auto& element: arrayLiteral.elements) {
+        element->accept(*this);
+
+        if (!isAssignableTo(element->type, baseType))
+            return Type::Error;
+    }
+
+    return baseType;
+}
+
 void TypeCheckerVisitor::visit(AST::Program& program) {
     _symbolTable.setCurrentScope(program.scope);
     for (const auto& stmt: program.statements) {
@@ -68,6 +83,9 @@ void TypeCheckerVisitor::visit(AST::FunctionDeclaration& node) {
 
 void TypeCheckerVisitor::visit(AST::ExpressionStatement& node) {
     node.expression->accept(*this);
+}
+
+void TypeCheckerVisitor::visit(AST::ArrayIndex& node) {
 }
 
 void TypeCheckerVisitor::visit(AST::IfStatement& node) {
@@ -152,7 +170,15 @@ void TypeCheckerVisitor::visit(AST::VariableDeclaration& node) {
     if (node.value) {
         node.value->accept(*this);
 
-        if (node.specifiedType != Type::Unspecified && !isAssignableTo(node.value->type, node.specifiedType)) {
+        if (auto* arrayPtr = dynamic_cast<AST::ArrayLiteral *>(node.value.get())) {
+            const Type arrayLiteralType = checkArrayLiteralType(*arrayPtr);
+            if (arrayLiteralType == Type::Error) logError(SemanticErrorType::MultiTypeArray, node);
+
+            node.value->type = arrayLiteralType;
+        }
+
+        if (node.specifiedType != Type::Unspecified &&
+            !isAssignableTo(node.value->type, node.specifiedType)) {
             logError(SemanticErrorType::IncompatibleAssignment, node,
                      TypeMismatchData(node.specifiedType, node.value->type));
             return;
@@ -168,7 +194,6 @@ void TypeCheckerVisitor::visit(AST::VariableDeclaration& node) {
         // checking here again just in case
         if (node.specifiedType == Type::Unspecified) {
             logError(SemanticErrorType::CannotInferType, node);
-            return;
         }
     }
 }
@@ -409,6 +434,9 @@ void TypeCheckerVisitor::visit(AST::VariableAssignment& node) {
     }
 }
 
+void TypeCheckerVisitor::visit(AST::ArrayAssignment& node) {
+}
+
 void TypeCheckerVisitor::visit(AST::ReturnStatement& node) {
     _foundReturn = true;
 
@@ -452,4 +480,7 @@ void TypeCheckerVisitor::visit(AST::VariableExpression& node) {
     }
 
     node.type = node.symbol->type;
+}
+
+void TypeCheckerVisitor::visit(AST::ArrayLiteral& node) {
 }

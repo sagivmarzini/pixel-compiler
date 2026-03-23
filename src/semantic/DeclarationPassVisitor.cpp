@@ -147,3 +147,15 @@ void DeclarationPassVisitor::visit(AST::RangeExpression& node) {
 void DeclarationPassVisitor::visit(AST::ExpressionStatement& node) {
     // nothing to do in declaration pass
 }
+
+void DeclarationPassVisitor::visit(AST::ArrayAssignment& node) {
+    // nothing to do in declaration pass
+}
+
+void DeclarationPassVisitor::visit(AST::ArrayLiteral& node) {
+    // nothing to do in declaration pass
+}
+
+void DeclarationPassVisitor::visit(AST::ArrayIndex& node) {
+    // nothing to do in declaration pass
+}

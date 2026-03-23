@@ -79,6 +79,7 @@ enum class SemanticErrorType {
     TypeMismatch, // General purpose
     IncompatibleAssignment,
     IncompatibleReturnType,
+    MultiTypeArray,
 
     // Control Flow
     NonBooleanCondition, // If/While

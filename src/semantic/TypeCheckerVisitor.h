@@ -18,7 +18,7 @@ public:
 
 private:
     Type _currentFunctionReturnType = Type::Unspecified;
-    bool _foundReturn               = false;
+    bool _foundReturn = false;
 
     // Returns true if the type is an `int` or `float`
     static bool isNumeric(Type type);
@@ -34,11 +34,23 @@ private:
 
     static bool isReturnTypeCompatible(Type functionType, Type returnedType);
 
+    Type checkArrayLiteralType(const AST::ArrayLiteral& arrayLiteral);
+
+
     void visit(AST::Program& program) override;
+
 
     void visit(AST::FunctionDeclaration& node) override;
 
-    void visit(AST::ExpressionStatement& node) override;
+    void visit(AST::FunctionCall& node) override;
+
+
+    void visit(AST::VariableDeclaration& node) override;
+
+    void visit(AST::VariableAssignment& node) override;
+
+    void visit(AST::ArrayAssignment& node) override;
+
 
     void visit(AST::IfStatement& node) override;
 
@@ -50,9 +62,8 @@ private:
 
     void visit(AST::Block& node) override;
 
-    void visit(AST::VariableDeclaration& node) override;
+    void visit(AST::ReturnStatement& node) override;
 
-    void visit(AST::FunctionCall& node) override;
 
     void visit(AST::BinaryExpression& node) override;
 
@@ -60,10 +71,10 @@ private:
 
     void visit(AST::IncDecExpression& node) override;
 
-    void visit(AST::VariableAssignment& node) override;
+    void visit(AST::ExpressionStatement& node) override;
 
+    void visit(AST::ArrayIndex& node) override;
 
-    void visit(AST::ReturnStatement& node) override;
 
     void visit(AST::IntegerLiteralNode& node) override;
 
@@ -74,6 +85,8 @@ private:
     void visit(AST::BooleanLiteralNode& node) override;
 
     void visit(AST::VariableExpression& node) override;
+
+    void visit(AST::ArrayLiteral& node) override;
 };
 
 

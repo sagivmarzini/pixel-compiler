@@ -141,6 +141,9 @@ SemanticError::SemanticError(SemanticErrorType type, const AST::AstNode& node, E
         case SemanticErrorType::NonIntForLoop:
             prefix = "For loops are only supported for integers";
             break;
+        case SemanticErrorType::MultiTypeArray:
+            prefix = "Arrays cannot have multiple types";
+            break;
     }
 
     // 3. Construct the Final Message
