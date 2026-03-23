@@ -53,12 +53,13 @@ void Compiler::compile() const {
 
     TypeCheckerVisitor typeChecker(symbolTable);
     typeChecker.run(ast);
+    printer.print(ast);
 
-    IRGeneratorLLVM irGenerator(_functionRegistry, _globalRegistry);
-    irGenerator.visit(ast);
-    irGenerator.print();
-
-    irGenerator.createExecutable("../out");
+    // IRGeneratorLLVM irGenerator(_functionRegistry, _globalRegistry);
+    // irGenerator.visit(ast);
+    // irGenerator.print();
+    //
+    // irGenerator.createExecutable("../out");
 }
 
 void Compiler::printTokens(const std::vector<Token>& tokens) {

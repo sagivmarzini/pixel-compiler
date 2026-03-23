@@ -24,7 +24,7 @@ namespace AST {
 
             ArrayType() = default;
 
-            ArrayType(const TokenMetadata& metadata, Type base, int size)
+            ArrayType(Type base, int size)
                 : baseType(base), size(size) {
             }
 

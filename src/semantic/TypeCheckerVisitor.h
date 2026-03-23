@@ -14,7 +14,7 @@ public:
     void run(AST::AstNode& root) override;
 
     // Returns the bigger type of the two (float > int, int > short, etc.)
-    static Type getPromotedType(Type leftType, Type rightType);
+    static Type getPromotedType(Type t1, Type t2);
 
 private:
     Type _currentFunctionReturnType = Type::Unspecified;
@@ -30,11 +30,9 @@ private:
 
     static bool isBoolean(Type type);
 
-    static bool isAssignableTo(Type assignedType, Type variableType);
+    static bool isAssignableTo(Type assignedType, Type targetType);
 
-    static bool isReturnTypeCompatible(Type functionType, Type returnedType);
-
-    Type checkArrayLiteralType(const AST::ArrayLiteral& arrayLiteral);
+    AST::VariableDeclaration::ArrayType checkArrayLiteralType(const AST::ArrayLiteral& arrayLiteral);
 
 
     void visit(AST::Program& program) override;

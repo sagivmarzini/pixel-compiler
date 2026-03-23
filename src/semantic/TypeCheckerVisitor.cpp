@@ -15,14 +15,15 @@ void TypeCheckerVisitor::run(AST::AstNode& root) {
         throw CompilerException(_errors);
 }
 
-Type TypeCheckerVisitor::getPromotedType(Type leftType, Type rightType) {
-    if (leftType == rightType) return leftType;
+Type TypeCheckerVisitor::getPromotedType(Type t1, Type t2) {
+    if (t1 == t2) return t1;
 
-    if (leftType == Type::Float || rightType == Type::Float) {
-        return Type::Float;
+    if (isNumeric(t1) && isNumeric(t2)) {
+        if (t1 == Type::Float || t2 == Type::Float) return Type::Float;
+        return Type::Int; // Default numeric promotion
     }
 
-    return Type::Error;
+    return Type::Error; // Mismatched types (e.g., Int and String)
 }
 
 bool TypeCheckerVisitor::isNumeric(Type type) {
@@ -41,27 +42,28 @@ bool TypeCheckerVisitor::isBoolean(Type type) {
     return type == Type::Bool;
 }
 
-bool TypeCheckerVisitor::isAssignableTo(Type assignedType, Type variableType) {
-    return assignedType == variableType || (isNumeric(assignedType) && isNumeric(variableType));
+bool TypeCheckerVisitor::isAssignableTo(Type assignedType, Type targetType) {
+    return assignedType == targetType || (assignedType == Type::Int && targetType == Type::Float);
 }
 
-bool TypeCheckerVisitor::isReturnTypeCompatible(Type functionType, Type returnedType) {
-    return functionType == returnedType || (functionType == Type::Float && returnedType == Type::Int);
-}
-
-Type TypeCheckerVisitor::checkArrayLiteralType(const AST::ArrayLiteral& arrayLiteral) {
-    if (arrayLiteral.elements.empty()) return Type::Unspecified;
+AST::VariableDeclaration::ArrayType TypeCheckerVisitor::checkArrayLiteralType(const AST::ArrayLiteral& arrayLiteral) {
+    if (arrayLiteral.elements.empty()) return {Type::Unspecified, 0};
 
     arrayLiteral.elements[0]->accept(*this);
-    const Type baseType = arrayLiteral.elements[0]->type;
-    for (const auto& element: arrayLiteral.elements) {
-        element->accept(*this);
+    Type commonType = arrayLiteral.elements[0]->type;
+    const int arraySize = arrayLiteral.elements.size();
 
-        if (!isAssignableTo(element->type, baseType))
-            return Type::Error;
+    for (size_t i = 1; i < arraySize; ++i) {
+        arrayLiteral.elements[i]->accept(*this);
+
+        commonType = getPromotedType(commonType, arrayLiteral.elements[i]->type);
+
+        if (commonType == Type::Error) {
+            return {Type::Error, arraySize};
+        }
     }
 
-    return baseType;
+    return {commonType, arraySize};
 }
 
 void TypeCheckerVisitor::visit(AST::Program& program) {
@@ -171,10 +173,11 @@ void TypeCheckerVisitor::visit(AST::VariableDeclaration& node) {
         node.value->accept(*this);
 
         if (auto* arrayPtr = dynamic_cast<AST::ArrayLiteral *>(node.value.get())) {
-            const Type arrayLiteralType = checkArrayLiteralType(*arrayPtr);
-            if (arrayLiteralType == Type::Error) logError(SemanticErrorType::MultiTypeArray, node);
+            const auto arrayLiteralType = checkArrayLiteralType(*arrayPtr);
+            if (arrayLiteralType.baseType == Type::Error) logError(SemanticErrorType::MultiTypeArray, node);
 
-            node.value->type = arrayLiteralType;
+            node.value->type = arrayLiteralType.baseType;
+            node.arrayType.value() = arrayLiteralType;
         }
 
         if (node.specifiedType != Type::Unspecified &&
@@ -446,9 +449,8 @@ void TypeCheckerVisitor::visit(AST::ReturnStatement& node) {
     node.value->accept(*this);
 
     if (const auto returnedType = node.value->type;
-        !isReturnTypeCompatible(_currentFunctionReturnType, returnedType)) {
+        !isAssignableTo(_currentFunctionReturnType, returnedType)) {
         logError(SemanticErrorType::TypeMismatch, node, TypeMismatchData(_currentFunctionReturnType, returnedType));
-        return;
     }
 }
 
