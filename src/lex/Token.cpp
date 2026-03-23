@@ -102,7 +102,7 @@ std::string tokenTypeToString(const TokenType& tokenType) {
         } else if constexpr (std::is_same_v<T, Identifier>) {
             return "Identifier(" + arg.name + ")";
         } else if constexpr (std::is_same_v<T, IntegerLiteral>) {
-            return "IntegerLiteral(" + std::to_string(arg.value) + ")";
+            return "IntegerLiteral" + (arg.value == -1 ? "" : "(" + std::to_string(arg.value) + ")");
         } else if constexpr (std::is_same_v<T, FloatLiteral>) {
             return "FloatLiteral(" + std::to_string(arg.value) + ")";
         } else if constexpr (std::is_same_v<T, StringLiteral>) {

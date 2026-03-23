@@ -42,7 +42,7 @@ struct Identifier {
 };
 
 struct IntegerLiteral {
-    int value;
+    int value = -1;
 };
 
 struct FloatLiteral {

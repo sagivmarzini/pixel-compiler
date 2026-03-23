@@ -171,7 +171,10 @@ std::unique_ptr<AST::Statement> Parser::parseVariableDeclaration() {
 
     // Check if the var is an array
     if (match<LeftBracket>()) {
+        if (checkValue(Operator::Minus)) logError(ParserErrorType::NonPositiveArraySize, peekPrevious());
         const auto [size] = expect<IntegerLiteral>();
+        if (size < 1) logError(ParserErrorType::NonPositiveArraySize, peekPrevious());
+
         arrayType.size = size;
         expect<RightBracket>();
         isArray = true;
