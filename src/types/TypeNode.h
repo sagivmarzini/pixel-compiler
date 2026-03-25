@@ -20,9 +20,9 @@ struct TypeNode {
 };
 
 struct ScalarTypeNode : TypeNode {
-    ScalarKind scalar;
+    PrimitiveKind scalar;
 
-    explicit ScalarTypeNode(ScalarKind k) : scalar(k) {
+    explicit ScalarTypeNode(PrimitiveKind k) : scalar(k) {
     }
 
     Kind kind() const override { return Kind::Scalar; }

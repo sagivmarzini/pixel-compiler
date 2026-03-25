@@ -16,13 +16,13 @@ TypeNode* TypeContext::getArray(TypeNode* base, int size) {
     return ptr;
 }
 
-TypeNode* TypeContext::get(ScalarKind kind) const {
+TypeNode* TypeContext::get(PrimitiveKind kind) const {
     switch (kind) {
-        case ScalarKind::Int: return getInt();
-        case ScalarKind::Float: return getFloat();
-        case ScalarKind::Bool: return getBool();
-        case ScalarKind::String: return getString();
-        case ScalarKind::Void: return getVoid();
+        case PrimitiveKind::Int: return getInt();
+        case PrimitiveKind::Float: return getFloat();
+        case PrimitiveKind::Bool: return getBool();
+        case PrimitiveKind::String: return getString();
+        case PrimitiveKind::Void: return getVoid();
         default: return nullptr;
     }
 }

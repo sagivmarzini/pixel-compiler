@@ -120,7 +120,7 @@ private:
     bool isAtStartOfStatement();
 
     [[noreturn]] void logError(const ParserErrorType& type, const Token& errorToken,
-                               const TokenType& expectedTokenType = ScalarKind::Unspecified);
+                               const TokenType& expectedTokenType = PrimitiveKind::Unspecified);
 };
 
 

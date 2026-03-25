@@ -17,56 +17,56 @@ void TypeCheckerVisitor::run(AST::AstNode& root) {
         throw CompilerException(_errors);
 }
 
-ScalarKind TypeCheckerVisitor::getPromotedType(ScalarKind t1, ScalarKind t2) {
+PrimitiveKind TypeCheckerVisitor::getPromotedType(PrimitiveKind t1, PrimitiveKind t2) {
     if (t1 == t2) return t1;
 
     if (isNumeric(t1) && isNumeric(t2)) {
-        if (t1 == ScalarKind::Float || t2 == ScalarKind::Float) return ScalarKind::Float;
-        return ScalarKind::Int; // Default numeric promotion
+        if (t1 == PrimitiveKind::Float || t2 == PrimitiveKind::Float) return PrimitiveKind::Float;
+        return PrimitiveKind::Int; // Default numeric promotion
     }
 
-    return ScalarKind::Error; // Mismatched types (e.g., Int and String)
+    return PrimitiveKind::Error; // Mismatched types (e.g., Int and String)
 }
 
-ScalarKind TypeCheckerVisitor::kindOf(TypeNode* t) {
-    if (!t) return ScalarKind::Unspecified;
+PrimitiveKind TypeCheckerVisitor::kindOf(TypeNode* t) {
+    if (!t) return PrimitiveKind::Unspecified;
     if (auto* s = dynamic_cast<ScalarTypeNode *>(t)) return s->scalar;
-    if (dynamic_cast<ArrayTypeNode *>(t)) return ScalarKind::Error; // arrays aren't scalar
-    return ScalarKind::Error;
+    if (dynamic_cast<ArrayTypeNode *>(t)) return PrimitiveKind::Error; // arrays aren't scalar
+    return PrimitiveKind::Error;
 }
 
-bool TypeCheckerVisitor::isNumeric(ScalarKind type) {
-    return type == ScalarKind::Int || type == ScalarKind::Float;
+bool TypeCheckerVisitor::isNumeric(PrimitiveKind type) {
+    return type == PrimitiveKind::Int || type == PrimitiveKind::Float;
 }
 
-bool TypeCheckerVisitor::areComparableTypes(ScalarKind leftType, ScalarKind rightType) {
+bool TypeCheckerVisitor::areComparableTypes(PrimitiveKind leftType, PrimitiveKind rightType) {
     return isNumeric(leftType) && isNumeric(rightType) || isString(leftType) && isString(rightType);
 }
 
-bool TypeCheckerVisitor::isString(ScalarKind type) {
-    return type == ScalarKind::String;
+bool TypeCheckerVisitor::isString(PrimitiveKind type) {
+    return type == PrimitiveKind::String;
 }
 
-bool TypeCheckerVisitor::isBoolean(ScalarKind type) {
-    return type == ScalarKind::Bool;
+bool TypeCheckerVisitor::isBoolean(PrimitiveKind type) {
+    return type == PrimitiveKind::Bool;
 }
 
-bool TypeCheckerVisitor::isAssignableTo(ScalarKind assignedType, ScalarKind targetType) {
-    return assignedType == targetType || (assignedType == ScalarKind::Int && targetType == ScalarKind::Float);
+bool TypeCheckerVisitor::isAssignableTo(PrimitiveKind assignedType, PrimitiveKind targetType) {
+    return assignedType == targetType || (assignedType == PrimitiveKind::Int && targetType == PrimitiveKind::Float);
 }
 
-std::pair<ScalarKind, int> TypeCheckerVisitor::checkArrayLiteralType(const AST::ArrayLiteral& arr) {
-    if (arr.elements.empty()) return {ScalarKind::Unspecified, 0};
+std::pair<PrimitiveKind, int> TypeCheckerVisitor::checkArrayLiteralType(const AST::ArrayLiteral& arr) {
+    if (arr.elements.empty()) return {PrimitiveKind::Unspecified, 0};
 
     arr.elements[0]->accept(*this);
 
-    ScalarKind common = kindOf(arr.elements[0]->type);
+    PrimitiveKind common = kindOf(arr.elements[0]->type);
     const int size = arr.elements.size();
     for (size_t i = 1; i < size; ++i) {
         arr.elements[i]->accept(*this);
         common = getPromotedType(common, kindOf(arr.elements[i]->type));
 
-        if (common == ScalarKind::Error) return {ScalarKind::Error, size};
+        if (common == PrimitiveKind::Error) return {PrimitiveKind::Error, size};
     }
 
     return {common, size};
@@ -114,7 +114,7 @@ bool TypeCheckerVisitor::checkArgumentLabel(AST::FunctionCall& node, const std::
     return false;
 }
 
-ScalarKind TypeCheckerVisitor::checkBinaryOp(AST::BinaryExpression& node, ScalarKind left, ScalarKind right) {
+PrimitiveKind TypeCheckerVisitor::checkBinaryOp(AST::BinaryExpression& node, PrimitiveKind left, PrimitiveKind right) {
     switch (node.op) {
         case Operator::Plus:
         case Operator::Minus:
@@ -125,7 +125,7 @@ ScalarKind TypeCheckerVisitor::checkBinaryOp(AST::BinaryExpression& node, Scalar
         case Operator::Equal:
         case Operator::NotEqual:
             if (areComparableTypes(left, right) || (isBoolean(left) && isBoolean(right)))
-                return ScalarKind::Bool;
+                return PrimitiveKind::Bool;
             break;
 
         case Operator::LessThan:
@@ -133,13 +133,13 @@ ScalarKind TypeCheckerVisitor::checkBinaryOp(AST::BinaryExpression& node, Scalar
         case Operator::LessEqual:
         case Operator::GreaterEqual:
             if (areComparableTypes(left, right))
-                return ScalarKind::Bool;
+                return PrimitiveKind::Bool;
             break;
 
         case Operator::LogicalAnd:
         case Operator::LogicalOr:
             if (isBoolean(left) && isBoolean(right))
-                return ScalarKind::Bool;
+                return PrimitiveKind::Bool;
             break;
 
         default:
@@ -148,25 +148,25 @@ ScalarKind TypeCheckerVisitor::checkBinaryOp(AST::BinaryExpression& node, Scalar
     }
 
     logError(SemanticErrorType::TypeMismatch, node, OperatorData(node.op, left, right));
-    return ScalarKind::Error;
+    return PrimitiveKind::Error;
 }
 
-ScalarKind TypeCheckerVisitor::checkArithmetic(AST::BinaryExpression& node, ScalarKind left, ScalarKind right) {
+PrimitiveKind TypeCheckerVisitor::checkArithmetic(AST::BinaryExpression& node, PrimitiveKind left, PrimitiveKind right) {
     if (isNumeric(left) && isNumeric(right)) {
-        const ScalarKind promoted = getPromotedType(left, right);
-        if (promoted == ScalarKind::Error)
+        const PrimitiveKind promoted = getPromotedType(left, right);
+        if (promoted == PrimitiveKind::Error)
             logError(SemanticErrorType::TypeMismatch, node, OperatorData(node.op, left, right));
         return promoted;
     }
 
     if (node.op == Operator::Plus && (isString(left) || isString(right))) {
-        const ScalarKind other = isString(left) ? right : left;
+        const PrimitiveKind other = isString(left) ? right : left;
         if (isString(other) || isNumeric(other))
-            return ScalarKind::String;
+            return PrimitiveKind::String;
     }
 
     logError(SemanticErrorType::TypeMismatch, node, OperatorData(node.op, left, right));
-    return ScalarKind::Error;
+    return PrimitiveKind::Error;
 }
 
 void TypeCheckerVisitor::visit(AST::Program& program) {
@@ -181,7 +181,7 @@ void TypeCheckerVisitor::visit(AST::FunctionDeclaration& node) {
     _foundReturn = false;
 
     node.body->accept(*this);
-    if (!_foundReturn && node.returnType != _typeCtx.get(ScalarKind::Void)) {
+    if (!_foundReturn && node.returnType != _typeCtx.get(PrimitiveKind::Void)) {
         logError(SemanticErrorType::MissingReturn, node);
     }
 }
@@ -195,7 +195,7 @@ void TypeCheckerVisitor::visit(AST::ArrayIndex& node) {
 
 void TypeCheckerVisitor::visit(AST::IfStatement& node) {
     node.condition->accept(*this);
-    if (node.condition->type != _typeCtx.get(ScalarKind::Bool)) {
+    if (node.condition->type != _typeCtx.get(PrimitiveKind::Bool)) {
         logError(SemanticErrorType::NonBooleanCondition, node);
     }
 
@@ -222,7 +222,7 @@ void TypeCheckerVisitor::visit(AST::WhileLoop& node) {
     node.condition->accept(*this);
 
     // Ensure condition returns a boolean
-    if (node.condition->type != _typeCtx.get(ScalarKind::Bool)) {
+    if (node.condition->type != _typeCtx.get(PrimitiveKind::Bool)) {
         logError(SemanticErrorType::NonBooleanCondition, node);
     }
 
@@ -236,7 +236,7 @@ void TypeCheckerVisitor::visit(AST::ForLoop& node) {
         node.step->accept(*this);
     }
 
-    if (node.range->type != _typeCtx.get(ScalarKind::Int) || node.step->type != _typeCtx.get(ScalarKind::Int)) {
+    if (node.range->type != _typeCtx.get(PrimitiveKind::Int) || node.step->type != _typeCtx.get(PrimitiveKind::Int)) {
         logError(SemanticErrorType::NonIntForLoop, node);
     }
 
@@ -247,8 +247,8 @@ void TypeCheckerVisitor::visit(AST::RangeExpression& node) {
     node.start->accept(*this);
     node.end->accept(*this);
 
-    const ScalarKind startKind = kindOf(node.start->type);
-    const ScalarKind endKind = kindOf(node.end->type);
+    const PrimitiveKind startKind = kindOf(node.start->type);
+    const PrimitiveKind endKind = kindOf(node.end->type);
 
     if (!isNumeric(startKind) || !isNumeric(endKind)) {
         logError(SemanticErrorType::NonNumericRange, node);
@@ -277,7 +277,7 @@ void TypeCheckerVisitor::visit(AST::VariableDeclaration& node) {
 
         if (auto* arrayPtr = dynamic_cast<AST::ArrayLiteral *>(node.initializer.get())) {
             const auto [baseKind, size] = checkArrayLiteralType(*arrayPtr);
-            if (baseKind == ScalarKind::Error) {
+            if (baseKind == PrimitiveKind::Error) {
                 logError(SemanticErrorType::MultiTypeArray, node);
                 return;
             }
@@ -291,7 +291,7 @@ void TypeCheckerVisitor::visit(AST::VariableDeclaration& node) {
         }
 
         // Scalar assignment - check compatibility
-        const ScalarKind initKind = kindOf(node.initializer->type);
+        const PrimitiveKind initKind = kindOf(node.initializer->type);
         if (node.type) {
             // declared type exists
             if (!isAssignableTo(initKind, kindOf(node.type))) {
@@ -335,19 +335,19 @@ void TypeCheckerVisitor::visit(AST::BinaryExpression& node) {
     node.left->accept(*this);
     node.right->accept(*this);
 
-    const ScalarKind left = kindOf(node.left->type);
-    const ScalarKind right = kindOf(node.right->type);
+    const PrimitiveKind left = kindOf(node.left->type);
+    const PrimitiveKind right = kindOf(node.right->type);
 
-    if (left == ScalarKind::Error || right == ScalarKind::Error) return;
+    if (left == PrimitiveKind::Error || right == PrimitiveKind::Error) return;
 
-    const ScalarKind result = checkBinaryOp(node, left, right);
+    const PrimitiveKind result = checkBinaryOp(node, left, right);
     node.type = _typeCtx.get(result);
 }
 
 void TypeCheckerVisitor::visit(AST::UnaryExpression& node) {
     node.operand->accept(*this);
 
-    const ScalarKind operandType = kindOf(node.operand->type);
+    const PrimitiveKind operandType = kindOf(node.operand->type);
 
     switch (node.op) {
         case Operator::Plus:
@@ -370,7 +370,7 @@ void TypeCheckerVisitor::visit(AST::UnaryExpression& node) {
                 return;
             }
 
-            node.type = _typeCtx.get(ScalarKind::Bool);
+            node.type = _typeCtx.get(PrimitiveKind::Bool);
 
             break;
         }
@@ -389,7 +389,7 @@ void TypeCheckerVisitor::visit(AST::IncDecExpression& node) {
     }
     node.symbol = operand;
 
-    const ScalarKind operandKind = kindOf(operand->type);
+    const PrimitiveKind operandKind = kindOf(operand->type);
 
     switch (node.op) {
         case Operator::PlusPlus:
@@ -412,7 +412,7 @@ void TypeCheckerVisitor::visit(AST::IncDecExpression& node) {
 
 void TypeCheckerVisitor::visit(AST::VariableAssignment& node) {
     node.assignedValue->accept(*this);
-    const ScalarKind assignedType = kindOf(node.assignedValue->type);
+    const PrimitiveKind assignedType = kindOf(node.assignedValue->type);
 
     const auto symbol = _symbolTable.lookup(node.varName);
     if (!symbol) {
@@ -426,7 +426,7 @@ void TypeCheckerVisitor::visit(AST::VariableAssignment& node) {
         return;
     }
 
-    if (const ScalarKind variableType = kindOf(symbol->type);
+    if (const PrimitiveKind variableType = kindOf(symbol->type);
         variableType != assignedType && !isAssignableTo(assignedType, variableType)) {
         logError(SemanticErrorType::IncompatibleAssignment, node, TypeMismatchData(variableType, assignedType));
         return;
@@ -437,7 +437,7 @@ void TypeCheckerVisitor::visit(AST::ArrayAssignment& node) {
     node.index->accept(*this);
     node.assignedValue->accept(*this);
 
-    if (kindOf(node.index->type) != ScalarKind::Int) {
+    if (kindOf(node.index->type) != PrimitiveKind::Int) {
         logError(SemanticErrorType::NonIntIndex, node);
         return;
     }
@@ -461,7 +461,7 @@ void TypeCheckerVisitor::visit(AST::ArrayAssignment& node) {
         return;
     }
 
-    const ScalarKind assignedKind = kindOf(node.assignedValue->type);
+    const PrimitiveKind assignedKind = kindOf(node.assignedValue->type);
     if (!isAssignableTo(assignedKind, kindOf(arrayType->base))) {
         logError(SemanticErrorType::TypeMismatch, node,
                  TypeMismatchData(kindOf(arrayType->base), assignedKind));
@@ -484,27 +484,27 @@ void TypeCheckerVisitor::visit(AST::ReturnStatement& node) {
 
     node.value->accept(*this);
 
-    const ScalarKind returnedType = kindOf(node.value->type);
-    const ScalarKind functionReturnType = kindOf(_currentFunctionReturnType);
+    const PrimitiveKind returnedType = kindOf(node.value->type);
+    const PrimitiveKind functionReturnType = kindOf(_currentFunctionReturnType);
     if (!isAssignableTo(functionReturnType, returnedType)) {
         logError(SemanticErrorType::TypeMismatch, node, TypeMismatchData(functionReturnType, returnedType));
     }
 }
 
 void TypeCheckerVisitor::visit(AST::IntegerLiteralNode& node) {
-    node.type = _typeCtx.get(ScalarKind::Int);
+    node.type = _typeCtx.get(PrimitiveKind::Int);
 }
 
 void TypeCheckerVisitor::visit(AST::FloatLiteralNode& node) {
-    node.type = _typeCtx.get(ScalarKind::Float);
+    node.type = _typeCtx.get(PrimitiveKind::Float);
 }
 
 void TypeCheckerVisitor::visit(AST::StringLiteralNode& node) {
-    node.type = _typeCtx.get(ScalarKind::String);
+    node.type = _typeCtx.get(PrimitiveKind::String);
 }
 
 void TypeCheckerVisitor::visit(AST::BooleanLiteralNode& node) {
-    node.type = _typeCtx.get(ScalarKind::Bool);
+    node.type = _typeCtx.get(PrimitiveKind::Bool);
 }
 
 void TypeCheckerVisitor::visit(AST::VariableExpression& node) {
@@ -514,7 +514,7 @@ void TypeCheckerVisitor::visit(AST::VariableExpression& node) {
     }
     if (!node.symbol) {
         logError(SemanticErrorType::UndefinedIdentifier, node, node.name);
-        node.type = _typeCtx.get(ScalarKind::Error);
+        node.type = _typeCtx.get(PrimitiveKind::Error);
         return;
     }
 

@@ -141,7 +141,7 @@ std::unique_ptr<AST::Statement> Parser::parseFunctionDeclaration() {
 
         auto paramName = expect<Identifier>();
         expect<Colon>();
-        auto paramType = expect<ScalarKind>();
+        auto paramType = expect<PrimitiveKind>();
 
         parameters.emplace_back(paramName.name, _typeCtx.get(paramType), isImplicit);
         if (!check<RightParen>()) {
@@ -155,7 +155,7 @@ std::unique_ptr<AST::Statement> Parser::parseFunctionDeclaration() {
     expect<RightParen>();
     expect<Arrow>();
 
-    auto returnType = expect<ScalarKind>();
+    auto returnType = expect<PrimitiveKind>();
     auto block = parseBlock();
 
     return std::make_unique<AST::FunctionDeclaration>(namePosition, _typeCtx.get(returnType), name, parameters,
@@ -180,12 +180,12 @@ std::unique_ptr<AST::Statement> Parser::parseVariableDeclaration() {
         isArray = true;
     }
 
-    ScalarKind type = ScalarKind::Unspecified;
+    PrimitiveKind type = PrimitiveKind::Unspecified;
     std::unique_ptr<AST::Expression> value = nullptr;
 
     // If a type is specified, get it
     if (match<Colon>()) {
-        type = expect<ScalarKind>();
+        type = expect<PrimitiveKind>();
     }
 
     if (checkValue(Operator::Assignment)) {
@@ -197,7 +197,7 @@ std::unique_ptr<AST::Statement> Parser::parseVariableDeclaration() {
             value = parseExpression();
     }
 
-    if (!value && type == ScalarKind::Unspecified) {
+    if (!value && type == PrimitiveKind::Unspecified) {
         logError(ParserErrorType::TypelessVarDeclaration, varNameToken);
     }
     expect<Semicolon>();

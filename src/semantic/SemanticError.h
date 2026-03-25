@@ -12,8 +12,8 @@ namespace AST {
 
 // Define the specific data packets for different errors
 struct TypeMismatchData {
-    ScalarKind expected;
-    ScalarKind actual;
+    PrimitiveKind expected;
+    PrimitiveKind actual;
 };
 
 struct ParamMismatchData {
@@ -24,13 +24,13 @@ struct ParamMismatchData {
 
 struct OperatorData {
     Operator op;
-    ScalarKind left;
-    ScalarKind right;
+    PrimitiveKind left;
+    PrimitiveKind right;
 };
 
 struct UnaryOperatorData {
     Operator op;
-    ScalarKind operand;
+    PrimitiveKind operand;
 };
 
 struct ArgumentPositionData {

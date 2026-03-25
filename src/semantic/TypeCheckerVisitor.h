@@ -14,27 +14,27 @@ public:
     void run(AST::AstNode& root) override;
 
     // Returns the bigger type of the two (float > int, int > short, etc.)
-    static ScalarKind getPromotedType(ScalarKind t1, ScalarKind t2);
+    static PrimitiveKind getPromotedType(PrimitiveKind t1, PrimitiveKind t2);
 
 private:
     TypeNode* _currentFunctionReturnType = nullptr;
     bool _foundReturn = false;
 
-    static ScalarKind kindOf(TypeNode* t);
+    static PrimitiveKind kindOf(TypeNode* t);
 
     // Returns true if the type is an `int` or `float`
-    static bool isNumeric(ScalarKind type);
+    static bool isNumeric(PrimitiveKind type);
 
     // Returns true if the types are both either numeric or strings (compared lexicographically)
-    static bool areComparableTypes(ScalarKind leftType, ScalarKind rightType);
+    static bool areComparableTypes(PrimitiveKind leftType, PrimitiveKind rightType);
 
-    static bool isString(ScalarKind type);
+    static bool isString(PrimitiveKind type);
 
-    static bool isBoolean(ScalarKind type);
+    static bool isBoolean(PrimitiveKind type);
 
-    static bool isAssignableTo(ScalarKind assignedType, ScalarKind targetType);
+    static bool isAssignableTo(PrimitiveKind assignedType, PrimitiveKind targetType);
 
-    std::pair<ScalarKind, int> checkArrayLiteralType(const AST::ArrayLiteral& arr);
+    std::pair<PrimitiveKind, int> checkArrayLiteralType(const AST::ArrayLiteral& arr);
 
     bool checkArgCount(AST::FunctionCall& node, const Symbol& fn);
 
@@ -48,9 +48,9 @@ private:
                             const AST::FunctionDeclaration::FunctionParameter& param,
                             const Symbol& calledFunction);
 
-    ScalarKind checkBinaryOp(AST::BinaryExpression& node, ScalarKind left, ScalarKind right);
+    PrimitiveKind checkBinaryOp(AST::BinaryExpression& node, PrimitiveKind left, PrimitiveKind right);
 
-    ScalarKind checkArithmetic(AST::BinaryExpression& node, ScalarKind left, ScalarKind right);
+    PrimitiveKind checkArithmetic(AST::BinaryExpression& node, PrimitiveKind left, PrimitiveKind right);
 
     void visit(AST::Program& program) override;
 

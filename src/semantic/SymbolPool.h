@@ -6,7 +6,7 @@
 #include "Symbol.h"
 
 class Scope;
-enum class ScalarKind;
+enum class PrimitiveKind;
 
 class SymbolPool {
 public:

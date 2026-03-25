@@ -24,7 +24,7 @@ public:
 
     TypeNode* getArray(TypeNode* base, int size);
 
-    TypeNode* get(ScalarKind kind) const;
+    TypeNode* get(PrimitiveKind kind) const;
 
 private:
     std::unique_ptr<ScalarTypeNode> _intType;

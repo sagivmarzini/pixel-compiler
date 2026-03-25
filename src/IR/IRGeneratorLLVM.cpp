@@ -76,7 +76,7 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::FunctionDeclaration& node) {
 
     node.body->acceptIR(*this);
     if (!_builder->GetInsertBlock()->getTerminator()) {
-        if (node.returnType == ScalarKind::Void) {
+        if (node.returnType == PrimitiveKind::Void) {
             _builder->CreateRetVoid();
         } else {
             // Return a default "zero" value for the specific type
@@ -123,7 +123,7 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::FunctionCall& node) {
             }
         }
 
-        if (info->kind == FunctionKind::Api && arg.value->type == ScalarKind::String) {
+        if (info->kind == FunctionKind::Api && arg.value->type == PrimitiveKind::String) {
             auto* getStr = getOrDeclareBuiltinFunction("pxl_get_string_data");
             argValue = _builder->CreateCall(getStr, {argValue});
         }
@@ -327,7 +327,7 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::VariableDeclaration& node) {
 }
 
 llvm::Value* IRGeneratorLLVM::visit(const AST::VariableAssignment& node) {
-    if (node.symbol->type == ScalarKind::String) {
+    if (node.symbol->type == PrimitiveKind::String) {
         // Load the source
         auto value = node.assignedValue->acceptIR(*this);
         auto strCopyFunc = getOrDeclareBuiltinFunction(_stringOperatorLowering.at(Operator::Assignment));
@@ -372,7 +372,7 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::BinaryExpression& node) {
 
     const bool isFloat = lhs->getType()->isFloatingPointTy();
     const bool isInt = lhs->getType()->isIntegerTy();
-    if (node.left->type == ScalarKind::String && node.right->type == ScalarKind::String) {
+    if (node.left->type == PrimitiveKind::String && node.right->type == PrimitiveKind::String) {
         const auto funcName = _stringOperatorLowering.at(node.op);
         auto* operationFunc = getOrDeclareBuiltinFunction(funcName);
         return _builder->CreateCall(operationFunc, {lhs, rhs}, "binop");
@@ -504,7 +504,7 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::ArrayIndex& node) {
 
 llvm::Value* IRGeneratorLLVM::visit(const AST::VariableExpression& node) const {
     llvm::Value* variableAddress = nullptr;
-    ScalarKind varType;
+    PrimitiveKind varType;
 
     if (_namedValues.contains(node.symbol)) {
         variableAddress = _namedValues.at(node.symbol);
@@ -540,46 +540,46 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::ArrayLiteral& node) {
     // TODO: Implement this
 }
 
-llvm::Type* IRGeneratorLLVM::getLlvmType(const ScalarKind& type) const {
+llvm::Type* IRGeneratorLLVM::getLlvmType(const PrimitiveKind& type) const {
     switch (type) {
-        case ScalarKind::Int:
+        case PrimitiveKind::Int:
             return _builder->getInt32Ty();
-        case ScalarKind::Float:
+        case PrimitiveKind::Float:
             return _builder->getFloatTy();
-        case ScalarKind::Bool:
+        case PrimitiveKind::Bool:
             return _builder->getInt1Ty();
-        case ScalarKind::Void:
+        case PrimitiveKind::Void:
             return _builder->getVoidTy();
-        case ScalarKind::Pointer:
+        case PrimitiveKind::Pointer:
             return _builder->getPtrTy();
-        case ScalarKind::String:
+        case PrimitiveKind::String:
             return _builder->getPtrTy();
-        case ScalarKind::Color:
+        case PrimitiveKind::Color:
             throw std::runtime_error("Not Implemented: colors");
         default:
             throw std::runtime_error("Internal error: illegal type: " + typeToString(type));
     }
 }
 
-ScalarKind IRGeneratorLLVM::llvmTypeToCompilerType(const llvm::Type& type) {
+PrimitiveKind IRGeneratorLLVM::llvmTypeToCompilerType(const llvm::Type& type) {
     if (type.isIntegerTy(32)) {
-        return ScalarKind::Int;
+        return PrimitiveKind::Int;
     }
 
     if (type.isIntegerTy(1)) {
-        return ScalarKind::Bool;
+        return PrimitiveKind::Bool;
     }
 
     if (type.isFloatTy()) {
-        return ScalarKind::Float;
+        return PrimitiveKind::Float;
     }
 
     if (type.isVoidTy()) {
-        return ScalarKind::Void;
+        return PrimitiveKind::Void;
     }
 
     if (type.isPointerTy()) {
-        return ScalarKind::Pointer;
+        return PrimitiveKind::Pointer;
     }
 
     throw std::runtime_error("Internal error: unsupported LLVM type: ");
