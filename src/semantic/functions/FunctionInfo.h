@@ -17,7 +17,7 @@ enum class FunctionKind {
 
 struct FunctionInfo {
     std::vector<AST::FunctionDeclaration::FunctionParameter> params;
-    ScalarKind returnType;
+    TypeNode* returnType;
     std::string llvmName; // actual symbol name (e.g. "sinf")
     bool isVariadic = false;
     FunctionKind kind;

@@ -9,9 +9,6 @@
 #include "parse/AST/Statement.h"
 #include "types/TypeContext.h"
 
-TypeCheckerVisitor::TypeCheckerVisitor(SymbolTable& symbolTable, TypeContext& typeCtx)
-    : SemanticVisitor(symbolTable), _typeCtx(typeCtx) {
-}
 
 void TypeCheckerVisitor::run(AST::AstNode& root) {
     root.accept(*this);
@@ -38,17 +35,6 @@ ScalarKind TypeCheckerVisitor::kindOf(TypeNode* t) {
     return ScalarKind::Error;
 }
 
-TypeNode* TypeCheckerVisitor::nodeFor(ScalarKind k) const {
-    switch (k) {
-        case ScalarKind::Int: return _typeCtx.getInt();
-        case ScalarKind::Float: return _typeCtx.getFloat();
-        case ScalarKind::Bool: return _typeCtx.getBool();
-        case ScalarKind::String: return _typeCtx.getString();
-        case ScalarKind::Void: return _typeCtx.getVoid();
-        default: return nullptr;
-    }
-}
-
 bool TypeCheckerVisitor::isNumeric(ScalarKind type) {
     return type == ScalarKind::Int || type == ScalarKind::Float;
 }
@@ -69,24 +55,118 @@ bool TypeCheckerVisitor::isAssignableTo(ScalarKind assignedType, ScalarKind targ
     return assignedType == targetType || (assignedType == ScalarKind::Int && targetType == ScalarKind::Float);
 }
 
-ScalarKind TypeCheckerVisitor::checkArrayLiteralType(const AST::ArrayLiteral& arrayLiteral) {
-    if (arrayLiteral.elements.empty()) return {ScalarKind::Unspecified, 0};
+std::pair<ScalarKind, int> TypeCheckerVisitor::checkArrayLiteralType(const AST::ArrayLiteral& arr) {
+    if (arr.elements.empty()) return {ScalarKind::Unspecified, 0};
 
-    arrayLiteral.elements[0]->accept(*this);
-    ScalarKind commonType = arrayLiteral.elements[0]->type;
-    const int arraySize = arrayLiteral.elements.size();
+    arr.elements[0]->accept(*this);
 
-    for (size_t i = 1; i < arraySize; ++i) {
-        arrayLiteral.elements[i]->accept(*this);
+    ScalarKind common = kindOf(arr.elements[0]->type);
+    const int size = arr.elements.size();
+    for (size_t i = 1; i < size; ++i) {
+        arr.elements[i]->accept(*this);
+        common = getPromotedType(common, kindOf(arr.elements[i]->type));
 
-        commonType = getPromotedType(commonType, arrayLiteral.elements[i]->type);
-
-        if (commonType == ScalarKind::Error) {
-            return {ScalarKind::Error, arraySize};
-        }
+        if (common == ScalarKind::Error) return {ScalarKind::Error, size};
     }
 
-    return {commonType, arraySize};
+    return {common, size};
+}
+
+bool TypeCheckerVisitor::checkArgCount(AST::FunctionCall& node, const Symbol& fn) {
+    const bool isVariadic = node.functionName == "print";
+    if (!isVariadic && node.arguments.size() != fn.params.size()) {
+        logError(SemanticErrorType::ArgumentCountMismatch, node,
+                 ParamMismatchData(node.functionName, fn.params.size(), node.arguments.size()));
+        return false;
+    }
+    return true;
+}
+
+void TypeCheckerVisitor::checkArgument(AST::FunctionCall& node,
+                                       const AST::FunctionCall::FunctionArgument& arg,
+                                       const AST::FunctionDeclaration::FunctionParameter& param,
+                                       const Symbol& fn) {
+    if (arg.name.has_value()) {
+        if (!checkArgumentLabel(node, arg.name.value(), param, fn)) return;
+    } else if (!param.isImplicit) {
+        logError(SemanticErrorType::MissingArgumentLabel, node, param.name);
+        return;
+    }
+
+    arg.value->accept(*this);
+    if (!isAssignableTo(kindOf(arg.value->type), kindOf(param.type))) {
+        logError(SemanticErrorType::ArgumentTypeMismatch, node,
+                 TypeMismatchData(kindOf(param.type), kindOf(arg.value->type)));
+    }
+}
+
+bool TypeCheckerVisitor::checkArgumentLabel(AST::FunctionCall& node, const std::string& argName,
+                                            const AST::FunctionDeclaration::FunctionParameter& param,
+                                            const Symbol& calledFunction) {
+    if (param.name == argName) return true;
+
+    if (calledFunction.getParameterByName(argName))
+        logError(SemanticErrorType::InvalidArgumentPosition, node,
+                 ArgumentPositionData(node.arguments, calledFunction.params));
+    else
+        logError(SemanticErrorType::UndefinedArgument, node, argName);
+
+    return false;
+}
+
+ScalarKind TypeCheckerVisitor::checkBinaryOp(AST::BinaryExpression& node, ScalarKind left, ScalarKind right) {
+    switch (node.op) {
+        case Operator::Plus:
+        case Operator::Minus:
+        case Operator::Star:
+        case Operator::Slash:
+            return checkArithmetic(node, left, right);
+
+        case Operator::Equal:
+        case Operator::NotEqual:
+            if (areComparableTypes(left, right) || (isBoolean(left) && isBoolean(right)))
+                return ScalarKind::Bool;
+            break;
+
+        case Operator::LessThan:
+        case Operator::GreaterThan:
+        case Operator::LessEqual:
+        case Operator::GreaterEqual:
+            if (areComparableTypes(left, right))
+                return ScalarKind::Bool;
+            break;
+
+        case Operator::LogicalAnd:
+        case Operator::LogicalOr:
+            if (isBoolean(left) && isBoolean(right))
+                return ScalarKind::Bool;
+            break;
+
+        default:
+            throw std::runtime_error(
+                std::format("Internal error: Unhandled binary operator {}", operatorToString(node.op)));
+    }
+
+    logError(SemanticErrorType::TypeMismatch, node, OperatorData(node.op, left, right));
+    return ScalarKind::Error;
+}
+
+ScalarKind TypeCheckerVisitor::checkArithmetic(AST::BinaryExpression& node, ScalarKind left, ScalarKind right) {
+    if (isNumeric(left) && isNumeric(right)) {
+        const ScalarKind promoted = getPromotedType(left, right);
+        if (promoted == ScalarKind::Error)
+            logError(SemanticErrorType::TypeMismatch, node, OperatorData(node.op, left, right));
+        return promoted;
+    }
+
+    if (node.op == Operator::Plus && (isString(left) || isString(right))) {
+        const ScalarKind other = isString(left) ? right : left;
+        if (isString(other) || isNumeric(other))
+            return ScalarKind::String;
+    }
+
+    logError(SemanticErrorType::TypeMismatch, node, OperatorData(node.op, left, right));
+    return ScalarKind::Error;
 }
 
 void TypeCheckerVisitor::visit(AST::Program& program) {
@@ -101,7 +181,7 @@ void TypeCheckerVisitor::visit(AST::FunctionDeclaration& node) {
     _foundReturn = false;
 
     node.body->accept(*this);
-    if (!_foundReturn && node.returnType != ScalarKind::Void) {
+    if (!_foundReturn && node.returnType != _typeCtx.get(ScalarKind::Void)) {
         logError(SemanticErrorType::MissingReturn, node);
     }
 }
@@ -115,7 +195,7 @@ void TypeCheckerVisitor::visit(AST::ArrayIndex& node) {
 
 void TypeCheckerVisitor::visit(AST::IfStatement& node) {
     node.condition->accept(*this);
-    if (node.condition->type != ScalarKind::Bool) {
+    if (node.condition->type != _typeCtx.get(ScalarKind::Bool)) {
         logError(SemanticErrorType::NonBooleanCondition, node);
     }
 
@@ -142,7 +222,7 @@ void TypeCheckerVisitor::visit(AST::WhileLoop& node) {
     node.condition->accept(*this);
 
     // Ensure condition returns a boolean
-    if (node.condition->type != ScalarKind::Bool) {
+    if (node.condition->type != _typeCtx.get(ScalarKind::Bool)) {
         logError(SemanticErrorType::NonBooleanCondition, node);
     }
 
@@ -156,7 +236,7 @@ void TypeCheckerVisitor::visit(AST::ForLoop& node) {
         node.step->accept(*this);
     }
 
-    if (node.range->type != ScalarKind::Int || node.step->type != ScalarKind::Int) {
+    if (node.range->type != _typeCtx.get(ScalarKind::Int) || node.step->type != _typeCtx.get(ScalarKind::Int)) {
         logError(SemanticErrorType::NonIntForLoop, node);
     }
 
@@ -167,15 +247,15 @@ void TypeCheckerVisitor::visit(AST::RangeExpression& node) {
     node.start->accept(*this);
     node.end->accept(*this);
 
-    const ScalarKind startType = node.start->type;
-    const ScalarKind endType = node.end->type;
+    const ScalarKind startKind = kindOf(node.start->type);
+    const ScalarKind endKind = kindOf(node.end->type);
 
-    if (!isNumeric(startType) || !isNumeric(endType)) {
+    if (!isNumeric(startKind) || !isNumeric(endKind)) {
         logError(SemanticErrorType::NonNumericRange, node);
         return;
     }
 
-    node.type = getPromotedType(startType, endType);
+    node.type = _typeCtx.get(getPromotedType(startKind, endKind));
 }
 
 void TypeCheckerVisitor::visit(AST::Block& node) {
@@ -196,29 +276,35 @@ void TypeCheckerVisitor::visit(AST::VariableDeclaration& node) {
         node.initializer->accept(*this);
 
         if (auto* arrayPtr = dynamic_cast<AST::ArrayLiteral *>(node.initializer.get())) {
-            const auto arrayLiteralType = checkArrayLiteralType(*arrayPtr);
-            if (arrayLiteralType.baseType == ScalarKind::Error) logError(SemanticErrorType::MultiTypeArray, node);
+            const auto [baseKind, size] = checkArrayLiteralType(*arrayPtr);
+            if (baseKind == ScalarKind::Error) {
+                logError(SemanticErrorType::MultiTypeArray, node);
+                return;
+            }
 
-            node.initializer->type = arrayLiteralType.baseType;
-            node.symbol->arrayType = arrayLiteralType;
-        }
-
-        if (node.specifiedType != ScalarKind::Unspecified &&
-            !isAssignableTo(node.initializer->type, node.specifiedType)) {
-            logError(SemanticErrorType::IncompatibleAssignment, node,
-                     TypeMismatchData(node.specifiedType, node.initializer->type));
+            // Build the proper ArrayTypeNode and assign it to both the expression and symbol
+            TypeNode* baseType = _typeCtx.get(baseKind);
+            TypeNode* arrayType = _typeCtx.getArray(baseType, size);
+            node.initializer->type = arrayType;
+            node.symbol->type = arrayType;
             return;
         }
 
-        const auto symbol = node.symbol;
-        if (!symbol) throw std::runtime_error("Internal error: undefined variable: " + node.name);
-
-        if (symbol->type == ScalarKind::Unspecified)
-            symbol->type = node.initializer->type;
+        // Scalar assignment - check compatibility
+        const ScalarKind initKind = kindOf(node.initializer->type);
+        if (node.type) {
+            // declared type exists
+            if (!isAssignableTo(initKind, kindOf(node.type))) {
+                logError(SemanticErrorType::IncompatibleAssignment, node,
+                         TypeMismatchData(kindOf(node.type), initKind));
+                return;
+            }
+        } else {
+            // Type inference - symbol gets the inferred type
+            node.symbol->type = node.initializer->type;
+        }
     } else {
-        // Parser already checked for typeless variable with no initial value,
-        // checking here again just in case
-        if (node.specifiedType == ScalarKind::Unspecified) {
+        if (!node.type) {
             logError(SemanticErrorType::CannotInferType, node);
         }
     }
@@ -233,151 +319,35 @@ void TypeCheckerVisitor::visit(AST::FunctionCall& node) {
         return;
     }
 
-    // Check if the number of arguments matches
-    if (const auto expectedArgAmount = calledFunction->params.size();
-        node.arguments.size() != expectedArgAmount &&
-        // printf has a variable number of arguments
-        node.functionName != "print") {
-        logError(SemanticErrorType::ArgumentCountMismatch, node,
-                 ParamMismatchData(node.functionName, expectedArgAmount, node.arguments.size()));
-        return;
-    }
+    if (!checkArgCount(node, *calledFunction)) return;
 
     node.type = calledFunction->type;
-    std::set<std::string> seenParams;
-    int index = 0;
 
-    for (const auto& argument: node.arguments) {
-        if (index < calledFunction->params.size()) {
-            auto& parameter = calledFunction->params.at(index);
-
-            if (argument.name.has_value()) {
-                // named argument
-                auto argName = argument.name.value();
-
-                if (parameter.name != argName) {
-                    if (calledFunction->getParameterByName(argName)) {
-                        // invalid pos
-                        logError(SemanticErrorType::InvalidArgumentPosition, node,
-                                 ArgumentPositionData(node.arguments, calledFunction->params));
-                        return;
-                    }
-
-                    logError(SemanticErrorType::UndefinedArgument, node, argName);
-                    return;
-                }
-            } else if (!parameter.isImplicit) {
-                logError(SemanticErrorType::MissingArgumentLabel, node, parameter.name);
-            }
-
-            // Validate type against the formal parameter
-            argument.value->accept(*this);
-            if (!isAssignableTo(argument.value->type, parameter.type)) {
-                logError(SemanticErrorType::ArgumentTypeMismatch, node,
-                         TypeMismatchData(parameter.type, argument.value->type));
-                return;
-            }
-        } else {
-            // 2. Extra arguments for printf path
-            // Just resolve the type of the extra expression so the compiler doesn't crash
-            argument.value->accept(*this);
-
-            // Optional: In a real variadic system, you'd check if these are "basic" types
-            // (int, float, ptr) since printf can't handle complex structs.
-        }
-
-        index++;
+    for (int i = 0; i < node.arguments.size(); ++i) {
+        if (i < calledFunction->params.size())
+            checkArgument(node, node.arguments[i], calledFunction->params[i], *calledFunction);
+        else
+            node.arguments[i].value->accept(*this); // variadic overflow — resolve type only
     }
 }
 
 void TypeCheckerVisitor::visit(AST::BinaryExpression& node) {
     node.left->accept(*this);
     node.right->accept(*this);
-    if (node.left->type == ScalarKind::Error || node.right->type == ScalarKind::Error) return;
 
-    const ScalarKind leftType = node.left->type;
-    const ScalarKind rightType = node.right->type;
+    const ScalarKind left = kindOf(node.left->type);
+    const ScalarKind right = kindOf(node.right->type);
 
-    switch (node.op) {
-        // Arithmetic Operators (+, -, *, /)
-        case Operator::Plus:
-        case Operator::Minus:
-        case Operator::Star:
-        case Operator::Slash: {
-            if (isNumeric(leftType) && isNumeric(rightType)) {
-                // Determine result type based on type promotion (e.g., int + float = float)
-                node.type = getPromotedType(leftType, rightType);
-                if (node.type == ScalarKind::Error) {
-                    logError(SemanticErrorType::TypeMismatch, node, OperatorData(node.op, leftType, rightType));
-                    return;
-                }
-            } else if (node.op == Operator::Plus && (isString(leftType) || isString(rightType))) {
-                // Check that the OTHER type is one that can be converted to a string (e.g., numeric, or another string).
-                if (const ScalarKind otherType = isString(leftType) ? rightType : leftType;
-                    isString(otherType) || isNumeric(otherType)) {
-                    node.type = ScalarKind::String;
-                } else {
-                    logError(SemanticErrorType::TypeMismatch, node,
-                             OperatorData(node.op, ScalarKind::String, otherType));
-                    return;
-                }
-            } else {
-                logError(SemanticErrorType::TypeMismatch, node, OperatorData(node.op, leftType, rightType));
-                return;
-            }
-            break;
-        }
+    if (left == ScalarKind::Error || right == ScalarKind::Error) return;
 
-        // Comparison and Equality Operators (=, !=, <, >, <=, >=)
-        case Operator::Equal:
-        case Operator::NotEqual: {
-            // Comparison is valid for numerics and strings (lexicographical)
-            if (areComparableTypes(leftType, rightType) || isBoolean(leftType) && isBoolean(rightType)) {
-                node.type = ScalarKind::Bool; // The result of comparison is always boolean
-            } else {
-                logError(SemanticErrorType::TypeMismatch, node, OperatorData(node.op, leftType, rightType));
-                return;
-            }
-            break;
-        }
-        case Operator::LessThan:
-        case Operator::GreaterThan:
-        case Operator::LessEqual:
-        case Operator::GreaterEqual: {
-            // Comparison is valid for numerics and strings (lexicographical)
-            if (areComparableTypes(leftType, rightType)) {
-                node.type = ScalarKind::Bool; // The result of comparison is always boolean
-            } else {
-                logError(SemanticErrorType::TypeMismatch, node, OperatorData(node.op, leftType, rightType));
-                return;
-            }
-            break;
-        }
-
-        // Logical Operators (&&, ||)
-        case Operator::LogicalAnd:
-        case Operator::LogicalOr: {
-            // Logical operators only work on booleans
-            if (isBoolean(leftType) && isBoolean(rightType)) {
-                node.type = ScalarKind::Bool; // Result is always boolean
-            } else {
-                logError(SemanticErrorType::TypeMismatch, node, OperatorData(node.op, leftType, rightType));
-                return;
-            }
-            break;
-        }
-
-        default:
-            throw std::runtime_error(
-                std::format("Internal error: Unhandled binary operator {}", operatorToString(node.op))
-            );
-    }
+    const ScalarKind result = checkBinaryOp(node, left, right);
+    node.type = _typeCtx.get(result);
 }
 
 void TypeCheckerVisitor::visit(AST::UnaryExpression& node) {
     node.operand->accept(*this);
 
-    const ScalarKind operandType = node.operand->type;
+    const ScalarKind operandType = kindOf(node.operand->type);
 
     switch (node.op) {
         case Operator::Plus:
@@ -389,7 +359,7 @@ void TypeCheckerVisitor::visit(AST::UnaryExpression& node) {
                 return;
             }
 
-            node.type = operandType;
+            node.type = _typeCtx.get(operandType);
 
             break;
         }
@@ -400,7 +370,7 @@ void TypeCheckerVisitor::visit(AST::UnaryExpression& node) {
                 return;
             }
 
-            node.type = ScalarKind::Bool;
+            node.type = _typeCtx.get(ScalarKind::Bool);
 
             break;
         }
@@ -419,11 +389,13 @@ void TypeCheckerVisitor::visit(AST::IncDecExpression& node) {
     }
     node.symbol = operand;
 
+    const ScalarKind operandKind = kindOf(operand->type);
+
     switch (node.op) {
         case Operator::PlusPlus:
         case Operator::MinusMinus: {
-            if (!isNumeric(operand->type)) {
-                logError(SemanticErrorType::TypeMismatch, node, UnaryOperatorData(node.op, operand->type));
+            if (!isNumeric(operandKind)) {
+                logError(SemanticErrorType::TypeMismatch, node, UnaryOperatorData(node.op, operandKind));
             }
 
             if (operand->isConst) {
@@ -440,7 +412,7 @@ void TypeCheckerVisitor::visit(AST::IncDecExpression& node) {
 
 void TypeCheckerVisitor::visit(AST::VariableAssignment& node) {
     node.assignedValue->accept(*this);
-    const ScalarKind assignedType = node.assignedValue->type;
+    const ScalarKind assignedType = kindOf(node.assignedValue->type);
 
     const auto symbol = _symbolTable.lookup(node.varName);
     if (!symbol) {
@@ -454,18 +426,18 @@ void TypeCheckerVisitor::visit(AST::VariableAssignment& node) {
         return;
     }
 
-    if (const ScalarKind variableType = symbol->type;
+    if (const ScalarKind variableType = kindOf(symbol->type);
         variableType != assignedType && !isAssignableTo(assignedType, variableType)) {
         logError(SemanticErrorType::IncompatibleAssignment, node, TypeMismatchData(variableType, assignedType));
+        return;
     }
 }
 
 void TypeCheckerVisitor::visit(AST::ArrayAssignment& node) {
     node.index->accept(*this);
     node.assignedValue->accept(*this);
-    const ScalarKind indexType = node.index->type;
-    const ScalarKind assignedType = node.assignedValue->type;
-    if (indexType != ScalarKind::Int) {
+
+    if (kindOf(node.index->type) != ScalarKind::Int) {
         logError(SemanticErrorType::NonIntIndex, node);
         return;
     }
@@ -482,15 +454,25 @@ void TypeCheckerVisitor::visit(AST::ArrayAssignment& node) {
         return;
     }
 
-    if (assignedType != node.symbol->arrayType->baseType) {
-        logError(SemanticErrorType::TypeMismatch, node,
-                 TypeMismatchData(node.symbol->arrayType->baseType, assignedType));
+    // Symbol must be an array type
+    auto* arrayType = dynamic_cast<ArrayTypeNode *>(symbol->type);
+    if (!arrayType) {
+        logError(SemanticErrorType::TypeMismatch, node); // assigning to non-array with index
         return;
     }
-    // Catch out of bounds with literal int if possible
-    if (const auto& index = dynamic_cast<AST::IntegerLiteralNode *>(node.index.get());
-        index->value >= node.symbol->arrayType->size) {
-        logError(SemanticErrorType::OutOfBounds, node);
+
+    const ScalarKind assignedKind = kindOf(node.assignedValue->type);
+    if (!isAssignableTo(assignedKind, kindOf(arrayType->base))) {
+        logError(SemanticErrorType::TypeMismatch, node,
+                 TypeMismatchData(kindOf(arrayType->base), assignedKind));
+        return;
+    }
+
+    // Bounds check on literal index
+    if (auto* litIdx = dynamic_cast<AST::IntegerLiteralNode *>(node.index.get())) {
+        if (litIdx->value >= arrayType->size) {
+            logError(SemanticErrorType::OutOfBounds, node);
+        }
     }
 }
 
@@ -502,26 +484,27 @@ void TypeCheckerVisitor::visit(AST::ReturnStatement& node) {
 
     node.value->accept(*this);
 
-    if (const auto returnedType = node.value->type;
-        !isAssignableTo(_currentFunctionReturnType, returnedType)) {
-        logError(SemanticErrorType::TypeMismatch, node, TypeMismatchData(_currentFunctionReturnType, returnedType));
+    const ScalarKind returnedType = kindOf(node.value->type);
+    const ScalarKind functionReturnType = kindOf(_currentFunctionReturnType);
+    if (!isAssignableTo(functionReturnType, returnedType)) {
+        logError(SemanticErrorType::TypeMismatch, node, TypeMismatchData(functionReturnType, returnedType));
     }
 }
 
 void TypeCheckerVisitor::visit(AST::IntegerLiteralNode& node) {
-    node.type = ScalarKind::Int;
+    node.type = _typeCtx.get(ScalarKind::Int);
 }
 
 void TypeCheckerVisitor::visit(AST::FloatLiteralNode& node) {
-    node.type = ScalarKind::Float;
+    node.type = _typeCtx.get(ScalarKind::Float);
 }
 
 void TypeCheckerVisitor::visit(AST::StringLiteralNode& node) {
-    node.type = ScalarKind::String;
+    node.type = _typeCtx.get(ScalarKind::String);
 }
 
 void TypeCheckerVisitor::visit(AST::BooleanLiteralNode& node) {
-    node.type = ScalarKind::Bool;
+    node.type = _typeCtx.get(ScalarKind::Bool);
 }
 
 void TypeCheckerVisitor::visit(AST::VariableExpression& node) {
@@ -531,7 +514,7 @@ void TypeCheckerVisitor::visit(AST::VariableExpression& node) {
     }
     if (!node.symbol) {
         logError(SemanticErrorType::UndefinedIdentifier, node, node.name);
-        node.type = ScalarKind::Error;
+        node.type = _typeCtx.get(ScalarKind::Error);
         return;
     }
 

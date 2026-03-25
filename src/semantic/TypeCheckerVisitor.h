@@ -1,6 +1,5 @@
 #ifndef COMPILER_PROJECT_TYPECHECKERVISITOR_H
 #define COMPILER_PROJECT_TYPECHECKERVISITOR_H
-#include "SemanticError.h"
 #include "SemanticVisitor.h"
 #include "lex/Token.h"
 
@@ -10,7 +9,7 @@ enum class SemanticErrorType;
 
 class TypeCheckerVisitor : public SemanticVisitor {
 public:
-    explicit TypeCheckerVisitor(SymbolTable& symbolTable, TypeContext& typeCtx);
+    using SemanticVisitor::SemanticVisitor; // inherit constructor
 
     void run(AST::AstNode& root) override;
 
@@ -18,13 +17,10 @@ public:
     static ScalarKind getPromotedType(ScalarKind t1, ScalarKind t2);
 
 private:
-    ScalarKind _currentFunctionReturnType = ScalarKind::Unspecified;
+    TypeNode* _currentFunctionReturnType = nullptr;
     bool _foundReturn = false;
-    TypeContext& _typeCtx;
 
     static ScalarKind kindOf(TypeNode* t);
-
-    TypeNode* nodeFor(ScalarKind k) const;
 
     // Returns true if the type is an `int` or `float`
     static bool isNumeric(ScalarKind type);
@@ -38,8 +34,23 @@ private:
 
     static bool isAssignableTo(ScalarKind assignedType, ScalarKind targetType);
 
-    ScalarKind checkArrayLiteralType(const AST::ArrayLiteral& arrayLiteral);
+    std::pair<ScalarKind, int> checkArrayLiteralType(const AST::ArrayLiteral& arr);
 
+    bool checkArgCount(AST::FunctionCall& node, const Symbol& fn);
+
+    void checkArgument(AST::FunctionCall& node,
+                       const AST::FunctionCall::FunctionArgument& arg,
+                       const AST::FunctionDeclaration::FunctionParameter& param,
+                       const Symbol& fn);
+
+    bool checkArgumentLabel(AST::FunctionCall& node,
+                            const std::string& argName,
+                            const AST::FunctionDeclaration::FunctionParameter& param,
+                            const Symbol& calledFunction);
+
+    ScalarKind checkBinaryOp(AST::BinaryExpression& node, ScalarKind left, ScalarKind right);
+
+    ScalarKind checkArithmetic(AST::BinaryExpression& node, ScalarKind left, ScalarKind right);
 
     void visit(AST::Program& program) override;
 

@@ -18,7 +18,7 @@ enum class Keyword {
 
 std::ostream& operator<<(std::ostream& os, const Keyword& keyword);
 
-
+// TODO: move this to TypeNode.h
 enum class ScalarKind {
     Unspecified,
 

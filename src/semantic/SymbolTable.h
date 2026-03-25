@@ -25,7 +25,7 @@ public:
 
     [[nodiscard]] Symbol* lookup(const std::string& name) const;
 
-    [[nodiscard]] Symbol* declare(const std::string& name, Symbol::SymbolKind kind, ScalarKind type,
+    [[nodiscard]] Symbol* declare(const std::string& name, Symbol::SymbolKind kind, TypeNode* type,
                                   bool isConst = false) const;
 
     void declareBuiltinFunctions(

@@ -22,17 +22,9 @@ public:
     TypeNode* getString() const { return _stringType.get(); }
     TypeNode* getPointer() const { return _pointerType.get(); }
 
-    TypeNode* getArray(TypeNode* base, int size) {
-        auto key = std::make_pair(base, size);
-        auto it = _arrayTypes.find(key);
-        if (it != _arrayTypes.end()) return it->second.get();
+    TypeNode* getArray(TypeNode* base, int size);
 
-        auto node = std::make_unique<ArrayTypeNode>(base, size);
-        auto* ptr = node.get();
-        _arrayTypes.emplace(key, std::move(node));
-
-        return ptr;
-    }
+    TypeNode* get(ScalarKind kind) const;
 
 private:
     std::unique_ptr<ScalarTypeNode> _intType;

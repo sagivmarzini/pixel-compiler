@@ -130,16 +130,16 @@ void AstPrinter::visit(AST::FunctionCall& node) {
 void AstPrinter::visit(AST::VariableDeclaration& node) {
     printIndent();
     std::cout << "VariableDeclaration: " << (node.isConst ? "const " : "var ")
-            << node.name << " : " << node.specifiedType << "\n";
+            << node.name << " : " << node.type << "\n";
 
     _indent++;
 
     if (node.symbol) {
         printSymbol(*node.symbol);
-        if (node.symbol->arrayType) {
+        if (node.symbol->type) {
             printIndent();
-            std::cout << "ArrayType: " << node.symbol->arrayType->baseType
-                    << "[" << node.symbol->arrayType->size << "]\n";
+            std::cout << "ArrayType: " << node.symbol->type
+                    << "[" << node.symbol->type << "]\n";
         }
     }
 

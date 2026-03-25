@@ -6,16 +6,18 @@
 #include "parse/AST/AstVisitor.h"
 #include "SymbolTable.h"
 
+class TypeContext;
 class SymbolPool;
 
 class SemanticVisitor : public AstVisitor {
 public:
-    explicit SemanticVisitor(SymbolTable& symbolTable);
+    explicit SemanticVisitor(SymbolTable& symbolTable, TypeContext& typeCtx);
 
     virtual void run(AST::AstNode& root) = 0;
 
 protected:
     SymbolTable& _symbolTable;
+    TypeContext& _typeCtx;
     std::vector<CompilerError> _errors;
 
     void enterScope() const;

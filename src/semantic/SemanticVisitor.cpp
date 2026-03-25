@@ -1,8 +1,8 @@
 #include "SemanticVisitor.h"
 #include "SymbolTable.h"
 
-SemanticVisitor::SemanticVisitor(SymbolTable& symbolTable)
-    : _symbolTable(symbolTable) {
+SemanticVisitor::SemanticVisitor(SymbolTable& symbolTable, TypeContext& typeCtx)
+    : _symbolTable(symbolTable), _typeCtx(typeCtx) {
 }
 
 void SemanticVisitor::enterScope() const {

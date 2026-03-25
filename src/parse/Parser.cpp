@@ -3,9 +3,10 @@
 #include "CompilerException.h"
 #include "AST/Statement.h"
 #include "ParserError.h"
+#include "types/TypeContext.h"
 
-Parser::Parser(std::vector<Token> tokens)
-    : _tokens(std::move(tokens)), _position(0) {
+Parser::Parser(std::vector<Token> tokens, TypeContext& typeCtx)
+    : _tokens(std::move(tokens)), _position(0), _typeCtx(typeCtx) {
 }
 
 AST::Program Parser::parseProgram() {
@@ -142,7 +143,7 @@ std::unique_ptr<AST::Statement> Parser::parseFunctionDeclaration() {
         expect<Colon>();
         auto paramType = expect<ScalarKind>();
 
-        parameters.emplace_back(paramName.name, paramType, isImplicit);
+        parameters.emplace_back(paramName.name, _typeCtx.get(paramType), isImplicit);
         if (!check<RightParen>()) {
             expect<Comma>(); // if didn't read the end, get a comma seperator
             // Check for trailing comma
@@ -157,7 +158,8 @@ std::unique_ptr<AST::Statement> Parser::parseFunctionDeclaration() {
     auto returnType = expect<ScalarKind>();
     auto block = parseBlock();
 
-    return std::make_unique<AST::FunctionDeclaration>(namePosition, returnType, name, parameters, std::move(block));
+    return std::make_unique<AST::FunctionDeclaration>(namePosition, _typeCtx.get(returnType), name, parameters,
+                                                      std::move(block));
 }
 
 std::unique_ptr<AST::Statement> Parser::parseVariableDeclaration() {
@@ -200,7 +202,8 @@ std::unique_ptr<AST::Statement> Parser::parseVariableDeclaration() {
     }
     expect<Semicolon>();
 
-    return std::make_unique<AST::VariableDeclaration>(varNameToken.metadata, isConst, type, name, std::move(value));
+    return std::make_unique<AST::VariableDeclaration>(varNameToken.metadata, isConst, _typeCtx.get(type), name,
+                                                      std::move(value));
 }
 
 std::unique_ptr<AST::Statement> Parser::parseVariableAssignment() {

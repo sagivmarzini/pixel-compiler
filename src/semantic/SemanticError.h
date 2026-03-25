@@ -38,7 +38,7 @@ struct ArgumentPositionData {
     std::string arguments;
 
     ArgumentPositionData(std::vector<AST::FunctionCall::FunctionArgument>& args,
-                         std::vector<AST::FunctionDeclaration::FunctionParameter>& params) {
+                         const std::vector<AST::FunctionDeclaration::FunctionParameter>& params) {
         for (int i = 0; i < args.size(); i++) {
             auto param = params[i].isImplicit ? params[i].name : "_";
             parameters.append(param + ", ");

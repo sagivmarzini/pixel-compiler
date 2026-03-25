@@ -45,10 +45,10 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::FunctionDeclaration& node) {
     std::vector<llvm::Type *> paramTypes;
     paramTypes.reserve(node.parameters.size());
     for (const auto& param: node.parameters) {
-        paramTypes.push_back(getLlvmType(param.type));
+        paramTypes.push_back(param.type->toLLVMType(*_context));
     }
 
-    const auto returnType = getLlvmType(node.returnType);
+    const auto returnType = node.returnType->toLLVMType(*_context);
 
     // Return type and parameter types
     const auto functionType = llvm::FunctionType::get(returnType, paramTypes, false);
@@ -80,7 +80,7 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::FunctionDeclaration& node) {
             _builder->CreateRetVoid();
         } else {
             // Return a default "zero" value for the specific type
-            _builder->CreateRet(llvm::Constant::getNullValue(getLlvmType(node.returnType)));
+            _builder->CreateRet(llvm::Constant::getNullValue(node.returnType->toLLVMType(*_context)));
         }
     }
 

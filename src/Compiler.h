@@ -11,7 +11,7 @@ class Compiler {
 public:
     explicit Compiler(std::string sourceFile);
 
-    void compile() const;
+    void compile();
 
     static void printTokens(const std::vector<Token>& tokens);
 

@@ -4,12 +4,13 @@
 #include "AST/Statement.h"
 #include "lex/Lexer.h"
 
+class TypeContext;
 class ParserError;
 enum class ParserErrorType;
 
 class Parser {
 public:
-    Parser(std::vector<Token> tokens);
+    Parser(std::vector<Token> tokens, TypeContext& typeCtx);
 
     AST::Program parseProgram();
 
@@ -19,6 +20,7 @@ public:
     };
 
 private:
+    TypeContext& _typeCtx;
     std::vector<Token> _tokens;
     size_t _position;
     Token _endOfFileToken = Token(EndOfFile(), -1, -1, "EOF");
