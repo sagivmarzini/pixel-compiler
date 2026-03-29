@@ -18,7 +18,7 @@ public:
 
 private:
     TypeNode* _currentFunctionReturnType = nullptr;
-    bool _foundReturn = false;
+    bool      _foundReturn               = false;
 
     static PrimitiveKind kindOf(TypeNode* t);
 
@@ -36,21 +36,28 @@ private:
 
     std::pair<PrimitiveKind, int> checkArrayLiteralType(const AST::ArrayLiteral& arr);
 
-    bool checkArgCount(AST::FunctionCall& node, const Symbol& fn);
+    bool checkArgCount(const AST::FunctionCall& node, const Symbol& fn);
 
-    void checkArgument(AST::FunctionCall& node,
-                       const AST::FunctionCall::FunctionArgument& arg,
+    void checkArgument(AST::FunctionCall&                                 node,
+                       const AST::FunctionCall::FunctionArgument&         arg,
                        const AST::FunctionDeclaration::FunctionParameter& param,
-                       const Symbol& fn);
+                       const Symbol&                                      fn);
 
-    bool checkArgumentLabel(AST::FunctionCall& node,
-                            const std::string& argName,
+    bool checkArgumentLabel(AST::FunctionCall&                                 node,
+                            const std::string&                                 argName,
                             const AST::FunctionDeclaration::FunctionParameter& param,
-                            const Symbol& calledFunction);
+                            const Symbol&                                      calledFunction);
 
-    PrimitiveKind checkBinaryOp(AST::BinaryExpression& node, PrimitiveKind left, PrimitiveKind right);
+    PrimitiveKind checkBinaryOp(const AST::BinaryExpression& node, PrimitiveKind left, PrimitiveKind right);
 
-    PrimitiveKind checkArithmetic(AST::BinaryExpression& node, PrimitiveKind left, PrimitiveKind right);
+    PrimitiveKind checkArithmetic(const AST::BinaryExpression& node, PrimitiveKind left, PrimitiveKind right);
+
+    void handleArrayLiteralInit(const AST::VariableDeclaration& node, const AST::ArrayLiteral* arrayLit,
+                                const ArrayTypeNode*            declaredArray);
+
+    void handleScalarFillInit(const AST::VariableDeclaration& node, const ArrayTypeNode* declaredArray);
+
+    void handleScalarInit(const AST::VariableDeclaration& node);
 
     void visit(AST::Program& program) override;
 

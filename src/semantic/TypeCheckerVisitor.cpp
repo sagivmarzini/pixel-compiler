@@ -72,7 +72,7 @@ std::pair<PrimitiveKind, int> TypeCheckerVisitor::checkArrayLiteralType(const AS
     return {common, size};
 }
 
-bool TypeCheckerVisitor::checkArgCount(AST::FunctionCall& node, const Symbol& fn) {
+bool TypeCheckerVisitor::checkArgCount(const AST::FunctionCall& node, const Symbol& fn) {
     const bool isVariadic = node.functionName == "print";
     if (!isVariadic && node.arguments.size() != fn.params.size()) {
         logError(SemanticErrorType::ArgumentCountMismatch, node,
@@ -114,7 +114,8 @@ bool TypeCheckerVisitor::checkArgumentLabel(AST::FunctionCall& node, const std::
     return false;
 }
 
-PrimitiveKind TypeCheckerVisitor::checkBinaryOp(AST::BinaryExpression& node, PrimitiveKind left, PrimitiveKind right) {
+PrimitiveKind TypeCheckerVisitor::checkBinaryOp(const AST::BinaryExpression& node, PrimitiveKind left,
+                                                PrimitiveKind                right) {
     switch (node.op) {
         case Operator::Plus:
         case Operator::Minus:
@@ -152,7 +153,7 @@ PrimitiveKind TypeCheckerVisitor::checkBinaryOp(AST::BinaryExpression& node, Pri
 }
 
 PrimitiveKind
-TypeCheckerVisitor::checkArithmetic(AST::BinaryExpression& node, PrimitiveKind left, PrimitiveKind right) {
+TypeCheckerVisitor::checkArithmetic(const AST::BinaryExpression& node, PrimitiveKind left, PrimitiveKind right) {
     if (isNumeric(left) && isNumeric(right)) {
         const PrimitiveKind promoted = getPromotedType(left, right);
         if (promoted == PrimitiveKind::Error)
@@ -168,6 +169,69 @@ TypeCheckerVisitor::checkArithmetic(AST::BinaryExpression& node, PrimitiveKind l
 
     logError(SemanticErrorType::TypeMismatch, node, OperatorData(node.op, left, right));
     return PrimitiveKind::Error;
+}
+
+void TypeCheckerVisitor::handleArrayLiteralInit(const AST::VariableDeclaration& node, const AST::ArrayLiteral* arrayLit,
+                                                const ArrayTypeNode*            declaredArray) {
+    const auto [elemKind, literalSize] = checkArrayLiteralType(*arrayLit);
+
+    if (elemKind == PrimitiveKind::Error) {
+        logError(SemanticErrorType::MultiTypeArray, node);
+        return;
+    }
+
+    if (declaredArray) {
+        const bool hasExplicitElemType = declaredArray->base != nullptr;
+
+        if (hasExplicitElemType &&
+            !isAssignableTo(elemKind, kindOf(declaredArray->base))) {
+            logError(SemanticErrorType::IncompatibleAssignment, node,
+                     TypeMismatchData(kindOf(declaredArray->base), elemKind));
+            return;
+        }
+
+        const bool hasBoundedSize = declaredArray->size != -1;
+        if (hasBoundedSize && literalSize > declaredArray->size) {
+            logError(SemanticErrorType::ArrayLiteralTooLarge, node);
+            return;
+        }
+    }
+
+    TypeNode* resolvedType = _typeCtx.getArray(_typeCtx.get(elemKind), literalSize);
+    node.initializer->type = resolvedType;
+    node.symbol->type      = resolvedType;
+}
+
+void TypeCheckerVisitor::handleScalarFillInit(const AST::VariableDeclaration& node,
+                                              const ArrayTypeNode*            declaredArray) {
+    const PrimitiveKind initKind = kindOf(node.initializer->type);
+
+    if (declaredArray->base) {
+        // Element type was explicitly declared: `var nums[5]: int = 7;`
+        if (!isAssignableTo(initKind, kindOf(declaredArray->base))) {
+            logError(SemanticErrorType::IncompatibleAssignment, node,
+                     TypeMismatchData(kindOf(declaredArray->base), initKind));
+            return;
+        }
+        node.symbol->type = node.type;
+    } else {
+        // Element type inferred from scalar: `var nums[5] = 7;`
+        node.symbol->type = _typeCtx.getArray(_typeCtx.get(initKind), declaredArray->size);
+    }
+}
+
+void TypeCheckerVisitor::handleScalarInit(const AST::VariableDeclaration& node) {
+    const PrimitiveKind initKind = kindOf(node.initializer->type);
+
+    if (!node.type) {
+        node.symbol->type = node.initializer->type; // type inference
+        return;
+    }
+
+    if (!isAssignableTo(initKind, kindOf(node.type))) {
+        logError(SemanticErrorType::IncompatibleAssignment, node,
+                 TypeMismatchData(kindOf(node.type), initKind));
+    }
 }
 
 void TypeCheckerVisitor::visit(AST::Program& program) {
@@ -187,11 +251,111 @@ void TypeCheckerVisitor::visit(AST::FunctionDeclaration& node) {
         logError(SemanticErrorType::MissingReturn, node);
 }
 
-void TypeCheckerVisitor::visit(AST::ExpressionStatement& node) {
-    node.expression->accept(*this);
+void TypeCheckerVisitor::visit(AST::FunctionCall& node) {
+    if (node.functionName == "main") node.functionName = "__main";
+
+    const auto calledFunction = _symbolTable.lookup(node.functionName);
+    if (!calledFunction) {
+        logError(SemanticErrorType::UndefinedFunction, node, node.functionName);
+        return;
+    }
+
+    if (!checkArgCount(node, *calledFunction)) return;
+
+    node.type = calledFunction->type;
+
+    for (int i = 0; i < node.arguments.size(); ++i) {
+        if (i < calledFunction->params.size())
+            checkArgument(node, node.arguments[i], calledFunction->params[i], *calledFunction);
+        else
+            node.arguments[i].value->accept(*this); // variadic overflow — resolve type only
+    }
 }
 
-void TypeCheckerVisitor::visit(AST::ArrayIndex& node) {
+void TypeCheckerVisitor::visit(AST::VariableDeclaration& node) {
+    if (!node.initializer) {
+        if (!node.type)
+            logError(SemanticErrorType::CannotInferType, node);
+        return;
+    }
+
+    node.initializer->accept(*this);
+
+    auto* declaredArray = dynamic_cast<ArrayTypeNode*>(node.type);
+
+    if (auto* arrayLit = dynamic_cast<AST::ArrayLiteral*>(node.initializer.get())) {
+        handleArrayLiteralInit(node, arrayLit, declaredArray);
+    } else if (declaredArray) {
+        handleScalarFillInit(node, declaredArray);
+    } else {
+        handleScalarInit(node);
+    }
+}
+
+void TypeCheckerVisitor::visit(AST::VariableAssignment& node) {
+    node.assignedValue->accept(*this);
+    const PrimitiveKind assignedType = kindOf(node.assignedValue->type);
+
+    const auto symbol = _symbolTable.lookup(node.varName);
+    if (!symbol) {
+        logError(SemanticErrorType::UndefinedIdentifier, node);
+        return;
+    }
+    node.symbol = symbol;
+
+    if (symbol->isConst) {
+        logError(SemanticErrorType::ReadOnlyAssignment, node);
+        return;
+    }
+
+    if (const PrimitiveKind variableType = kindOf(symbol->type);
+        variableType != assignedType && !isAssignableTo(assignedType, variableType)) {
+        logError(SemanticErrorType::IncompatibleAssignment, node, TypeMismatchData(variableType, assignedType));
+        return;
+    }
+}
+
+void TypeCheckerVisitor::visit(AST::ArrayAssignment& node) {
+    node.index->accept(*this);
+    node.assignedValue->accept(*this);
+
+    if (kindOf(node.index->type) != PrimitiveKind::Int) {
+        logError(SemanticErrorType::NonIntIndex, node);
+        return;
+    }
+
+    const auto symbol = _symbolTable.lookup(node.varName);
+    if (!symbol) {
+        logError(SemanticErrorType::UndefinedIdentifier, node);
+        return;
+    }
+    node.symbol = symbol;
+
+    if (symbol->isConst) {
+        logError(SemanticErrorType::ReadOnlyAssignment, node);
+        return;
+    }
+
+    // Symbol must be an array type
+    auto* arrayType = dynamic_cast<ArrayTypeNode*>(symbol->type);
+    if (!arrayType) {
+        logError(SemanticErrorType::TypeMismatch, node); // assigning to non-array with index
+        return;
+    }
+
+    const PrimitiveKind assignedKind = kindOf(node.assignedValue->type);
+    if (!isAssignableTo(assignedKind, kindOf(arrayType->base))) {
+        logError(SemanticErrorType::TypeMismatch, node,
+                 TypeMismatchData(kindOf(arrayType->base), assignedKind));
+        return;
+    }
+
+    // Bounds check on literal index
+    if (auto* litIdx = dynamic_cast<AST::IntegerLiteralNode*>(node.index.get())) {
+        if (litIdx->value >= arrayType->size) {
+            logError(SemanticErrorType::OutOfBounds, node);
+        }
+    }
 }
 
 void TypeCheckerVisitor::visit(AST::IfStatement& node) {
@@ -272,100 +436,18 @@ void TypeCheckerVisitor::visit(AST::Block& node) {
     }
 }
 
-void TypeCheckerVisitor::visit(AST::VariableDeclaration& node) {
-    auto* declaredArray = dynamic_cast<ArrayTypeNode*>(node.type);
+void TypeCheckerVisitor::visit(AST::ReturnStatement& node) {
+    _foundReturn = true;
 
-    if (node.initializer) {
-        node.initializer->accept(*this);
-
-        // Array literal initializer
-        if (auto* arrayLiteral = dynamic_cast<AST::ArrayLiteral*>(node.initializer.get())) {
-            const auto [literalKind, literalSize] = checkArrayLiteralType(*arrayLiteral);
-            if (literalKind == PrimitiveKind::Error) {
-                logError(SemanticErrorType::MultiTypeArray, node);
-                return;
-            }
-
-            TypeNode* literalElementType = _typeCtx.get(literalKind);
-            TypeNode* literalArrayType   = _typeCtx.getArray(literalElementType, literalSize);
-
-            if (declaredArray) {
-                // var nums[5]: int = [1, 2, 3]; — check element type compatibility
-                if (declaredArray->base && !isAssignableTo(literalKind, kindOf(declaredArray->base))) {
-                    logError(SemanticErrorType::IncompatibleAssignment, node,
-                             TypeMismatchData(kindOf(declaredArray->base), literalKind));
-                    return;
-                }
-                if (declaredArray->size != -1 && literalSize > declaredArray->size) {
-                    logError(SemanticErrorType::ArrayLiteralTooLarge, node);
-                    return;
-                }
-            }
-
-            node.initializer->type = literalArrayType;
-            node.symbol->type      = literalArrayType;
-            return;
-        }
-
-        // Scalar fill initializer for array: var nums[5] = 7;
-        if (declaredArray) {
-            const PrimitiveKind initKind = kindOf(node.initializer->type);
-
-            if (declaredArray->base) {
-                // element type was explicitly declared: var nums[5]: int = 7;
-                if (!isAssignableTo(initKind, kindOf(declaredArray->base))) {
-                    logError(SemanticErrorType::IncompatibleAssignment, node,
-                             TypeMismatchData(kindOf(declaredArray->base), initKind));
-                    return;
-                }
-                node.symbol->type = node.type;
-            } else {
-                // element type inferred from scalar: var nums[5] = 7;
-                TypeNode* inferredArrayType = _typeCtx.getArray(_typeCtx.get(initKind), declaredArray->size);
-                node.symbol->type           = inferredArrayType;
-            }
-            return;
-        }
-
-        // ── Scalar initializer ───────────────────────────────────────────────
-        const PrimitiveKind initKind = kindOf(node.initializer->type);
-        if (node.type) {
-            if (!isAssignableTo(initKind, kindOf(node.type))) {
-                logError(SemanticErrorType::IncompatibleAssignment, node,
-                         TypeMismatchData(kindOf(node.type), initKind));
-            }
-        } else {
-            // type inference
-            node.symbol->type = node.initializer->type;
-        }
-    } else {
-        // No initializer
-        if (!node.type) {
-            logError(SemanticErrorType::CannotInferType, node);
-        }
-        // declared type with no initializer is valid: var x: int;
-        // symbol type was already set during declaration pass
-    }
-}
-
-void TypeCheckerVisitor::visit(AST::FunctionCall& node) {
-    if (node.functionName == "main") node.functionName = "__main";
-
-    const auto calledFunction = _symbolTable.lookup(node.functionName);
-    if (!calledFunction) {
-        logError(SemanticErrorType::UndefinedFunction, node, node.functionName);
+    if (!node.value)
         return;
-    }
 
-    if (!checkArgCount(node, *calledFunction)) return;
+    node.value->accept(*this);
 
-    node.type = calledFunction->type;
-
-    for (int i = 0; i < node.arguments.size(); ++i) {
-        if (i < calledFunction->params.size())
-            checkArgument(node, node.arguments[i], calledFunction->params[i], *calledFunction);
-        else
-            node.arguments[i].value->accept(*this); // variadic overflow — resolve type only
+    const PrimitiveKind returnedType       = kindOf(node.value->type);
+    const PrimitiveKind functionReturnType = kindOf(_currentFunctionReturnType);
+    if (!isAssignableTo(functionReturnType, returnedType)) {
+        logError(SemanticErrorType::TypeMismatch, node, TypeMismatchData(functionReturnType, returnedType));
     }
 }
 
@@ -448,47 +530,25 @@ void TypeCheckerVisitor::visit(AST::IncDecExpression& node) {
     }
 }
 
-void TypeCheckerVisitor::visit(AST::VariableAssignment& node) {
-    node.assignedValue->accept(*this);
-    const PrimitiveKind assignedType = kindOf(node.assignedValue->type);
-
-    const auto symbol = _symbolTable.lookup(node.varName);
-    if (!symbol) {
-        logError(SemanticErrorType::UndefinedIdentifier, node);
-        return;
-    }
-    node.symbol = symbol;
-
-    if (symbol->isConst) {
-        logError(SemanticErrorType::ReadOnlyAssignment, node);
-        return;
-    }
-
-    if (const PrimitiveKind variableType = kindOf(symbol->type);
-        variableType != assignedType && !isAssignableTo(assignedType, variableType)) {
-        logError(SemanticErrorType::IncompatibleAssignment, node, TypeMismatchData(variableType, assignedType));
-        return;
-    }
+void TypeCheckerVisitor::visit(AST::ExpressionStatement& node) {
+    node.expression->accept(*this);
 }
 
-void TypeCheckerVisitor::visit(AST::ArrayAssignment& node) {
-    node.index->accept(*this);
-    node.assignedValue->accept(*this);
-
-    if (kindOf(node.index->type) != PrimitiveKind::Int) {
-        logError(SemanticErrorType::NonIntIndex, node);
-        return;
-    }
-
-    const auto symbol = _symbolTable.lookup(node.varName);
+void TypeCheckerVisitor::visit(AST::ArrayIndex& node) {
+    const auto symbol = _symbolTable.lookup(node.variableName);
     if (!symbol) {
         logError(SemanticErrorType::UndefinedIdentifier, node);
         return;
     }
-    node.symbol = symbol;
-
     if (symbol->isConst) {
         logError(SemanticErrorType::ReadOnlyAssignment, node);
+        return;
+    }
+    node.symbol = symbol;
+
+    node.index->accept(*this);
+    if (kindOf(node.index->type) != PrimitiveKind::Int) {
+        logError(SemanticErrorType::NonIntIndex, node);
         return;
     }
 
@@ -499,34 +559,14 @@ void TypeCheckerVisitor::visit(AST::ArrayAssignment& node) {
         return;
     }
 
-    const PrimitiveKind assignedKind = kindOf(node.assignedValue->type);
-    if (!isAssignableTo(assignedKind, kindOf(arrayType->base))) {
-        logError(SemanticErrorType::TypeMismatch, node,
-                 TypeMismatchData(kindOf(arrayType->base), assignedKind));
-        return;
-    }
-
     // Bounds check on literal index
     if (auto* litIdx = dynamic_cast<AST::IntegerLiteralNode*>(node.index.get())) {
         if (litIdx->value >= arrayType->size) {
             logError(SemanticErrorType::OutOfBounds, node);
         }
     }
-}
 
-void TypeCheckerVisitor::visit(AST::ReturnStatement& node) {
-    _foundReturn = true;
-
-    if (!node.value)
-        return;
-
-    node.value->accept(*this);
-
-    const PrimitiveKind returnedType       = kindOf(node.value->type);
-    const PrimitiveKind functionReturnType = kindOf(_currentFunctionReturnType);
-    if (!isAssignableTo(functionReturnType, returnedType)) {
-        logError(SemanticErrorType::TypeMismatch, node, TypeMismatchData(functionReturnType, returnedType));
-    }
+    node.type = arrayType->base;
 }
 
 void TypeCheckerVisitor::visit(AST::IntegerLiteralNode& node) {
@@ -560,4 +600,5 @@ void TypeCheckerVisitor::visit(AST::VariableExpression& node) {
 }
 
 void TypeCheckerVisitor::visit(AST::ArrayLiteral& node) {
+    // TODO: Implement
 }
