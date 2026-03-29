@@ -150,6 +150,9 @@ SemanticError::SemanticError(SemanticErrorType type, const AST::AstNode& node, E
         case SemanticErrorType::OutOfBounds:
             prefix = "index out of bounds";
             break;
+        case SemanticErrorType::ArrayLiteralTooLarge:
+            prefix = "array literal is larger than declared array size";
+            break;
     }
 
     // 3. Construct the Final Message

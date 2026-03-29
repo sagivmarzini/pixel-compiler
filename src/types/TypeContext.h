@@ -15,6 +15,15 @@ struct TypeNode;
 
 class TypeContext {
 public:
+    TypeContext()
+        : _intType(std::make_unique<ScalarTypeNode>(PrimitiveKind::Int))
+          , _floatType(std::make_unique<ScalarTypeNode>(PrimitiveKind::Float))
+          , _boolType(std::make_unique<ScalarTypeNode>(PrimitiveKind::Bool))
+          , _voidType(std::make_unique<ScalarTypeNode>(PrimitiveKind::Void))
+          , _stringType(std::make_unique<ScalarTypeNode>(PrimitiveKind::String))
+          , _pointerType(std::make_unique<ScalarTypeNode>(PrimitiveKind::Pointer)) {
+    }
+
     TypeNode* getInt() const { return _intType.get(); }
     TypeNode* getFloat() const { return _floatType.get(); }
     TypeNode* getBool() const { return _boolType.get(); }
@@ -35,7 +44,7 @@ private:
     std::unique_ptr<ScalarTypeNode> _pointerType;
 
     // Array types are deduplicated by (base, size)
-    std::map<std::pair<TypeNode *, int>, std::unique_ptr<ArrayTypeNode> > _arrayTypes;
+    std::map<std::pair<TypeNode*, int>, std::unique_ptr<ArrayTypeNode> > _arrayTypes;
 };
 
 

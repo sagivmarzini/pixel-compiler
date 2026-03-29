@@ -98,6 +98,7 @@ enum class SemanticErrorType {
     // Declaration pass
     ParameterRedeclaration,
     MissingMainFunction,
+    ArrayLiteralTooLarge,
 };
 
 class SemanticError : public CompilerError {

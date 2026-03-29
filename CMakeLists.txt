@@ -105,9 +105,9 @@ set(COMPILER_SOURCES
         src/semantic/globals/GlobalRegistry.cpp
         src/semantic/globals/GlobalRegistry.h
         src/semantic/globals/GlobalEntry.h
-        src/types/TypeNode.h
-        src/types/TypeContext.cpp
         src/types/TypeContext.h
+        src/types/TypeContext.cpp
+        src/types/TypeNode.h
 )
 
 add_executable(pxl ${COMPILER_SOURCES})

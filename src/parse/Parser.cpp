@@ -67,7 +67,7 @@ std::unique_ptr<AST::Statement> Parser::parseStatement() {
 
     // Otherwise parse expression statement
     const auto startToken = peek();
-    auto expression = parseExpression();
+    auto       expression = parseExpression();
 
     expect<Semicolon>();
 
@@ -127,7 +127,7 @@ std::vector<AST::FunctionCall::FunctionArgument> Parser::parseFunctionArguments(
 
 std::unique_ptr<AST::Statement> Parser::parseFunctionDeclaration() {
     expect<Keyword>();
-    auto [name] = expect<Identifier>();
+    auto [name]       = expect<Identifier>();
     auto namePosition = peekPrevious().metadata;
     expect<LeftParen>();
 
@@ -156,7 +156,7 @@ std::unique_ptr<AST::Statement> Parser::parseFunctionDeclaration() {
     expect<Arrow>();
 
     auto returnType = expect<PrimitiveKind>();
-    auto block = parseBlock();
+    auto block      = parseBlock();
 
     return std::make_unique<AST::FunctionDeclaration>(namePosition, _typeCtx.get(returnType), name, parameters,
                                                       std::move(block));
@@ -166,48 +166,54 @@ std::unique_ptr<AST::Statement> Parser::parseVariableDeclaration() {
     const bool isConst = checkValue(Keyword::Const);
     expect<Keyword>();
 
-    const auto varNameToken = peek(); // for logging error on the variable
-    auto [name] = expect<Identifier>();
-    bool isArray = false;
+    const auto varNameToken = peek();
+    auto       [name]       = expect<Identifier>();
 
-    // Check if the var is an array
+    // var name[N] — explicit fixed-size array
+    int arraySize = 0;
     if (match<LeftBracket>()) {
-        if (checkValue(Operator::Minus)) logError(ParserErrorType::NonPositiveArraySize, peekPrevious());
-        if (const auto [size] = expect<IntegerLiteral>(); size < 1)
+        if (checkValue(Operator::Minus))
+            logError(ParserErrorType::NonPositiveArraySize, peek());
+        const auto [size] = expect<IntegerLiteral>();
+        if (size < 1)
             logError(ParserErrorType::NonPositiveArraySize, peekPrevious());
-
+        arraySize = size;
         expect<RightBracket>();
-        isArray = true;
     }
 
-    PrimitiveKind type = PrimitiveKind::Unspecified;
-    std::unique_ptr<AST::Expression> value = nullptr;
+    // : type
+    PrimitiveKind elementKind = PrimitiveKind::Unspecified;
+    if (match<Colon>())
+        elementKind = expect<PrimitiveKind>();
 
-    // If a type is specified, get it
-    if (match<Colon>()) {
-        type = expect<PrimitiveKind>();
-    }
-
-    if (checkValue(Operator::Assignment)) {
-        expect<Operator>();
+    // = value
+    std::unique_ptr<AST::Expression> value;
+    if (matchValue(Operator::Assignment)) {
         if (check<LeftBracket>()) {
             value = parseArrayLiteral();
-            isArray = true;
-        } else
+            if (arraySize == 0) arraySize = -1; // size inferred by type checker
+        } else {
             value = parseExpression();
+        }
     }
 
-    if (!value && type == PrimitiveKind::Unspecified) {
+    if (!value && elementKind == PrimitiveKind::Unspecified)
         logError(ParserErrorType::TypelessVarDeclaration, varNameToken);
-    }
+
     expect<Semicolon>();
 
-    return std::make_unique<AST::VariableDeclaration>(varNameToken.metadata, isConst, _typeCtx.get(type), name,
-                                                      std::move(value));
+    TypeNode* elementType  = _typeCtx.get(elementKind); // nullptr if Unspecified
+    TypeNode* declaredType = (arraySize != 0)
+                                 ? _typeCtx.getArray(elementType, arraySize)
+                                 : elementType;
+
+    return std::make_unique<AST::VariableDeclaration>(
+        varNameToken.metadata, isConst, declaredType, name, std::move(value)
+    );
 }
 
 std::unique_ptr<AST::Statement> Parser::parseVariableAssignment() {
-    auto name = expect<Identifier>();
+    auto       name    = expect<Identifier>();
     const auto namePos = peekPrevious().metadata;
 
     expectValue(Operator::Assignment);
@@ -219,7 +225,7 @@ std::unique_ptr<AST::Statement> Parser::parseVariableAssignment() {
 }
 
 std::unique_ptr<AST::Statement> Parser::parseArrayAssignment() {
-    auto name = expect<Identifier>();
+    auto       name    = expect<Identifier>();
     const auto namePos = peekPrevious().metadata;
 
     expect<LeftBracket>();
@@ -234,7 +240,7 @@ std::unique_ptr<AST::Statement> Parser::parseArrayAssignment() {
 }
 
 std::unique_ptr<AST::Expression> Parser::parseFunctionCall() {
-    auto [name] = expect<Identifier>();
+    auto       [name]  = expect<Identifier>();
     const auto namePos = peekPrevious().metadata;
 
     expect<LeftParen>();
@@ -246,8 +252,8 @@ std::unique_ptr<AST::Expression> Parser::parseFunctionCall() {
 
 std::unique_ptr<AST::Statement> Parser::parseIfStatement() {
     expect<Keyword>();
-    const auto ifPos = peekPrevious().metadata;
-    auto condition = parseExpression();
+    const auto ifPos     = peekPrevious().metadata;
+    auto       condition = parseExpression();
 
     auto thenBranch = parseStatement();
 
@@ -266,8 +272,8 @@ std::unique_ptr<AST::Statement> Parser::parseIfStatement() {
 
 std::unique_ptr<AST::Statement> Parser::parseWhileLoop() {
     expect<Keyword>();
-    const auto whilePos = peekPrevious().metadata;
-    auto condition = parseExpression();
+    const auto whilePos  = peekPrevious().metadata;
+    auto       condition = parseExpression();
 
     auto block = parseStatement();
 
@@ -276,7 +282,7 @@ std::unique_ptr<AST::Statement> Parser::parseWhileLoop() {
 
 std::unique_ptr<AST::RangeExpression> Parser::parseRangeExpression() {
     const auto startPosition = peek().metadata;
-    auto start = parseExpression();
+    auto       start         = parseExpression();
     expect<DoubleDot>();
     auto end = parseExpression();
 
@@ -285,8 +291,8 @@ std::unique_ptr<AST::RangeExpression> Parser::parseRangeExpression() {
 
 std::unique_ptr<AST::Statement> Parser::parseForLoop() {
     expect<Keyword>();
-    const auto forPos = peekPrevious().metadata;
-    auto identifier = expect<Identifier>();
+    const auto forPos     = peekPrevious().metadata;
+    auto       identifier = expect<Identifier>();
     expectValue(Keyword::In);
     auto range = parseRangeExpression();
 
@@ -320,10 +326,10 @@ std::unique_ptr<AST::Expression> Parser::parseExpression() {
 
 std::unique_ptr<AST::Expression> Parser::parseBooleanOrExpression() {
     const auto startPosition = peek().metadata;
-    auto left = parseBooleanAndExpression();
+    auto       left          = parseBooleanAndExpression();
 
     while (checkValue(Operator::LogicalOr)) {
-        auto op = expect<Operator>();
+        auto op    = expect<Operator>();
         auto right = parseBooleanAndExpression();
 
         left = std::make_unique<AST::BinaryExpression>(startPosition, std::move(left), op, std::move(right));
@@ -333,10 +339,10 @@ std::unique_ptr<AST::Expression> Parser::parseBooleanOrExpression() {
 
 std::unique_ptr<AST::Expression> Parser::parseBooleanAndExpression() {
     const auto startPosition = peek().metadata;
-    auto left = parseBooleanEqualityExpression();
+    auto       left          = parseBooleanEqualityExpression();
 
     while (checkValue(Operator::LogicalAnd)) {
-        auto op = expect<Operator>();
+        auto op    = expect<Operator>();
         auto right = parseBooleanEqualityExpression();
 
         left = std::make_unique<AST::BinaryExpression>(startPosition, std::move(left), op, std::move(right));
@@ -347,10 +353,10 @@ std::unique_ptr<AST::Expression> Parser::parseBooleanAndExpression() {
 
 std::unique_ptr<AST::Expression> Parser::parseBooleanEqualityExpression() {
     const auto startPosition = peek().metadata;
-    auto left = parseComparisonExpression();
+    auto       left          = parseComparisonExpression();
 
     while (checkValue(Operator::Equal) || checkValue(Operator::NotEqual)) {
-        auto op = expect<Operator>();
+        auto op    = expect<Operator>();
         auto right = parseComparisonExpression();
 
         left = std::make_unique<AST::BinaryExpression>(startPosition, std::move(left), op, std::move(right));
@@ -360,11 +366,11 @@ std::unique_ptr<AST::Expression> Parser::parseBooleanEqualityExpression() {
 
 std::unique_ptr<AST::Expression> Parser::parseComparisonExpression() {
     const auto startPosition = peek().metadata;
-    auto left = parseAdditiveExpression();
+    auto       left          = parseAdditiveExpression();
 
     while (checkValue(Operator::LessThan) || checkValue(Operator::LessEqual)
            || checkValue(Operator::GreaterThan) || checkValue(Operator::GreaterEqual)) {
-        auto op = expect<Operator>();
+        auto op    = expect<Operator>();
         auto right = parseAdditiveExpression();
 
         left = std::make_unique<AST::BinaryExpression>(startPosition, std::move(left), op, std::move(right));
@@ -374,10 +380,10 @@ std::unique_ptr<AST::Expression> Parser::parseComparisonExpression() {
 
 std::unique_ptr<AST::Expression> Parser::parseAdditiveExpression() {
     const auto startPosition = peek().metadata;
-    auto left = parseMultiplicativeExpression();
+    auto       left          = parseMultiplicativeExpression();
 
     while (checkValue(Operator::Plus) || checkValue(Operator::Minus)) {
-        auto op = expect<Operator>();
+        auto op    = expect<Operator>();
         auto right = parseMultiplicativeExpression();
 
         left = std::make_unique<AST::BinaryExpression>(startPosition, std::move(left), op, std::move(right));
@@ -387,10 +393,10 @@ std::unique_ptr<AST::Expression> Parser::parseAdditiveExpression() {
 
 std::unique_ptr<AST::Expression> Parser::parseMultiplicativeExpression() {
     const auto startPosition = peek().metadata;
-    auto left = parseUnaryExpression();
+    auto       left          = parseUnaryExpression();
 
     while (checkValue(Operator::Star) || checkValue(Operator::Slash)) {
-        auto op = expect<Operator>();
+        auto op    = expect<Operator>();
         auto right = parseUnaryExpression();
 
         left = std::make_unique<AST::BinaryExpression>(startPosition, std::move(left), op, std::move(right));
@@ -401,7 +407,7 @@ std::unique_ptr<AST::Expression> Parser::parseMultiplicativeExpression() {
 std::unique_ptr<AST::Expression> Parser::parseUnaryExpression() {
     if (checkValue(Operator::Plus) || checkValue(Operator::Minus) ||
         checkValue(Operator::Exclamation)) {
-        auto op = expect<Operator>();
+        auto op      = expect<Operator>();
         auto operand = parseUnaryExpression(); // to allow -++i
 
         return std::make_unique<AST::UnaryExpression>(peekPrevious().metadata, std::move(operand), op);
@@ -416,8 +422,8 @@ std::unique_ptr<AST::Expression> Parser::parseIncDecExpression() {
             logError(ParserErrorType::IncrementNonVariable, peek());
         }
 
-        auto op = expect<Operator>();
-        auto var = expect<Identifier>();
+        auto op     = expect<Operator>();
+        auto var    = expect<Identifier>();
         auto fixPos = AST::IncDecExpression::Fix::Prefix;
 
         return std::make_unique<AST::IncDecExpression>(peekPrevious().metadata, var.name, op, fixPos);
@@ -426,10 +432,10 @@ std::unique_ptr<AST::Expression> Parser::parseIncDecExpression() {
     auto expr = parsePrimary();
 
     while (checkValue(Operator::PlusPlus) || checkValue(Operator::MinusMinus)) {
-        if (auto var = dynamic_cast<AST::VariableExpression *>(expr.get())) {
-            auto op = expect<Operator>();
+        if (auto var = dynamic_cast<AST::VariableExpression*>(expr.get())) {
+            auto op     = expect<Operator>();
             auto fixPos = AST::IncDecExpression::Fix::Postfix;
-            expr = std::make_unique<AST::IncDecExpression>(peekPrevious().metadata, var->name, op, fixPos);
+            expr        = std::make_unique<AST::IncDecExpression>(peekPrevious().metadata, var->name, op, fixPos);
         } else {
             logError(ParserErrorType::IncrementNonVariable, peek());
         }
