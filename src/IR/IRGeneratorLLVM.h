@@ -18,7 +18,8 @@ class SymbolTable;
 
 class IRGeneratorLLVM {
 public:
-    explicit IRGeneratorLLVM(const FunctionRegistry& registry, const GlobalRegistry& globalRegistry);
+    explicit IRGeneratorLLVM(const TypeContext&    typeContext, const FunctionRegistry& registry,
+                             const GlobalRegistry& globalRegistry);
 
     void print() const;
 
@@ -83,10 +84,11 @@ private:
     // A helper object that makes it easy to generate LLVM instructions (IR).
     std::unique_ptr<llvm::IRBuilder<> > _builder;
     // Keeps track of which values (like variables) are defined and their alloca address
-    std::unordered_map<Symbol *, llvm::Value *> _namedValues;
+    std::unordered_map<Symbol*, llvm::Value*> _namedValues;
 
-    const FunctionRegistry& _functionRegistry;
-    const GlobalRegistry& _globalRegistry;
+    const TypeContext&                        _typeContext;
+    const FunctionRegistry&                   _functionRegistry;
+    const GlobalRegistry&                     _globalRegistry;
     std::unordered_map<Operator, std::string> _stringOperatorLowering = {
         {Operator::Plus, "pxl_concat_string"},
         {Operator::Equal, "pxl_string_equals"},
@@ -99,8 +101,6 @@ private:
         {Operator::Assignment, "pxl_copy"}
     };
 
-    [[nodiscard]] llvm::Type* getLlvmType(const PrimitiveKind& type) const;
-
     [[nodiscard]] static PrimitiveKind llvmTypeToCompilerType(const llvm::Type& type);
 
     // Promotes two LLVM values to have matching types, if necessary.
@@ -108,7 +108,7 @@ private:
 
     [[nodiscard]] llvm::Value* castToType(llvm::Value* value, const llvm::Type* expectedType) const;
 
-    llvm::Value* initLocalVariable(llvm::Type* type, const std::string& name,
+    llvm::Value* initLocalVariable(llvm::Type*  type, const std::string& name,
                                    llvm::Value* value) const;
 
     llvm::Function* getOrDeclareBuiltinFunction(const std::string& name) const;
