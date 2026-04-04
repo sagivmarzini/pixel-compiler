@@ -28,7 +28,7 @@ void AstPrinter::printSymbol(const Symbol& symbol) {
     std::cout << "Kind: " << symbolKindToString(symbol.kind) << "\n";
 
     printIndent();
-    std::cout << "Type: " << symbol.type << "\n";
+    std::cout << "Type: " << (symbol.type ? symbol.type->toString() : "null") << "\n";
 
     printIndent();
     std::cout << "Scope: " << symbol.scope << "\n";
@@ -37,7 +37,9 @@ void AstPrinter::printSymbol(const Symbol& symbol) {
         printIndent();
         std::cout << "Params: [";
         for (size_t i = 0; i < symbol.params.size(); i++) {
-            std::cout << symbol.params[i].name << ": " << symbol.params[i].type;
+            std::cout << symbol.params[i].name << ": " << (symbol.params[i].type
+                                                               ? symbol.params[i].type->toString()
+                                                               : "null");
             if (i < symbol.params.size() - 1) std::cout << ", ";
         }
         std::cout << "]\n";
@@ -130,17 +132,12 @@ void AstPrinter::visit(AST::FunctionCall& node) {
 void AstPrinter::visit(AST::VariableDeclaration& node) {
     printIndent();
     std::cout << "VariableDeclaration: " << (node.isConst ? "const " : "var ")
-            << node.name << " : " << node.type << "\n";
+            << node.name << " : " << (node.type ? node.type->toString() : "null") << "\n";
 
     _indent++;
 
     if (node.symbol) {
         printSymbol(*node.symbol);
-        if (node.symbol->type) {
-            printIndent();
-            std::cout << "ArrayType: " << node.symbol->type
-                    << "[" << node.symbol->type << "]\n";
-        }
     }
 
 
@@ -299,7 +296,8 @@ void AstPrinter::visit(AST::FunctionDeclaration& node) {
         _indent++;
         for (auto& param: node.parameters) {
             printIndent();
-            std::cout << param.name << ": " << param.type << (param.isImplicit ? "- implicit" : "- explicit") << "\n";
+            std::cout << param.name << ": " << (param.type ? param.type->toString() : "null") << (
+                param.isImplicit ? "- implicit" : "- explicit") << "\n";
         }
         _indent--;
     }

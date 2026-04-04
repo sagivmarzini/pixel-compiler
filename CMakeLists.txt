@@ -108,6 +108,7 @@ set(COMPILER_SOURCES
         src/types/TypeContext.h
         src/types/TypeContext.cpp
         src/types/TypeNode.h
+        src/types/TypeNode.cpp
 )
 
 add_executable(pxl ${COMPILER_SOURCES})
