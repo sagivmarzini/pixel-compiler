@@ -15,51 +15,36 @@ struct TypeNode {
 
     virtual ~TypeNode() = default;
 
-    virtual Kind kind() const = 0;
+    [[nodiscard]] virtual Kind kind() const = 0;
 
     virtual llvm::Type* toLLVMType(llvm::LLVMContext& ctx) const = 0;
+
+    virtual std::string toString() const = 0;
 };
 
 struct ScalarTypeNode : TypeNode {
     PrimitiveKind scalar;
 
-    explicit ScalarTypeNode(PrimitiveKind k) : scalar(k) {
-    }
+    explicit ScalarTypeNode(PrimitiveKind k);
 
-    Kind kind() const override { return Kind::Scalar; }
+    [[nodiscard]] Kind kind() const override;
 
-    llvm::Type* toLLVMType(llvm::LLVMContext& ctx) const override {
-        switch (scalar) {
-            case PrimitiveKind::Int:
-                return llvm::Type::getInt32Ty(ctx);
-            case PrimitiveKind::Float:
-                return llvm::Type::getFloatTy(ctx);
-            case PrimitiveKind::Bool:
-                return llvm::Type::getInt1Ty(ctx);
-            case PrimitiveKind::Void:
-                return llvm::Type::getVoidTy(ctx);
-            case PrimitiveKind::Pointer:
-            case PrimitiveKind::String:
-                return llvm::PointerType::get(ctx, 0);
+    llvm::Type* toLLVMType(llvm::LLVMContext& ctx) const override;
 
-            default:
-                throw std::runtime_error("Internal error: unsupported scalar type: " + typeToString(scalar));
-        }
-    }
+    std::string toString() const override;
 };
 
 struct ArrayTypeNode : TypeNode {
     TypeNode* base; // non-owning - base type also lives in TypeContext
     int       size;
 
-    ArrayTypeNode(TypeNode* base, int size) : base(base), size(size) {
-    }
+    ArrayTypeNode(TypeNode* base, int size);
 
-    Kind kind() const override { return Kind::Array; }
+    [[nodiscard]] Kind kind() const override;
 
-    llvm::Type* toLLVMType(llvm::LLVMContext& ctx) const override {
-        return llvm::ArrayType::get(base->toLLVMType(ctx), size);
-    }
+    llvm::Type* toLLVMType(llvm::LLVMContext& ctx) const override;
+
+    std::string toString() const override;
 };
 
 #endif //PXL_LANG_TYPENODE_H
