@@ -347,11 +347,12 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::VariableAssignment& node) {
 }
 
 llvm::Value* IRGeneratorLLVM::visit(const AST::ArrayAssignment& node) {
-    llvm::Type*  elementType = node.symbol->type->toLLVMType(*_context);
+    llvm::Type*  elementType = static_cast<ArrayTypeNode*>(node.symbol->type)->base->toLLVMType(*_context);
     llvm::Value* arrayAddr   = _namedValues.at(node.symbol);
     llvm::Value* indexVal    = node.index->acceptIR(*this);
 
     llvm::Value* elemPtr = getArrayElementPtr(arrayAddr, indexVal, elementType, "elem");
+
 
     // Evaluate rhs, cast to element type if needed (e.g. int literal → float array)
     llvm::Value* newValue = node.assignedValue->acceptIR(*this);
@@ -636,7 +637,9 @@ llvm::Value* IRGeneratorLLVM::castToType(llvm::Value* value, const llvm::Type* e
     if (value->getType() == _builder->getInt32Ty() && expectedType == _builder->getFloatTy())
         return _builder->CreateSIToFP(value, _builder->getFloatTy());
 
-    return nullptr;
+    throw std::runtime_error(
+        "| LLVM | castToType: no known cast between types"
+    );
 }
 
 llvm::Value* IRGeneratorLLVM::initLocalVariable(llvm::Type*  type, const std::string& name,
@@ -792,11 +795,9 @@ void IRGeneratorLLVM::createExecutable(const std::string& outputPath) const {
             "clang"
             " " + objFilename +
             " " + PXL_RUNTIME_LIB_PATH +
-            " -lm"
-#if defined(__linux__)
-            " -ldl -lpthread"
-#endif
-            " -o " + outputPath;
+            " -lm" +
+            " " + PXL_PLATFORM_LINK_FLAGS
+            + " -o " + outputPath;
 
     std::cout << "| PXL | Linking..." << std::endl;
 

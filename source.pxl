@@ -4,19 +4,19 @@
 // edge cases. Pass/fail printed to stdout; canvas is visual.
 // ============================================================
 
-// --- Global arrays (all declaration forms) ---
+// --- Global arrays (bare declarations only) ---
 
-var litInts   = [10, 20, 30, 40, 50];
-var litFloats = [1.5, 2.5, 3.5, 4.5];
-var litBools  = [true, false, true, false];
+var litInts[5]:   Int;
+var litFloats[4]: Float;
+var litBools[4]:  Bool;
 
 var zeroBuf[8]: Int;
 var zeroFlt[6]: Float;
 
-var filledInt[5] = 7;
-var filledFlt[5] = 3.14;
+var filledInt[5]: Int;
+var filledFlt[5]: Float;
 
-var scores[10]: Int;
+var scores[10]:    Int;
 var positions[20]: Float;
 
 var frame = 0;
@@ -73,6 +73,34 @@ func setup() -> Void {
     frameRate(fps: 60);
     title(t: "Pixel Array Tests");
 
+    // Literal init — element by element
+    litInts[0] = 10;
+    litInts[1] = 20;
+    litInts[2] = 30;
+    litInts[3] = 40;
+    litInts[4] = 50;
+
+    litFloats[0] = 1.5;
+    litFloats[1] = 2.5;
+    litFloats[2] = 3.5;
+    litFloats[3] = 4.5;
+
+    litBools[0] = true;
+    litBools[1] = false;
+    litBools[2] = true;
+    litBools[3] = false;
+
+    // Uniform fill — loop
+    for i in 0..4 {
+        filledInt[i] = 7;
+    }
+    for i in 0..4 {
+        filledFlt[i] = 3.14;
+    }
+
+    // zeroBuf and zeroFlt are already zero-initialized by the runtime,
+    // no explicit init needed.
+
     // Fill scores with i*i
     for i in 0..9 {
         scores[i] = i * i;
@@ -86,7 +114,7 @@ func setup() -> Void {
 
     // Mutation tests that need to run once (results read in draw)
     zeroBuf[3] = 42;
-    zeroBuf[3] = zeroBuf[3] + 8;   // -> 50
+    zeroBuf[3] = zeroBuf[3] + 8;          // -> 50
     litInts[2] = litInts[0] + litInts[1]; // 10 + 20 -> 30
 
     // Print all results to stdout
@@ -133,6 +161,8 @@ func setup() -> Void {
 // draw — pure graphics, no text/textSize calls
 // ============================================================
 func draw() -> Void {
+    totalPass = 0;
+    totalFail = 0;
     background(r: 18.0, g: 18.0, b: 28.0);
     frame = frame + 1;
 
@@ -197,14 +227,12 @@ func draw() -> Void {
                 x: 460.0, y: 54.0 + fi * 34.0,
                 w: 320.0, h: 26.0,
                 r: hue, g: 120.0, b: 220.0);
-        // small index dot at left edge of bar
         fill(r: 200.0, g: 200.0, b: 200.0);
         noStroke();
         circle(x: 456.0, y: 67.0 + fi * 34.0, d: 6.0);
     }
 
     // ---- Animated strip: positions[] drives 20 circles ----
-    // baseline rule
     fill(r: 50.0, g: 50.0, b: 70.0);
     noStroke();
     rect(x: 460.0, y: 400.0, w: 320.0, h: 2.0);
