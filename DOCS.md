@@ -11,6 +11,7 @@
 3. [Language Basics](#language-basics)
     - [Comments](#comments)
     - [Variables](#variables)
+    - [Arrays](#arrays)
     - [Types](#types)
     - [Operators](#operators)
 4. [Control Flow](#control-flow)
@@ -118,6 +119,56 @@ Attempting to reassign a `const` is a compile-time error.
 
 > **Note:** Only declarations are allowed at the global scope. You cannot write statements like `x = x + 1` outside of a
 > function body.
+
+## Arrays
+
+Arrays hold a fixed-length sequence of values of the same type.
+
+There are several declaration forms:
+```pixel
+var nums = [1, 2, 3];            // inferred as Int array, initialized from literal
+var flags = [true, false, true]; // Bool array
+var coords = [1.0, 2.0, 3.0];   // Float array
+var buf[100]: Int;               // 100 Ints, all zeroed
+var grid[64]: Float;             // 64 Floats, all zeroed
+var filled[10] = 6;              // 10 Ints, all initialized to 6
+var weights[8] = 0.5;            // 8 Floats, all initialized to 0.5
+```
+
+### Access and mutation
+
+Arrays are zero-indexed. Elements are read and written using bracket notation:
+```pixel
+var x = nums[0]; // read element at index 0
+nums[2] = 99;    // write to index 2
+```
+
+Accessing an index out of bounds is a runtime error.
+
+### Iteration
+
+Use a `for` loop with a range to iterate over an array:
+```pixel
+for i in 0..3 {
+    print("%d\n", nums[i]);
+}
+```
+
+### Constraints
+
+Arrays cannot be resized after declaration.
+
+> **Note:** Arrays cannot be initialized with a value at the global scope. A global array must be declared empty
+> (size + type only), then populated inside a function such as `setup()`:
+>
+> ```pixel
+> var globalArr[5]: Int; // global scope — declaration only
+>
+> fn setup() {
+>     globalArr[0] = 1;  // initialization inside a function
+>     globalArr[1] = 10;
+> }
+> ```
 
 ## Types
 
