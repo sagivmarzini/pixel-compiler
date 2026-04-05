@@ -347,7 +347,18 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::VariableAssignment& node) {
 }
 
 llvm::Value* IRGeneratorLLVM::visit(const AST::ArrayAssignment& node) {
-    // TODO: Implement
+    llvm::Type*  elementType = node.symbol->type->toLLVMType(*_context);
+    llvm::Value* arrayAddr   = _namedValues.at(node.symbol);
+    llvm::Value* indexVal    = node.index->acceptIR(*this);
+
+    llvm::Value* elemPtr = getArrayElementPtr(arrayAddr, indexVal, elementType, "elem");
+
+    // Evaluate rhs, cast to element type if needed (e.g. int literal → float array)
+    llvm::Value* newValue = node.assignedValue->acceptIR(*this);
+    newValue              = castToType(newValue, elementType);
+
+    _builder->CreateStore(newValue, elemPtr);
+    return nullptr;
 }
 
 llvm::Value* IRGeneratorLLVM::visit(const AST::ExpressionStatement& node) {
@@ -501,7 +512,13 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::IncDecExpression& node) {
 }
 
 llvm::Value* IRGeneratorLLVM::visit(const AST::ArrayIndex& node) {
-    // TODO: Implement this
+    llvm::Type*  elementType = node.type->toLLVMType(*_context);
+    llvm::Value* arrayAddr   = _namedValues.at(node.symbol);
+    llvm::Value* indexVal    = node.index->acceptIR(*this);
+
+    llvm::Value* elemPtr = getArrayElementPtr(arrayAddr, indexVal, elementType, "elem");
+
+    return _builder->CreateLoad(elementType, elemPtr, "elem_val");
 }
 
 llvm::Value* IRGeneratorLLVM::visit(const AST::VariableExpression& node) const {
@@ -539,7 +556,33 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::FloatLiteralNode& node) const {
 }
 
 llvm::Value* IRGeneratorLLVM::visit(const AST::ArrayLiteral& node) {
-    // TODO: Implement this
+    llvm::Type* elementType = node.type->toLLVMType(*_context);
+    auto        count       = static_cast<uint64_t>(node.elements.size());
+
+    // Allocate [N x T] on the stack
+    llvm::ArrayType* arrayType = llvm::ArrayType::get(elementType, count);
+    llvm::Value*     arrayAddr = _builder->CreateAlloca(arrayType, nullptr, "array_tmp");
+
+    // Initialize each element from the literal's expressions
+    for (uint64_t i = 0; i < count; ++i) {
+        llvm::Value* elemVal = node.elements[i]->acceptIR(*this);
+        elemVal              = castToType(elemVal, elementType);
+
+        // GEP with two indices: [0, i] — first index steps past the alloca
+        // pointer, second index selects the element within the [N x T].
+        llvm::Value* elemPtr = _builder->CreateInBoundsGEP(
+            arrayType,
+            arrayAddr,
+            {_builder->getInt32(0), _builder->getInt32(static_cast<uint32_t>(i))},
+            "init_elem_" + std::to_string(i)
+        );
+
+        _builder->CreateStore(elemVal, elemPtr);
+    }
+
+    // Return the alloca itself — callers (VariableDeclaration) store this pointer.
+    // The address is already an [N x T]*, compatible with getArrayElementPtr via bitcast.
+    return arrayAddr;
 }
 
 PrimitiveKind IRGeneratorLLVM::llvmTypeToCompilerType(const llvm::Type& type) {
@@ -614,7 +657,7 @@ llvm::Function* IRGeneratorLLVM::getOrDeclareBuiltinFunction(const std::string& 
 
     if (info->kind == FunctionKind::Intrinsic && info->intrinsicId.has_value()) {
         auto* f32 = llvm::Type::getFloatTy(_module->getContext());
-        return llvm::Intrinsic::getDeclaration(_module.get(), *info->intrinsicId, {f32});
+        return llvm::Intrinsic::getOrInsertDeclaration(_module.get(), *info->intrinsicId, {f32});
     }
 
     const std::string& llvmName = info->llvmName.empty() ? name : info->llvmName;
@@ -646,8 +689,10 @@ llvm::Function* IRGeneratorLLVM::getOrDeclareBuiltinFunction(const std::string& 
 
 llvm::Value* IRGeneratorLLVM::createPxlStringFromLiteral(const std::string& value) const {
     // Create a hidden global for the raw C-string bytes
-    auto* rawPtr = _builder->CreateGlobalStringPtr(value, ".str_raw", 0, _module.get());
-
+    auto* strGlobal = _builder->CreateGlobalString(value, ".str_raw", 0, _module.get());
+    auto* rawPtr    = _builder->CreateConstInBoundsGEP2_32(
+        strGlobal->getValueType(), strGlobal, 0, 0, ".str_ptr"
+    );
     // Prepare arguments for pxl_create_string(char* data, size_t size)
     auto* sizeVal = _builder->getInt32(value.length());
 
@@ -673,6 +718,21 @@ void IRGeneratorLLVM::createMainFunction() const {
     _builder->CreateCall(getOrDeclareBuiltinFunction("run"), {setupArg, drawArg});
 
     _builder->CreateRet(_builder->getInt32(0));
+}
+
+/// Returns a pointer to array[index] — the GEP pattern used by both
+/// ArrayIndex and ArrayAssignment. arrayAddr must be the alloca holding
+/// the flat array (i.e. an [N x T]* or a T* alloca).
+llvm::Value* IRGeneratorLLVM::getArrayElementPtr(llvm::Value*       arrayAddr,
+                                                 llvm::Value*       indexVal,
+                                                 llvm::Type*        elementType,
+                                                 const std::string& debugName) const {
+    return _builder->CreateInBoundsGEP(
+        elementType,
+        arrayAddr,
+        indexVal,
+        debugName + "_ptr"
+    );
 }
 
 

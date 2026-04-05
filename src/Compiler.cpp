@@ -39,12 +39,12 @@ void Compiler::compile() {
 
     // Parsing
     Parser parser(tokens, _typeContext);
-    auto ast = parser.parseProgram();
+    auto   ast = parser.parseProgram();
 
     AstPrinter printer;
 
     // Semantic analyzing
-    SymbolPool symbols;
+    SymbolPool  symbols;
     SymbolTable symbolTable(symbols);
     symbolTable.declareBuiltinFunctions(_functionRegistry.getAllApiFunctions());
     symbolTable.declareBuiltinGlobals(_globalRegistry.getAllGlobals());
@@ -56,11 +56,11 @@ void Compiler::compile() {
     typeChecker.run(ast);
     printer.print(ast);
 
-    // IRGeneratorLLVM irGenerator(_functionRegistry, _globalRegistry);
-    // irGenerator.visit(ast);
-    // irGenerator.print();
-    //
-    // irGenerator.createExecutable("../out");
+    IRGeneratorLLVM irGenerator(_typeContext, _functionRegistry, _globalRegistry);
+    irGenerator.visit(ast);
+    irGenerator.print();
+
+    irGenerator.createExecutable("../out");
 }
 
 void Compiler::printTokens(const std::vector<Token>& tokens) {
@@ -70,11 +70,11 @@ void Compiler::printTokens(const std::vector<Token>& tokens) {
 }
 
 void Compiler::initFunctions() {
-    const auto intType = _typeContext.getInt();
-    const auto floatType = _typeContext.getFloat();
-    const auto stringType = _typeContext.getString();
-    const auto voidType = _typeContext.getVoid();
-    const auto boolType = _typeContext.getBool();
+    const auto intType     = _typeContext.getInt();
+    const auto floatType   = _typeContext.getFloat();
+    const auto stringType  = _typeContext.getString();
+    const auto voidType    = _typeContext.getVoid();
+    const auto boolType    = _typeContext.getBool();
     const auto pointerType = _typeContext.getPointer();
 
     // -----------------------------

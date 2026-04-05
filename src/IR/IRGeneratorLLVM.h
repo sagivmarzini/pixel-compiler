@@ -116,6 +116,9 @@ private:
     llvm::Value* createPxlStringFromLiteral(const std::string& value) const;
 
     void createMainFunction() const;
+
+    llvm::Value* getArrayElementPtr(llvm::Value* arrayAddr, llvm::Value*         indexVal,
+                                    llvm::Type*  elementType, const std::string& debugName) const;
 };
 
 
