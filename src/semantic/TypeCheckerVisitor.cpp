@@ -284,6 +284,14 @@ void TypeCheckerVisitor::visit(AST::VariableDeclaration& node) {
     auto* declaredArray = dynamic_cast<ArrayTypeNode*>(node.type);
 
     if (auto* arrayLit = dynamic_cast<AST::ArrayLiteral*>(node.initializer.get())) {
+        if (node.symbol->scope->getParent()->getParent() == nullptr) {
+            // Global scope
+            if (dynamic_cast<ArrayTypeNode*>(node.symbol->type) ||
+                dynamic_cast<AST::ArrayLiteral*>(node.initializer.get())) {
+                logError(SemanticErrorType::GlobalArrayNotSupported, node);
+                return;
+            }
+        }
         handleArrayLiteralInit(node, arrayLit, declaredArray);
     } else if (declaredArray) {
         handleScalarFillInit(node, declaredArray);
@@ -600,5 +608,20 @@ void TypeCheckerVisitor::visit(AST::VariableExpression& node) {
 }
 
 void TypeCheckerVisitor::visit(AST::ArrayLiteral& node) {
-    // TODO: Implement
+    const auto [elemKind, size] = checkArrayLiteralType(node);
+
+    if (elemKind == PrimitiveKind::Error) {
+        logError(SemanticErrorType::MultiTypeArray, node);
+        node.type = _typeCtx.get(PrimitiveKind::Error);
+        return;
+    }
+
+    if (elemKind == PrimitiveKind::Unspecified) {
+        // Empty literal [] — type cannot be inferred standalone;
+        // VariableDeclaration will resolve it from the declared type.
+        node.type = nullptr;
+        return;
+    }
+
+    node.type = _typeCtx.getArray(_typeCtx.get(elemKind), size);
 }

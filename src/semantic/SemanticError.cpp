@@ -153,6 +153,9 @@ SemanticError::SemanticError(SemanticErrorType type, const AST::AstNode& node, E
         case SemanticErrorType::ArrayLiteralTooLarge:
             prefix = "array literal is larger than declared array size";
             break;
+        case SemanticErrorType::GlobalArrayNotSupported:
+            prefix = "global arrays are not supported yet";
+            break;
     }
 
     // 3. Construct the Final Message

@@ -99,6 +99,7 @@ enum class SemanticErrorType {
     ParameterRedeclaration,
     MissingMainFunction,
     ArrayLiteralTooLarge,
+    GlobalArrayNotSupported,
 };
 
 class SemanticError : public CompilerError {
