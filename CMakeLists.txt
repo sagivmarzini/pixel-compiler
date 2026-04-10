@@ -105,6 +105,10 @@ set(COMPILER_SOURCES
         src/semantic/globals/GlobalRegistry.cpp
         src/semantic/globals/GlobalRegistry.h
         src/semantic/globals/GlobalEntry.h
+        src/types/TypeContext.h
+        src/types/TypeContext.cpp
+        src/types/TypeNode.h
+        src/types/TypeNode.cpp
 )
 
 add_executable(pxl ${COMPILER_SOURCES})
@@ -115,9 +119,47 @@ target_include_directories(pxl PRIVATE
         ${LLVM_INCLUDE_DIRS}
 )
 
+# Get SDL3's link requirements
+get_target_property(SDL3_LINK_LIBS SDL3::SDL3-static INTERFACE_LINK_LIBRARIES)
+
+set(PXL_PLATFORM_LINK_FLAGS "")
+
+foreach (lib ${SDL3_LINK_LIBS})
+    # Strip any generator expressions entirely
+    if (lib MATCHES "\\$<")
+        # Extract the inner library name from $<LINK_LIBRARY:FRAMEWORK,Foo> -> -framework Foo
+        if (lib MATCHES "\\$<LINK_LIBRARY:FRAMEWORK,([^>]+)>")
+            string(APPEND PXL_PLATFORM_LINK_FLAGS " -framework ${CMAKE_MATCH_1}")
+        endif ()
+        # All other generator expressions: skip
+    elseif (lib MATCHES "^-framework ")
+        string(APPEND PXL_PLATFORM_LINK_FLAGS " ${lib}")
+    elseif (lib MATCHES "^-")
+        string(APPEND PXL_PLATFORM_LINK_FLAGS " ${lib}")
+    elseif (lib MATCHES "\\.framework$")
+        get_filename_component(fw_name ${lib} NAME_WE)
+        string(APPEND PXL_PLATFORM_LINK_FLAGS " -framework ${fw_name}")
+    elseif (TARGET ${lib})
+        # Skip — already merged into the .a
+    elseif (lib MATCHES "^[A-Za-z]")
+        string(APPEND PXL_PLATFORM_LINK_FLAGS " -l${lib}")
+    endif ()
+endforeach ()
+
+if (APPLE)
+    string(APPEND PXL_PLATFORM_LINK_FLAGS " -lobjc -framework CoreHaptics -framework UniformTypeIdentifiers")
+endif ()
+if (UNIX AND NOT APPLE)
+    string(APPEND PXL_PLATFORM_LINK_FLAGS " -ldl -lpthread")
+endif ()
+
+# Escape quotes for use in a compile definition string
+string(REPLACE "\"" "\\\"" PXL_PLATFORM_LINK_FLAGS_ESCAPED "${PXL_PLATFORM_LINK_FLAGS}")
+
 target_compile_definitions(pxl PRIVATE
         ${LLVM_DEFINITIONS}
         PXL_RUNTIME_LIB_PATH="${CMAKE_BINARY_DIR}/libs/libpxl_runtime.a"
+        "PXL_PLATFORM_LINK_FLAGS=\"${PXL_PLATFORM_LINK_FLAGS_ESCAPED}\""
 )
 
 target_link_libraries(pxl PRIVATE ${llvm_libs})

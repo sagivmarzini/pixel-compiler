@@ -28,7 +28,7 @@ void AstPrinter::printSymbol(const Symbol& symbol) {
     std::cout << "Kind: " << symbolKindToString(symbol.kind) << "\n";
 
     printIndent();
-    std::cout << "Type: " << symbol.type << "\n";
+    std::cout << "Type: " << (symbol.type ? symbol.type->toString() : "null") << "\n";
 
     printIndent();
     std::cout << "Scope: " << symbol.scope << "\n";
@@ -37,7 +37,9 @@ void AstPrinter::printSymbol(const Symbol& symbol) {
         printIndent();
         std::cout << "Params: [";
         for (size_t i = 0; i < symbol.params.size(); i++) {
-            std::cout << symbol.params[i].name << ": " << symbol.params[i].type;
+            std::cout << symbol.params[i].name << ": " << (symbol.params[i].type
+                                                               ? symbol.params[i].type->toString()
+                                                               : "null");
             if (i < symbol.params.size() - 1) std::cout << ", ";
         }
         std::cout << "]\n";
@@ -129,23 +131,25 @@ void AstPrinter::visit(AST::FunctionCall& node) {
 
 void AstPrinter::visit(AST::VariableDeclaration& node) {
     printIndent();
-    std::cout << "VariableDeclaration: " << node.name << " : " << node.specifiedType << "\n";
+    std::cout << "VariableDeclaration: " << (node.isConst ? "const " : "var ")
+            << node.name << " : " << (node.type ? node.type->toString() : "null") << "\n";
+
+    _indent++;
 
     if (node.symbol) {
-        _indent++;
         printSymbol(*node.symbol);
-        _indent--;
     }
 
-    if (node.value) {
-        _indent++;
+
+    if (node.initializer) {
         printIndent();
         std::cout << "InitialValue:\n";
         _indent++;
-        node.value->accept(*this);
-        _indent--;
+        node.initializer->accept(*this);
         _indent--;
     }
+
+    _indent--;
 }
 
 void AstPrinter::visit(AST::VariableAssignment& node) {
@@ -153,6 +157,31 @@ void AstPrinter::visit(AST::VariableAssignment& node) {
     std::cout << "VariableAssignment: " << node.varName << "\n";
     _indent++;
     node.assignedValue->accept(*this);
+    _indent--;
+}
+
+void AstPrinter::visit(AST::ArrayAssignment& node) {
+    printIndent();
+    std::cout << "ArrayAssignment: " << node.varName << "\n";
+
+    _indent++;
+
+    if (node.symbol) {
+        printSymbol(*node.symbol);
+    }
+
+    printIndent();
+    std::cout << "Index:\n";
+    _indent++;
+    node.index->accept(*this);
+    _indent--;
+
+    printIndent();
+    std::cout << "Value:\n";
+    _indent++;
+    node.assignedValue->accept(*this);
+    _indent--;
+
     _indent--;
 }
 
@@ -267,7 +296,8 @@ void AstPrinter::visit(AST::FunctionDeclaration& node) {
         _indent++;
         for (auto& param: node.parameters) {
             printIndent();
-            std::cout << param.name << ": " << param.type << (param.isImplicit ? "- implicit" : "- explicit") << "\n";
+            std::cout << param.name << ": " << (param.type ? param.type->toString() : "null") << (
+                param.isImplicit ? "- implicit" : "- explicit") << "\n";
         }
         _indent--;
     }
@@ -294,6 +324,43 @@ void AstPrinter::visit(AST::RangeExpression& node) {
     std::cout << "End:\n";
     _indent++;
     node.end->accept(*this);
+    _indent--;
+
+    _indent--;
+}
+
+void AstPrinter::visit(AST::ArrayLiteral& node) {
+    printIndent();
+    std::cout << "ArrayLiteral\n";
+    _indent++;
+
+    if (!node.elements.empty()) {
+        printIndent();
+        std::cout << "Elements:\n";
+        _indent++;
+        for (auto& elem: node.elements) {
+            elem->accept(*this);
+        }
+        _indent--;
+    }
+
+    _indent--;
+}
+
+void AstPrinter::visit(AST::ArrayIndex& node) {
+    printIndent();
+    std::cout << "ArrayIndex: " << node.variableName << "\n";
+
+    _indent++;
+
+    if (node.symbol) {
+        printSymbol(*node.symbol);
+    }
+
+    printIndent();
+    std::cout << "Index:\n";
+    _indent++;
+    node.index->accept(*this);
     _indent--;
 
     _indent--;

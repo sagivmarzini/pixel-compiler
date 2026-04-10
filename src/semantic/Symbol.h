@@ -18,14 +18,14 @@ struct Symbol {
         Constant
     };
 
-    std::string                                            name;
-    SymbolKind                                             kind;
-    Type                                                   type;
-    Scope*                                                 scope;
-    bool                                                   isConst;
+    std::string name;
+    SymbolKind kind;
+    TypeNode* type;
+    Scope* scope;
+    bool isConst;
     std::vector<AST::FunctionDeclaration::FunctionParameter> params; // empty unless it's a function
 
-    std::optional<AST::FunctionDeclaration::FunctionParameter> getParameterByName(const std::string& name) {
+    std::optional<AST::FunctionDeclaration::FunctionParameter> getParameterByName(const std::string& name) const {
         const auto it = std::find_if(params.begin(), params.end(),
                                      [name](const AST::FunctionDeclaration::FunctionParameter& param) {
                                          return param.name == name;

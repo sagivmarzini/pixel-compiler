@@ -12,6 +12,7 @@ enum class ParserErrorType {
     TrailingComma,
     ElseWithoutIf,
     IncrementNonVariable,
+    NonPositiveArraySize,
 };
 
 

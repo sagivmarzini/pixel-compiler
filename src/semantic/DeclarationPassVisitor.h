@@ -50,6 +50,12 @@ private:
     void visit(AST::RangeExpression& node) override;
 
     void visit(AST::ExpressionStatement& node) override;
+
+    void visit(AST::ArrayAssignment& node) override;
+
+    void visit(AST::ArrayLiteral& node) override;
+
+    void visit(AST::ArrayIndex& node) override;
 };
 
 

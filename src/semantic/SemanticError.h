@@ -12,8 +12,8 @@ namespace AST {
 
 // Define the specific data packets for different errors
 struct TypeMismatchData {
-    Type expected;
-    Type actual;
+    PrimitiveKind expected;
+    PrimitiveKind actual;
 };
 
 struct ParamMismatchData {
@@ -24,13 +24,13 @@ struct ParamMismatchData {
 
 struct OperatorData {
     Operator op;
-    Type left;
-    Type right;
+    PrimitiveKind left;
+    PrimitiveKind right;
 };
 
 struct UnaryOperatorData {
     Operator op;
-    Type operand;
+    PrimitiveKind operand;
 };
 
 struct ArgumentPositionData {
@@ -38,7 +38,7 @@ struct ArgumentPositionData {
     std::string arguments;
 
     ArgumentPositionData(std::vector<AST::FunctionCall::FunctionArgument>& args,
-                         std::vector<AST::FunctionDeclaration::FunctionParameter>& params) {
+                         const std::vector<AST::FunctionDeclaration::FunctionParameter>& params) {
         for (int i = 0; i < args.size(); i++) {
             auto param = params[i].isImplicit ? params[i].name : "_";
             parameters.append(param + ", ");
@@ -63,6 +63,7 @@ enum class SemanticErrorType {
     DuplicateDeclaration,
     CannotInferType,
     ReadOnlyAssignment, // For const
+    NonIntIndex,
 
     // Function/Call Issues
     UndefinedFunction,
@@ -73,12 +74,14 @@ enum class SemanticErrorType {
     DuplicateArgumentName,
     MissingArgumentLabel,
     InvalidArgumentPosition,
+    OutOfBounds,
 
 
     // Type Logic
     TypeMismatch, // General purpose
     IncompatibleAssignment,
     IncompatibleReturnType,
+    MultiTypeArray,
 
     // Control Flow
     NonBooleanCondition, // If/While
@@ -95,6 +98,8 @@ enum class SemanticErrorType {
     // Declaration pass
     ParameterRedeclaration,
     MissingMainFunction,
+    ArrayLiteralTooLarge,
+    GlobalArrayNotSupported,
 };
 
 class SemanticError : public CompilerError {
