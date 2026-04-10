@@ -14,7 +14,7 @@ int main(int argc, char** argv) {
 
     const std::string inputFilePath = argv[1];
     try {
-        const Compiler compiler(inputFilePath);
+        Compiler compiler(inputFilePath);
         compiler.compile();
 
         return EXIT_SUCCESS;

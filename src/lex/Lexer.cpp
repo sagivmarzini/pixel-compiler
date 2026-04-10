@@ -59,19 +59,27 @@ std::vector<Token> Lexer::lex() {
                     break;
                 case '{':
                     eat();
-                    token = Token(LBrace{}, _line, _col - 1, std::string{current});
+                    token = Token(LeftBrace{}, _line, _col - 1, std::string{current});
                     break;
                 case '}':
                     eat();
-                    token = Token(RBrace{}, _line, _col - 1, std::string{current});
+                    token = Token(RightBrace{}, _line, _col - 1, std::string{current});
                     break;
                 case '(':
                     eat();
-                    token = Token(LParen{}, _line, _col - 1, std::string{current});
+                    token = Token(LeftParen{}, _line, _col - 1, std::string{current});
                     break;
                 case ')':
                     eat();
-                    token = Token(RParen{}, _line, _col - 1, std::string{current});
+                    token = Token(RightParen{}, _line, _col - 1, std::string{current});
+                    break;
+                case '[':
+                    eat();
+                    token = Token(LeftBracket{}, _line, _col - 1, std::string{current});
+                    break;
+                case ']':
+                    eat();
+                    token = Token(RightBracket{}, _line, _col - 1, std::string{current});
                     break;
                 case '.':
                     if (peekNext() == '.') {
@@ -220,7 +228,7 @@ char Lexer::eat() {
 
 Token Lexer::parseNumber() {
     std::string numberStr;
-    bool        isFloat = false;
+    bool isFloat = false;
 
     // Position tracking for error messages
     const int startCol = _col;
@@ -278,8 +286,8 @@ Token Lexer::parseNumber() {
 
 std::string Lexer::parseIdentifierOrKeyword() {
     std::string text;
-    const auto  startLine = _line;
-    const auto  startCol  = _col;
+    const auto startLine = _line;
+    const auto startCol = _col;
 
     text.push_back(eat());
 

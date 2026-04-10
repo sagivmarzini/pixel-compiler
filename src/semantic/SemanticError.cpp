@@ -130,16 +130,31 @@ SemanticError::SemanticError(SemanticErrorType type, const AST::AstNode& node, E
             prefix = "semantic error";
             break;
         case SemanticErrorType::ParameterRedeclaration:
-            prefix = "Function parameter declared more than once";
+            prefix = "function parameter declared more than once";
             break;
         case SemanticErrorType::MissingMainFunction:
-            prefix = "No main function found";
+            prefix = "no main function found";
             break;
         case SemanticErrorType::UnreachableCode:
-            prefix = "Unreachable code";
+            prefix = "unreachable code";
             break;
         case SemanticErrorType::NonIntForLoop:
-            prefix = "For loops are only supported for integers";
+            prefix = "for loops are only supported for integers";
+            break;
+        case SemanticErrorType::MultiTypeArray:
+            prefix = "arrays cannot have multiple types";
+            break;
+        case SemanticErrorType::NonIntIndex:
+            prefix = "index must be an integer";
+            break;
+        case SemanticErrorType::OutOfBounds:
+            prefix = "index out of bounds";
+            break;
+        case SemanticErrorType::ArrayLiteralTooLarge:
+            prefix = "array literal is larger than declared array size";
+            break;
+        case SemanticErrorType::GlobalArrayNotSupported:
+            prefix = "global arrays are not supported yet";
             break;
     }
 

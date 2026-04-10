@@ -18,7 +18,8 @@ class SymbolTable;
 
 class IRGeneratorLLVM {
 public:
-    explicit IRGeneratorLLVM(const FunctionRegistry& registry, const GlobalRegistry& globalRegistry);
+    explicit IRGeneratorLLVM(const TypeContext&    typeContext, const FunctionRegistry& registry,
+                             const GlobalRegistry& globalRegistry);
 
     void print() const;
 
@@ -46,6 +47,8 @@ public:
 
     llvm::Value* visit(const AST::VariableAssignment& node);
 
+    llvm::Value* visit(const AST::ArrayAssignment& node);
+
 
     llvm::Value* visit(const AST::ExpressionStatement& node);
 
@@ -58,6 +61,8 @@ public:
 
     llvm::Value* visit(const AST::IncDecExpression& node);
 
+    llvm::Value* visit(const AST::ArrayIndex& node);
+
 
     llvm::Value* visit(const AST::VariableExpression& node) const;
 
@@ -69,6 +74,8 @@ public:
 
     llvm::Value* visit(const AST::FloatLiteralNode& node) const;
 
+    llvm::Value* visit(const AST::ArrayLiteral& node);
+
 private:
     // Owns the core LLVM data structures, such as the type and constant tables.
     std::unique_ptr<llvm::LLVMContext> _context;
@@ -77,10 +84,11 @@ private:
     // A helper object that makes it easy to generate LLVM instructions (IR).
     std::unique_ptr<llvm::IRBuilder<> > _builder;
     // Keeps track of which values (like variables) are defined and their alloca address
-    std::unordered_map<Symbol *, llvm::Value *> _namedValues;
+    std::unordered_map<Symbol*, llvm::Value*> _namedValues;
 
-    const FunctionRegistry& _functionRegistry;
-    const GlobalRegistry& _globalRegistry;
+    const TypeContext&                        _typeContext;
+    const FunctionRegistry&                   _functionRegistry;
+    const GlobalRegistry&                     _globalRegistry;
     std::unordered_map<Operator, std::string> _stringOperatorLowering = {
         {Operator::Plus, "pxl_concat_string"},
         {Operator::Equal, "pxl_string_equals"},
@@ -93,16 +101,14 @@ private:
         {Operator::Assignment, "pxl_copy"}
     };
 
-    [[nodiscard]] llvm::Type* getLlvmType(const Type& type) const;
-
-    [[nodiscard]] static Type llvmTypeToCompilerType(const llvm::Type& type);
+    [[nodiscard]] static PrimitiveKind llvmTypeToCompilerType(const llvm::Type& type);
 
     // Promotes two LLVM values to have matching types, if necessary.
     void promoteToMatch(llvm::Value*& lhs, llvm::Value*& rhs) const;
 
     [[nodiscard]] llvm::Value* castToType(llvm::Value* value, const llvm::Type* expectedType) const;
 
-    llvm::Value* initLocalVariable(llvm::Type* type, const std::string& name,
+    llvm::Value* initLocalVariable(llvm::Type*  type, const std::string& name,
                                    llvm::Value* value) const;
 
     llvm::Function* getOrDeclareBuiltinFunction(const std::string& name) const;
@@ -110,6 +116,9 @@ private:
     llvm::Value* createPxlStringFromLiteral(const std::string& value) const;
 
     void createMainFunction() const;
+
+    llvm::Value* getArrayElementPtr(llvm::Value* arrayAddr, llvm::Value*         indexVal,
+                                    llvm::Type*  elementType, const std::string& debugName) const;
 };
 
 

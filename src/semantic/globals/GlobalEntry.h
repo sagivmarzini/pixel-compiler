@@ -6,11 +6,11 @@
 #define PXL_LANG_GLOBALENTRY_H
 #include <string>
 
-#include "lex/Token.h"
+struct TypeNode;
 
 struct GlobalEntry {
     std::string symbolName; // "pxl_mouse_x"
-    Type type;
+    TypeNode* type;
 };
 
 #endif //PXL_LANG_GLOBALENTRY_H

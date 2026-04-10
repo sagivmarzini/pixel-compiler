@@ -33,5 +33,8 @@ ParserError::ParserError(const ParserErrorType& type, const Token& errorToken, c
         case ParserErrorType::IncrementNonVariable:
             _message = "cannot apply operator ++/-- on non variable types";
             break;
+        case ParserErrorType::NonPositiveArraySize:
+            _message = "array size cannot be less than 1";
+            break;
     }
 }

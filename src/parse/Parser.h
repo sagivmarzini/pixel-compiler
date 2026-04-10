@@ -4,12 +4,13 @@
 #include "AST/Statement.h"
 #include "lex/Lexer.h"
 
+class TypeContext;
 class ParserError;
 enum class ParserErrorType;
 
 class Parser {
 public:
-    Parser(std::vector<Token> tokens);
+    Parser(std::vector<Token> tokens, TypeContext& typeCtx);
 
     AST::Program parseProgram();
 
@@ -19,14 +20,16 @@ public:
     };
 
 private:
-    std::vector<Token>         _tokens;
-    size_t                     _position;
-    Token                      _endOfFileToken = Token(EndOfFile(), -1, -1, "EOF");
+    TypeContext& _typeCtx;
+    std::vector<Token> _tokens;
+    size_t _position;
+    Token _endOfFileToken = Token(EndOfFile(), -1, -1, "EOF");
     std::vector<CompilerError> _errors;
     // A flag to prevent multiple errors from one single mistake
     bool _isPanicMode = false;
 
     std::unique_ptr<AST::Statement> parseDeclaration();
+
 
     std::unique_ptr<AST::Statement> parseStatement();
 
@@ -39,6 +42,8 @@ private:
     std::unique_ptr<AST::Statement> parseVariableDeclaration();
 
     std::unique_ptr<AST::Statement> parseVariableAssignment();
+
+    std::unique_ptr<AST::Statement> parseArrayAssignment();
 
     std::unique_ptr<AST::Expression> parseFunctionCall();
 
@@ -70,7 +75,12 @@ private:
 
     std::unique_ptr<AST::Expression> parseIncDecExpression();
 
+
     std::unique_ptr<AST::Expression> parsePrimary();
+
+    std::unique_ptr<AST::Expression> parseArrayLiteral();
+
+    std::unique_ptr<AST::Expression> parseArrayIndex();
 
     Token& peek();
 
@@ -109,8 +119,8 @@ private:
 
     bool isAtStartOfStatement();
 
-    void error(const ParserErrorType& type, const Token& errorToken,
-               const TokenType&       expectedTokenType = Type::Unspecified);
+    [[noreturn]] void logError(const ParserErrorType& type, const Token& errorToken,
+                               const TokenType& expectedTokenType = PrimitiveKind::Unspecified);
 };
 
 

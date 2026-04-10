@@ -15,7 +15,8 @@
 #include "semantic/DeclarationPassVisitor.h"
 #include "semantic/TypeCheckerVisitor.h"
 
-Compiler::Compiler(std::string sourceFile) : _sourceFileName(std::move(sourceFile)) {
+Compiler::Compiler(std::string sourceFile)
+    : _sourceFileName(std::move(sourceFile)) {
     std::ifstream file(_sourceFileName);
     if (!file.is_open()) {
         throw std::invalid_argument(std::format("Failed to open file: '{}'", sourceFile));
@@ -30,31 +31,32 @@ Compiler::Compiler(std::string sourceFile) : _sourceFileName(std::move(sourceFil
     initGlobals();
 }
 
-void Compiler::compile() const {
+void Compiler::compile() {
     // Lexing
     Lexer lexer(_sourceCode);
 
     const auto tokens = lexer.lex();
 
     // Parsing
-    Parser parser(tokens);
-    auto ast = parser.parseProgram();
+    Parser parser(tokens, _typeContext);
+    auto   ast = parser.parseProgram();
 
     AstPrinter printer;
 
     // Semantic analyzing
-    SymbolPool symbols;
+    SymbolPool  symbols;
     SymbolTable symbolTable(symbols);
     symbolTable.declareBuiltinFunctions(_functionRegistry.getAllApiFunctions());
     symbolTable.declareBuiltinGlobals(_globalRegistry.getAllGlobals());
 
-    DeclarationPassVisitor declPass(symbolTable);
+    DeclarationPassVisitor declPass(symbolTable, _typeContext);
     declPass.run(ast);
 
-    TypeCheckerVisitor typeChecker(symbolTable);
+    TypeCheckerVisitor typeChecker(symbolTable, _typeContext);
     typeChecker.run(ast);
+    printer.print(ast);
 
-    IRGeneratorLLVM irGenerator(_functionRegistry, _globalRegistry);
+    IRGeneratorLLVM irGenerator(_typeContext, _functionRegistry, _globalRegistry);
     irGenerator.visit(ast);
     irGenerator.print();
 
@@ -68,67 +70,91 @@ void Compiler::printTokens(const std::vector<Token>& tokens) {
 }
 
 void Compiler::initFunctions() {
+    const auto intType     = _typeContext.getInt();
+    const auto floatType   = _typeContext.getFloat();
+    const auto stringType  = _typeContext.getString();
+    const auto voidType    = _typeContext.getVoid();
+    const auto boolType    = _typeContext.getBool();
+    const auto pointerType = _typeContext.getPointer();
+
     // -----------------------------
     // Math & IO API — user-callable
     // -----------------------------
     _functionRegistry.registerApi("print",
-                                  {{{"str", Type::String, true}}, Type::Int, "printf", true});
+                                  {{{"str", stringType, true}}, intType, "printf", true});
 
     // Math — LLVM intrinsics (float in, float out)
-    _functionRegistry.registerIntrinsic("abs", {{{"value", Type::Float, true}}, Type::Float}, llvm::Intrinsic::fabs);
-    _functionRegistry.registerIntrinsic("sqrt", {{{"value", Type::Float, true}}, Type::Float}, llvm::Intrinsic::sqrt);
-    _functionRegistry.registerIntrinsic("pow", {{{"base", Type::Float}, {"exponent", Type::Float}}, Type::Float},
-                                        llvm::Intrinsic::pow);
-    _functionRegistry.registerIntrinsic("sin", {{{"angle", Type::Float, true}}, Type::Float}, llvm::Intrinsic::sin);
-    _functionRegistry.registerIntrinsic("cos", {{{"angle", Type::Float, true}}, Type::Float}, llvm::Intrinsic::cos);
-    _functionRegistry.registerIntrinsic("exp", {{{"value", Type::Float, true}}, Type::Float}, llvm::Intrinsic::exp);
-    _functionRegistry.registerIntrinsic("exp2", {{{"value", Type::Float, true}}, Type::Float}, llvm::Intrinsic::exp2);
-    _functionRegistry.registerIntrinsic("log", {{{"value", Type::Float, true}}, Type::Float}, llvm::Intrinsic::log);
-    _functionRegistry.registerIntrinsic("log2", {{{"value", Type::Float, true}}, Type::Float}, llvm::Intrinsic::log2);
-    _functionRegistry.registerIntrinsic("log10", {{{"value", Type::Float, true}}, Type::Float}, llvm::Intrinsic::log10);
-    _functionRegistry.registerIntrinsic("floor", {{{"value", Type::Float, true}}, Type::Float}, llvm::Intrinsic::floor);
-    _functionRegistry.registerIntrinsic("ceil", {{{"value", Type::Float, true}}, Type::Float}, llvm::Intrinsic::ceil);
-    _functionRegistry.registerIntrinsic("round", {{{"value", Type::Float, true}}, Type::Float}, llvm::Intrinsic::round);
-    _functionRegistry.registerIntrinsic("trunc", {{{"value", Type::Float, true}}, Type::Float}, llvm::Intrinsic::trunc);
-    _functionRegistry.registerIntrinsic("min", {{{"a", Type::Float}, {"b", Type::Float}}, Type::Float},
-                                        llvm::Intrinsic::minnum);
-    _functionRegistry.registerIntrinsic("max", {{{"a", Type::Float}, {"b", Type::Float}}, Type::Float},
-                                        llvm::Intrinsic::maxnum);
-    _functionRegistry.registerIntrinsic("copysign", {{{"mag", Type::Float}, {"sgn", Type::Float}}, Type::Float},
-                                        llvm::Intrinsic::copysign);
+    _functionRegistry.registerIntrinsic("abs", {{{"value", floatType, true}}, floatType},
+                                        llvm::Intrinsic::fabs);
+    _functionRegistry.registerIntrinsic("sqrt", {{{"value", floatType, true}}, floatType},
+                                        llvm::Intrinsic::sqrt);
+    _functionRegistry.registerIntrinsic(
+        "pow", {{{"base", floatType}, {"exponent", floatType}}, floatType},
+        llvm::Intrinsic::pow);
+    _functionRegistry.registerIntrinsic("sin", {{{"angle", floatType, true}}, floatType},
+                                        llvm::Intrinsic::sin);
+    _functionRegistry.registerIntrinsic("cos", {{{"angle", floatType, true}}, floatType},
+                                        llvm::Intrinsic::cos);
+    _functionRegistry.registerIntrinsic("exp", {{{"value", floatType, true}}, floatType},
+                                        llvm::Intrinsic::exp);
+    _functionRegistry.registerIntrinsic("exp2", {{{"value", floatType, true}}, floatType},
+                                        llvm::Intrinsic::exp2);
+    _functionRegistry.registerIntrinsic("log", {{{"value", floatType, true}}, floatType},
+                                        llvm::Intrinsic::log);
+    _functionRegistry.registerIntrinsic("log2", {{{"value", floatType, true}}, floatType},
+                                        llvm::Intrinsic::log2);
+    _functionRegistry.registerIntrinsic("log10", {{{"value", floatType, true}}, floatType},
+                                        llvm::Intrinsic::log10);
+    _functionRegistry.registerIntrinsic("floor", {{{"value", floatType, true}}, floatType},
+                                        llvm::Intrinsic::floor);
+    _functionRegistry.registerIntrinsic("ceil", {{{"value", floatType, true}}, floatType},
+                                        llvm::Intrinsic::ceil);
+    _functionRegistry.registerIntrinsic("round", {{{"value", floatType, true}}, floatType},
+                                        llvm::Intrinsic::round);
+    _functionRegistry.registerIntrinsic("trunc", {{{"value", floatType, true}}, floatType},
+                                        llvm::Intrinsic::trunc);
+    _functionRegistry.registerIntrinsic(
+        "min", {{{"a", floatType}, {"b", floatType}}, floatType},
+        llvm::Intrinsic::minnum);
+    _functionRegistry.registerIntrinsic(
+        "max", {{{"a", floatType}, {"b", floatType}}, floatType},
+        llvm::Intrinsic::maxnum);
+    _functionRegistry.registerIntrinsic(
+        "copysign", {{{"mag", floatType}, {"sgn", floatType}}, floatType},
+        llvm::Intrinsic::copysign);
     _functionRegistry.registerApi("tan",
                                   {
-                                      {{"angle", Type::Float, true}},
-                                      Type::Float, "tanf"
+                                      {{"angle", floatType, true}},
+                                      floatType, "tanf"
                                   });
     _functionRegistry.registerApi("asin",
                                   {
-                                      {{"value", Type::Float, true}},
-                                      Type::Float, "asinf"
+                                      {{"value", floatType, true}},
+                                      floatType, "asinf"
                                   });
     _functionRegistry.registerApi("acos",
                                   {
-                                      {{"value", Type::Float, true}},
-                                      Type::Float, "acosf"
+                                      {{"value", floatType, true}},
+                                      floatType, "acosf"
                                   });
     _functionRegistry.registerApi("atan",
                                   {
-                                      {{"value", Type::Float, true}},
-                                      Type::Float, "atanf"
+                                      {{"value", floatType, true}},
+                                      floatType, "atanf"
                                   });
     _functionRegistry.registerApi("atan2",
                                   {
-                                      {{"y", Type::Float}, {"x", Type::Float}},
-                                      Type::Float, "atan2f"
+                                      {{"y", floatType}, {"x", floatType}},
+                                      floatType, "atan2f"
                                   });
 
     // -----------------------------
     // Graphics — Structure
     // -----------------------------
     _functionRegistry.registerApi("loop",
-                                  {{}, Type::Void, "pxl_loop"});
+                                  {{}, voidType, "pxl_loop"});
     _functionRegistry.registerApi("noLoop",
-                                  {{}, Type::Void, "pxl_no_loop"});
+                                  {{}, voidType, "pxl_no_loop"});
 
     // -----------------------------
     // Graphics — Canvas setup
@@ -136,19 +162,19 @@ void Compiler::initFunctions() {
     _functionRegistry.registerApi("canvas",
                                   {
                                       {
-                                          {"width", Type::Int},
-                                          {"height", Type::Int}
+                                          {"width", intType},
+                                          {"height", intType}
                                       },
-                                      Type::Void, "pxl_set_canvas_size"
+                                      voidType, "pxl_set_canvas_size"
                                   });
     _functionRegistry.registerApi("frameRate",
                                   {
-                                      {{"fps", Type::Int}}, Type::Void,
+                                      {{"fps", intType}}, voidType,
                                       "pxl_set_frames_per_second"
                                   });
     _functionRegistry.registerApi("title",
                                   {
-                                      {{"t", Type::String}}, Type::Void,
+                                      {{"t", stringType}}, voidType,
                                       "pxl_set_window_title"
                                   });
 
@@ -158,60 +184,60 @@ void Compiler::initFunctions() {
     _functionRegistry.registerApi("background",
                                   {
                                       {
-                                          {"r", Type::Float},
-                                          {"g", Type::Float}, {"b", Type::Float}
+                                          {"r", floatType},
+                                          {"g", floatType}, {"b", floatType}
                                       },
-                                      Type::Void,
+                                      voidType,
                                       "pxl_background"
                                   });
     _functionRegistry.registerApi("fill",
                                   {
                                       {
-                                          {"r", Type::Float},
-                                          {"g", Type::Float}, {"b", Type::Float}
+                                          {"r", floatType},
+                                          {"g", floatType}, {"b", floatType}
                                       },
-                                      Type::Void,
+                                      voidType,
                                       "pxl_fill"
                                   });
     _functionRegistry.registerApi("fillAlpha",
                                   {
                                       {
-                                          {"r", Type::Float},
-                                          {"g", Type::Float},
-                                          {"b", Type::Float}, {"a", Type::Float}
+                                          {"r", floatType},
+                                          {"g", floatType},
+                                          {"b", floatType}, {"a", floatType}
                                       },
-                                      Type::Void, "pxl_fill_a"
+                                      voidType, "pxl_fill_a"
                                   });
     _functionRegistry.registerApi("noFill",
-                                  {{}, Type::Void, "pxl_no_fill"});
+                                  {{}, voidType, "pxl_no_fill"});
     _functionRegistry.registerApi("stroke",
                                   {
                                       {
-                                          {"r", Type::Float},
-                                          {"g", Type::Float}, {"b", Type::Float}
+                                          {"r", floatType},
+                                          {"g", floatType}, {"b", floatType}
                                       },
-                                      Type::Void,
+                                      voidType,
                                       "pxl_stroke"
                                   });
     _functionRegistry.registerApi("strokeAlpha",
                                   {
                                       {
-                                          {"r", Type::Float},
-                                          {"g", Type::Float},
-                                          {"b", Type::Float}, {"a", Type::Float}
+                                          {"r", floatType},
+                                          {"g", floatType},
+                                          {"b", floatType}, {"a", floatType}
                                       },
-                                      Type::Void, "pxl_stroke_a"
+                                      voidType, "pxl_stroke_a"
                                   });
     _functionRegistry.registerApi("noStroke",
-                                  {{}, Type::Void, "pxl_no_stroke"});
+                                  {{}, voidType, "pxl_no_stroke"});
     _functionRegistry.registerApi("strokeWeight",
                                   {
-                                      {{"weight", Type::Float}}, Type::Void,
+                                      {{"weight", floatType}}, voidType,
                                       "pxl_stroke_weight"
                                   });
     _functionRegistry.registerApi("colorMode",
                                   {
-                                      {{"mode", Type::Int}}, Type::Void,
+                                      {{"mode", intType}}, voidType,
                                       "pxl_color_mode"
                                   });
 
@@ -221,56 +247,56 @@ void Compiler::initFunctions() {
     _functionRegistry.registerApi("rect",
                                   {
                                       {
-                                          {"x", Type::Float},
-                                          {"y", Type::Float},
-                                          {"w", Type::Float}, {"h", Type::Float}
+                                          {"x", floatType},
+                                          {"y", floatType},
+                                          {"w", floatType}, {"h", floatType}
                                       },
-                                      Type::Void, "pxl_rect"
+                                      voidType, "pxl_rect"
                                   });
     _functionRegistry.registerApi("circle",
                                   {
                                       {
-                                          {"x", Type::Float},
-                                          {"y", Type::Float}, {"d", Type::Float}
+                                          {"x", floatType},
+                                          {"y", floatType}, {"d", floatType}
                                       },
-                                      Type::Void,
+                                      voidType,
                                       "pxl_circle"
                                   });
     _functionRegistry.registerApi("ellipse",
                                   {
                                       {
-                                          {"x", Type::Float},
-                                          {"y", Type::Float},
-                                          {"w", Type::Float}, {"h", Type::Float}
+                                          {"x", floatType},
+                                          {"y", floatType},
+                                          {"w", floatType}, {"h", floatType}
                                       },
-                                      Type::Void, "pxl_ellipse"
+                                      voidType, "pxl_ellipse"
                                   });
     _functionRegistry.registerApi("line",
                                   {
                                       {
-                                          {"x1", Type::Float},
-                                          {"y1", Type::Float},
-                                          {"x2", Type::Float},
-                                          {"y2", Type::Float}
+                                          {"x1", floatType},
+                                          {"y1", floatType},
+                                          {"x2", floatType},
+                                          {"y2", floatType}
                                       },
-                                      Type::Void, "pxl_line"
+                                      voidType, "pxl_line"
                                   });
     _functionRegistry.registerApi("triangle",
                                   {
                                       {
-                                          {"x1", Type::Float},
-                                          {"y1", Type::Float},
-                                          {"x2", Type::Float},
-                                          {"y2", Type::Float},
-                                          {"x3", Type::Float},
-                                          {"y3", Type::Float}
+                                          {"x1", floatType},
+                                          {"y1", floatType},
+                                          {"x2", floatType},
+                                          {"y2", floatType},
+                                          {"x3", floatType},
+                                          {"y3", floatType}
                                       },
-                                      Type::Void, "pxl_triangle"
+                                      voidType, "pxl_triangle"
                                   });
     _functionRegistry.registerApi("point",
                                   {
-                                      {{"x", Type::Float}, {"y", Type::Float}},
-                                      Type::Void, "pxl_point"
+                                      {{"x", floatType}, {"y", floatType}},
+                                      voidType, "pxl_point"
                                   });
 
     // -----------------------------
@@ -278,26 +304,26 @@ void Compiler::initFunctions() {
     // -----------------------------
     _functionRegistry.registerApi("translate",
                                   {
-                                      {{"x", Type::Float}, {"y", Type::Float}},
-                                      Type::Void, "pxl_translate"
+                                      {{"x", floatType}, {"y", floatType}},
+                                      voidType, "pxl_translate"
                                   });
     _functionRegistry.registerApi("rotate",
                                   {
-                                      {{"angle", Type::Float}}, Type::Void,
+                                      {{"angle", floatType}}, voidType,
                                       "pxl_rotate"
                                   });
     _functionRegistry.registerApi("scale",
                                   {
                                       {
-                                          {"sx", Type::Float},
-                                          {"sy", Type::Float}
+                                          {"sx", floatType},
+                                          {"sy", floatType}
                                       },
-                                      Type::Void, "pxl_scale"
+                                      voidType, "pxl_scale"
                                   });
     _functionRegistry.registerApi("push",
-                                  {{}, Type::Void, "pxl_push"});
+                                  {{}, voidType, "pxl_push"});
     _functionRegistry.registerApi("pop",
-                                  {{}, Type::Void, "pxl_pop"});
+                                  {{}, voidType, "pxl_pop"});
 
     // -----------------------------
     // Graphics — Math utilities
@@ -305,60 +331,60 @@ void Compiler::initFunctions() {
     _functionRegistry.registerApi("map",
                                   {
                                       {
-                                          {"value", Type::Float},
-                                          {"start1", Type::Float},
-                                          {"stop1", Type::Float},
-                                          {"start2", Type::Float},
-                                          {"stop2", Type::Float}
+                                          {"value", floatType},
+                                          {"start1", floatType},
+                                          {"stop1", floatType},
+                                          {"start2", floatType},
+                                          {"stop2", floatType}
                                       },
-                                      Type::Float, "pxl_map"
+                                      floatType, "pxl_map"
                                   });
     _functionRegistry.registerApi("lerp",
                                   {
                                       {
-                                          {"start", Type::Float},
-                                          {"stop", Type::Float},
-                                          {"amt", Type::Float}
+                                          {"start", floatType},
+                                          {"stop", floatType},
+                                          {"amt", floatType}
                                       },
-                                      Type::Float, "pxl_lerp"
+                                      floatType, "pxl_lerp"
                                   });
     _functionRegistry.registerApi("constrain",
                                   {
                                       {
-                                          {"n", Type::Float},
-                                          {"low", Type::Float},
-                                          {"high", Type::Float}
+                                          {"n", floatType},
+                                          {"low", floatType},
+                                          {"high", floatType}
                                       },
-                                      Type::Float,
+                                      floatType,
                                       "pxl_constrain"
                                   });
     _functionRegistry.registerApi("dist",
                                   {
                                       {
-                                          {"x1", Type::Float},
-                                          {"y1", Type::Float},
-                                          {"x2", Type::Float},
-                                          {"y2", Type::Float}
+                                          {"x1", floatType},
+                                          {"y1", floatType},
+                                          {"x2", floatType},
+                                          {"y2", floatType}
                                       },
-                                      Type::Float, "pxl_dist"
+                                      floatType, "pxl_dist"
                                   });
     _functionRegistry.registerApi("random",
                                   {
                                       {
-                                          {"low", Type::Float},
-                                          {"high", Type::Float}
+                                          {"low", floatType},
+                                          {"high", floatType}
                                       },
-                                      Type::Float, "pxl_random"
+                                      floatType, "pxl_random"
                                   });
     _functionRegistry.registerApi("noise",
                                   {
-                                      {{"x", Type::Float}}, Type::Float,
+                                      {{"x", floatType}}, floatType,
                                       "pxl_noise"
                                   });
     _functionRegistry.registerApi("noise2",
                                   {
-                                      {{"x", Type::Float}, {"y", Type::Float}},
-                                      Type::Float, "pxl_noise2"
+                                      {{"x", floatType}, {"y", floatType}},
+                                      floatType, "pxl_noise2"
                                   });
 
     // -----------------------------
@@ -367,20 +393,20 @@ void Compiler::initFunctions() {
     _functionRegistry.registerApi("text",
                                   {
                                       {
-                                          {"str", Type::String},
-                                          {"x", Type::Float}, {"y", Type::Float}
+                                          {"str", stringType},
+                                          {"x", floatType}, {"y", floatType}
                                       },
-                                      Type::Void,
+                                      voidType,
                                       "pxl_text"
                                   });
     _functionRegistry.registerApi("textSize",
                                   {
-                                      {{"size", Type::Float}}, Type::Void,
+                                      {{"size", floatType}}, voidType,
                                       "pxl_text_size"
                                   });
     _functionRegistry.registerApi("textAlign",
                                   {
-                                      {{"align", Type::Int}}, Type::Void,
+                                      {{"align", intType}}, voidType,
                                       "pxl_text_align"
                                   });
 
@@ -390,13 +416,13 @@ void Compiler::initFunctions() {
     _functionRegistry.registerInternal("run",
                                        {
                                            {
-                                               {"setup", Type::Pointer},
-                                               {"draw", Type::Pointer}
+                                               {"setup", pointerType},
+                                               {"draw", pointerType}
                                            },
-                                           Type::Void, "pxl_run"
+                                           voidType, "pxl_run"
                                        });
     _functionRegistry.registerInternal("quit",
-                                       {{}, Type::Void, "pxl_quit"});
+                                       {{}, voidType, "pxl_quit"});
 
     // -----------------------------
     // Runtime string helpers — internal
@@ -404,94 +430,94 @@ void Compiler::initFunctions() {
     _functionRegistry.registerInternal("pxl_create_string",
                                        {
                                            {
-                                               {"data", Type::String},
-                                               {"size", Type::Int}
+                                               {"data", stringType},
+                                               {"size", intType}
                                            },
-                                           Type::String
+                                           stringType
                                        });
     _functionRegistry.registerInternal("pxl_destroy_string",
-                                       {{{"str", Type::String}}, Type::Void});
+                                       {{{"str", stringType}}, voidType});
     _functionRegistry.registerInternal("pxl_copy",
                                        {
                                            {
-                                               {"dest", Type::String},
-                                               {"src", Type::String}
+                                               {"dest", stringType},
+                                               {"src", stringType}
                                            },
-                                           Type::Void
+                                           voidType
                                        });
     _functionRegistry.registerInternal("pxl_get_string_data",
-                                       {{{"str", Type::String}}, Type::String});
+                                       {{{"str", stringType}}, stringType});
     _functionRegistry.registerInternal("pxl_concat_string",
                                        {
                                            {
-                                               {"a", Type::String},
-                                               {"b", Type::String}
+                                               {"a", stringType},
+                                               {"b", stringType}
                                            },
-                                           Type::String
+                                           stringType
                                        });
     _functionRegistry.registerInternal("pxl_char_at",
                                        {
                                            {
-                                               {"str", Type::String},
-                                               {"index", Type::Int}
+                                               {"str", stringType},
+                                               {"index", intType}
                                            },
-                                           Type::Int
+                                           intType
                                        });
     _functionRegistry.registerInternal("pxl_string_equals",
                                        {
                                            {
-                                               {"a", Type::String},
-                                               {"b", Type::String}
+                                               {"a", stringType},
+                                               {"b", stringType}
                                            },
-                                           Type::Bool
+                                           boolType
                                        });
     _functionRegistry.registerInternal("pxl_string_not_equals",
                                        {
                                            {
-                                               {"a", Type::String},
-                                               {"b", Type::String}
+                                               {"a", stringType},
+                                               {"b", stringType}
                                            },
-                                           Type::Bool
+                                           boolType
                                        });
     _functionRegistry.registerInternal("pxl_string_greater",
                                        {
                                            {
-                                               {"a", Type::String},
-                                               {"b", Type::String}
+                                               {"a", stringType},
+                                               {"b", stringType}
                                            },
-                                           Type::Bool
+                                           boolType
                                        });
     _functionRegistry.registerInternal("pxl_string_smaller",
                                        {
                                            {
-                                               {"a", Type::String},
-                                               {"b", Type::String}
+                                               {"a", stringType},
+                                               {"b", stringType}
                                            },
-                                           Type::Bool
+                                           boolType
                                        });
     _functionRegistry.registerInternal("pxl_string_greater_equals",
                                        {
                                            {
-                                               {"a", Type::String},
-                                               {"b", Type::String}
+                                               {"a", stringType},
+                                               {"b", stringType}
                                            },
-                                           Type::Bool
+                                           boolType
                                        });
     _functionRegistry.registerInternal("pxl_string_smaller_equals",
                                        {
                                            {
-                                               {"a", Type::String},
-                                               {"b", Type::String}
+                                               {"a", stringType},
+                                               {"b", stringType}
                                            },
-                                           Type::Bool
+                                           boolType
                                        });
 }
 
 
 void Compiler::initGlobals() {
-    _globalRegistry.registerGlobal("mouseX", Type::Float, "pxl_mouse_x");
-    _globalRegistry.registerGlobal("mouseY", Type::Float, "pxl_mouse_y");
-    _globalRegistry.registerGlobal("mousePressed", Type::Bool, "pxl_mouse_pressed");
-    _globalRegistry.registerGlobal("keyPressed", Type::Bool, "pxl_key_pressed");
-    _globalRegistry.registerGlobal("keyCode", Type::Int, "pxl_key_code");
+    _globalRegistry.registerGlobal("mouseX", _typeContext.getFloat(), "pxl_mouse_x");
+    _globalRegistry.registerGlobal("mouseY", _typeContext.getFloat(), "pxl_mouse_y");
+    _globalRegistry.registerGlobal("mousePressed", _typeContext.getBool(), "pxl_mouse_pressed");
+    _globalRegistry.registerGlobal("keyPressed", _typeContext.getBool(), "pxl_key_pressed");
+    _globalRegistry.registerGlobal("keyCode", _typeContext.getInt(), "pxl_key_code");
 }
