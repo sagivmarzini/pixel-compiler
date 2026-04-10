@@ -18,6 +18,14 @@ llvm::Value* AST::VariableAssignment::acceptIR(IRGeneratorLLVM& visitor) {
     return visitor.visit(*this);
 }
 
+void AST::ArrayAssignment::accept(AstVisitor& visitor) {
+    visitor.visit(*this);
+}
+
+llvm::Value* AST::ArrayAssignment::acceptIR(IRGeneratorLLVM& visitor) {
+    return visitor.visit(*this);
+}
+
 void AST::ReturnStatement::accept(AstVisitor& visitor) {
     visitor.visit(*this);
 }

@@ -6,11 +6,11 @@
 #include "Symbol.h"
 
 class Scope;
-enum class Type;
+enum class PrimitiveKind;
 
 class SymbolPool {
 public:
-    Symbol &createSymbol(const std::string &name, Symbol::SymbolKind kind, Type type, Scope *scope, bool isConst);
+    Symbol& createSymbol(const std::string& name, Symbol::SymbolKind kind, TypeNode* type, Scope* scope, bool isConst);
 
 private:
     std::vector<std::unique_ptr<Symbol> > _symbols;

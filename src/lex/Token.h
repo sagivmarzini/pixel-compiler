@@ -18,8 +18,8 @@ enum class Keyword {
 
 std::ostream& operator<<(std::ostream& os, const Keyword& keyword);
 
-
-enum class Type {
+// TODO: move this to TypeNode.h
+enum class PrimitiveKind {
     Unspecified,
 
     Int,
@@ -33,7 +33,7 @@ enum class Type {
     Error
 };
 
-std::ostream& operator<<(std::ostream& os, const Type& type);
+std::ostream& operator<<(std::ostream& os, const PrimitiveKind& type);
 
 
 // Token payload structs
@@ -42,7 +42,7 @@ struct Identifier {
 };
 
 struct IntegerLiteral {
-    int value;
+    int value = -1;
 };
 
 struct FloatLiteral {
@@ -90,16 +90,22 @@ struct Colon {
 struct Comma {
 };
 
-struct LBrace {
+struct LeftBrace {
 };
 
-struct RBrace {
+struct RightBrace {
 };
 
-struct LParen {
+struct LeftParen {
 };
 
-struct RParen {
+struct RightParen {
+};
+
+struct LeftBracket {
+};
+
+struct RightBracket {
 };
 
 struct Arrow {
@@ -114,16 +120,20 @@ struct Underscore {
 struct EndOfFile {
 };
 
+
 // Token variant
+
 using TokenType = std::variant<
     // simple tokens
     Semicolon,
     Colon,
     Comma,
-    LBrace,
-    RBrace,
-    LParen,
-    RParen,
+    LeftBrace,
+    RightBrace,
+    LeftParen,
+    RightParen,
+    LeftBracket,
+    RightBracket,
     Arrow,
     DoubleDot,
     Underscore,
@@ -136,7 +146,7 @@ using TokenType = std::variant<
     FloatLiteral,
     StringLiteral,
     BooleanLiteral,
-    Type,
+    PrimitiveKind,
     Identifier,
 
     // EOF
@@ -155,13 +165,12 @@ static const std::unordered_map<std::string, TokenType> keywords = {
     {"in", Keyword::In},
     {"step", Keyword::Step},
 
-    {"Int", Type::Int},
-    {"Float", Type::Float},
-    {"Bool", Type::Bool},
-    {"Ptr", Type::Pointer},
-    {"String", Type::String},
-    {"Color", Type::Color},
-    {"Void", Type::Void},
+    {"Int", PrimitiveKind::Int},
+    {"Float", PrimitiveKind::Float},
+    {"Bool", PrimitiveKind::Bool},
+    {"String", PrimitiveKind::String},
+    {"Color", PrimitiveKind::Color},
+    {"Void", PrimitiveKind::Void},
 
     {"true", BooleanLiteral{true}},
     {"false", BooleanLiteral{false}},
@@ -179,14 +188,12 @@ struct Token {
 
     Token() = default;
 
-    Token(TokenType type, int line, int col, std::string lexeme)
-        : type(std::move(type)), metadata(line, col, std::move(lexeme)) {
-    }
+    Token(TokenType type, int line, int col, std::string lexeme);
 };
 
 std::ostream& operator<<(std::ostream& os, const Token& token);
 
-std::string typeToString(Type type);
+std::string typeToString(PrimitiveKind type);
 
 std::string operatorToString(Operator op);
 

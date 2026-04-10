@@ -1,10 +1,10 @@
 #ifndef COMPILER_PROJECT_TYPECHECKERVISITOR_H
 #define COMPILER_PROJECT_TYPECHECKERVISITOR_H
-#include "SemanticError.h"
 #include "SemanticVisitor.h"
 #include "lex/Token.h"
 
 
+class TypeContext;
 enum class SemanticErrorType;
 
 class TypeCheckerVisitor : public SemanticVisitor {
@@ -14,31 +14,65 @@ public:
     void run(AST::AstNode& root) override;
 
     // Returns the bigger type of the two (float > int, int > short, etc.)
-    static Type getPromotedType(Type leftType, Type rightType);
+    static PrimitiveKind getPromotedType(PrimitiveKind t1, PrimitiveKind t2);
 
 private:
-    Type _currentFunctionReturnType = Type::Unspecified;
-    bool _foundReturn               = false;
+    TypeNode* _currentFunctionReturnType = nullptr;
+    bool      _foundReturn               = false;
+
+    static PrimitiveKind kindOf(TypeNode* t);
 
     // Returns true if the type is an `int` or `float`
-    static bool isNumeric(Type type);
+    static bool isNumeric(PrimitiveKind type);
 
     // Returns true if the types are both either numeric or strings (compared lexicographically)
-    static bool areComparableTypes(Type leftType, Type rightType);
+    static bool areComparableTypes(PrimitiveKind leftType, PrimitiveKind rightType);
 
-    static bool isString(Type type);
+    static bool isString(PrimitiveKind type);
 
-    static bool isBoolean(Type type);
+    static bool isBoolean(PrimitiveKind type);
 
-    static bool isAssignableTo(Type assignedType, Type variableType);
+    static bool isAssignableTo(PrimitiveKind assignedType, PrimitiveKind targetType);
 
-    static bool isReturnTypeCompatible(Type functionType, Type returnedType);
+    std::pair<PrimitiveKind, int> checkArrayLiteralType(const AST::ArrayLiteral& arr);
+
+    bool checkArgCount(const AST::FunctionCall& node, const Symbol& fn);
+
+    void checkArgument(AST::FunctionCall&                                 node,
+                       const AST::FunctionCall::FunctionArgument&         arg,
+                       const AST::FunctionDeclaration::FunctionParameter& param,
+                       const Symbol&                                      fn);
+
+    bool checkArgumentLabel(AST::FunctionCall&                                 node,
+                            const std::string&                                 argName,
+                            const AST::FunctionDeclaration::FunctionParameter& param,
+                            const Symbol&                                      calledFunction);
+
+    PrimitiveKind checkBinaryOp(const AST::BinaryExpression& node, PrimitiveKind left, PrimitiveKind right);
+
+    PrimitiveKind checkArithmetic(const AST::BinaryExpression& node, PrimitiveKind left, PrimitiveKind right);
+
+    void handleArrayLiteralInit(const AST::VariableDeclaration& node, const AST::ArrayLiteral* arrayLit,
+                                const ArrayTypeNode*            declaredArray);
+
+    void handleScalarFillInit(const AST::VariableDeclaration& node, const ArrayTypeNode* declaredArray);
+
+    void handleScalarInit(const AST::VariableDeclaration& node);
 
     void visit(AST::Program& program) override;
 
+
     void visit(AST::FunctionDeclaration& node) override;
 
-    void visit(AST::ExpressionStatement& node) override;
+    void visit(AST::FunctionCall& node) override;
+
+
+    void visit(AST::VariableDeclaration& node) override;
+
+    void visit(AST::VariableAssignment& node) override;
+
+    void visit(AST::ArrayAssignment& node) override;
+
 
     void visit(AST::IfStatement& node) override;
 
@@ -50,9 +84,8 @@ private:
 
     void visit(AST::Block& node) override;
 
-    void visit(AST::VariableDeclaration& node) override;
+    void visit(AST::ReturnStatement& node) override;
 
-    void visit(AST::FunctionCall& node) override;
 
     void visit(AST::BinaryExpression& node) override;
 
@@ -60,10 +93,10 @@ private:
 
     void visit(AST::IncDecExpression& node) override;
 
-    void visit(AST::VariableAssignment& node) override;
+    void visit(AST::ExpressionStatement& node) override;
 
+    void visit(AST::ArrayIndex& node) override;
 
-    void visit(AST::ReturnStatement& node) override;
 
     void visit(AST::IntegerLiteralNode& node) override;
 
@@ -74,6 +107,8 @@ private:
     void visit(AST::BooleanLiteralNode& node) override;
 
     void visit(AST::VariableExpression& node) override;
+
+    void visit(AST::ArrayLiteral& node) override;
 };
 
 

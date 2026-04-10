@@ -67,6 +67,22 @@ llvm::Value* AST::IncDecExpression::acceptIR(IRGeneratorLLVM& visitor) {
     return visitor.visit(*this);
 }
 
+void AST::ArrayIndex::accept(AstVisitor& visitor) {
+    visitor.visit(*this);
+}
+
+llvm::Value* AST::ArrayIndex::acceptIR(IRGeneratorLLVM& visitor) {
+    return visitor.visit(*this);
+}
+
+void AST::ArrayLiteral::accept(AstVisitor& visitor) {
+    visitor.visit(*this);
+}
+
+llvm::Value* AST::ArrayLiteral::acceptIR(IRGeneratorLLVM& visitor) {
+    return visitor.visit(*this);
+}
+
 void AST::FunctionCall::accept(AstVisitor& visitor) {
     visitor.visit(*this);
 }

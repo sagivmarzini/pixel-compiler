@@ -3,9 +3,10 @@
 #include "CompilerException.h"
 #include "AST/Statement.h"
 #include "ParserError.h"
+#include "types/TypeContext.h"
 
-Parser::Parser(std::vector<Token> tokens)
-    : _tokens(std::move(tokens)), _position(0) {
+Parser::Parser(std::vector<Token> tokens, TypeContext& typeCtx)
+    : _tokens(std::move(tokens)), _position(0), _typeCtx(typeCtx) {
 }
 
 AST::Program Parser::parseProgram() {
@@ -34,13 +35,11 @@ std::unique_ptr<AST::Statement> Parser::parseDeclaration() {
         return parseFunctionDeclaration();
     }
 
-    error(ParserErrorType::ExpectedDeclaration, peek());
-    // Unreachable, but keeps the compiler happy
-    throw std::runtime_error("Internal error: unreachable");
+    logError(ParserErrorType::ExpectedDeclaration, peek());
 }
 
 std::unique_ptr<AST::Statement> Parser::parseStatement() {
-    if (check<LBrace>()) {
+    if (check<LeftBrace>()) {
         return parseBlock();
     }
     if (checkValue(Keyword::Var) || checkValue(Keyword::Const)) {
@@ -53,7 +52,7 @@ std::unique_ptr<AST::Statement> Parser::parseStatement() {
         return parseIfStatement();
     }
     if (matchValue(Keyword::Else)) {
-        error(ParserErrorType::ElseWithoutIf, peekPrevious());
+        logError(ParserErrorType::ElseWithoutIf, peekPrevious());
     }
     if (checkValue(Keyword::While)) {
         return parseWhileLoop();
@@ -62,26 +61,27 @@ std::unique_ptr<AST::Statement> Parser::parseStatement() {
         return parseForLoop();
     }
     if (check<Identifier>()) {
-        if (checkNextValue(Operator::Assignment)) {
-            return parseVariableAssignment();
-        }
+        if (checkNext<LeftBracket>()) return parseArrayAssignment();
+        if (checkNextValue(Operator::Assignment)) return parseVariableAssignment();
     }
 
     // Otherwise parse expression statement
     const auto startToken = peek();
-    auto expression = parseExpression();
+    auto       expression = parseExpression();
+
     expect<Semicolon>();
+
     return std::make_unique<AST::ExpressionStatement>(startToken.metadata, std::move(expression));
 }
 
 std::unique_ptr<AST::Block> Parser::parseBlock() {
     const auto startToken = peek();
-    expect<LBrace>();
+    expect<LeftBrace>();
 
     AST::Block block(peekPrevious().metadata);
-    while (!check<RBrace>()) {
+    while (!check<RightBrace>()) {
         if (isAtEnd()) {
-            error(ParserErrorType::MissingClosingBrace, startToken);
+            logError(ParserErrorType::MissingClosingBrace, startToken);
         }
         try {
             block.statements.push_back(parseStatement());
@@ -93,16 +93,16 @@ std::unique_ptr<AST::Block> Parser::parseBlock() {
             synchronize();
         }
     }
-    expect<RBrace>();
+    expect<RightBrace>();
 
     return std::make_unique<AST::Block>(std::move(block));
 }
 
 std::vector<AST::FunctionCall::FunctionArgument> Parser::parseFunctionArguments() {
     std::vector<AST::FunctionCall::FunctionArgument> args;
-    while (!check<RParen>()) {
+    while (!check<RightParen>()) {
         if (isAtEnd()) {
-            error(ParserErrorType::MissingClosingParen, peek());
+            logError(ParserErrorType::MissingClosingParen, peek());
         }
         std::optional<std::string> paramName;
 
@@ -114,11 +114,11 @@ std::vector<AST::FunctionCall::FunctionArgument> Parser::parseFunctionArguments(
         auto param = parseExpression();
 
         args.emplace_back(std::move(param), paramName);
-        if (!check<RParen>()) {
+        if (!check<RightParen>()) {
             expect<Comma>(); // if didn't read the end, get a comma seperator
             // Check for trailing comma
-            if (check<RParen>())
-                error(ParserErrorType::TrailingComma, peek());
+            if (check<RightParen>())
+                logError(ParserErrorType::TrailingComma, peek());
         }
     }
 
@@ -127,70 +127,93 @@ std::vector<AST::FunctionCall::FunctionArgument> Parser::parseFunctionArguments(
 
 std::unique_ptr<AST::Statement> Parser::parseFunctionDeclaration() {
     expect<Keyword>();
-    auto [name] = expect<Identifier>();
+    auto [name]       = expect<Identifier>();
     auto namePosition = peekPrevious().metadata;
-    expect<LParen>();
+    expect<LeftParen>();
 
     std::vector<AST::FunctionDeclaration::FunctionParameter> parameters;
     //parse parameters
-    while (!check<RParen>()) {
+    while (!check<RightParen>()) {
         if (isAtEnd()) {
-            error(ParserErrorType::MissingClosingParen, peek());
+            logError(ParserErrorType::MissingClosingParen, peek());
         }
         bool isImplicit = match<Underscore>();
 
         auto paramName = expect<Identifier>();
         expect<Colon>();
-        auto paramType = expect<Type>();
+        auto paramType = expect<PrimitiveKind>();
 
-        parameters.emplace_back(paramName.name, paramType, isImplicit);
-        if (!check<RParen>()) {
+        parameters.emplace_back(paramName.name, _typeCtx.get(paramType), isImplicit);
+        if (!check<RightParen>()) {
             expect<Comma>(); // if didn't read the end, get a comma seperator
             // Check for trailing comma
-            if (check<RParen>())
-                error(ParserErrorType::TrailingComma, peek());
+            if (check<RightParen>())
+                logError(ParserErrorType::TrailingComma, peek());
         }
     }
 
-    expect<RParen>();
+    expect<RightParen>();
     expect<Arrow>();
 
-    auto returnType = expect<Type>();
-    auto block = parseBlock();
+    auto returnType = expect<PrimitiveKind>();
+    auto block      = parseBlock();
 
-    return std::make_unique<AST::FunctionDeclaration>(namePosition, returnType, name, parameters, std::move(block));
+    return std::make_unique<AST::FunctionDeclaration>(namePosition, _typeCtx.get(returnType), name, parameters,
+                                                      std::move(block));
 }
 
 std::unique_ptr<AST::Statement> Parser::parseVariableDeclaration() {
-    const bool isConst = checkValue(Keyword::Const) ? true : false;
+    const bool isConst = checkValue(Keyword::Const);
     expect<Keyword>();
 
-    const auto varNameToken = peek(); // for logging error on the variable
-    auto [name] = expect<Identifier>();
+    const auto varNameToken = peek();
+    auto       [name]       = expect<Identifier>();
 
-    // if initializing with inferred type set it to undefined
-    Type type = Type::Unspecified;
-    std::unique_ptr<AST::Expression> value = nullptr;
-    // Ff initializing with type then get it
-    if (match<Colon>()) {
-        type = expect<Type>();
+    // var name[N] — explicit fixed-size array
+    int arraySize = 0;
+    if (match<LeftBracket>()) {
+        if (checkValue(Operator::Minus))
+            logError(ParserErrorType::NonPositiveArraySize, peek());
+        const auto [size] = expect<IntegerLiteral>();
+        if (size < 1)
+            logError(ParserErrorType::NonPositiveArraySize, peekPrevious());
+        arraySize = size;
+        expect<RightBracket>();
     }
 
-    if (checkValue(Operator::Assignment)) {
-        expect<Operator>();
-        value = parseExpression();
+    // : type
+    PrimitiveKind elementKind = PrimitiveKind::Unspecified;
+    if (match<Colon>())
+        elementKind = expect<PrimitiveKind>();
+
+    // = value
+    std::unique_ptr<AST::Expression> value;
+    if (matchValue(Operator::Assignment)) {
+        if (check<LeftBracket>()) {
+            value = parseArrayLiteral();
+            if (arraySize == 0) arraySize = -1; // size inferred by type checker
+        } else {
+            value = parseExpression();
+        }
     }
 
-    if (!value && type == Type::Unspecified) {
-        error(ParserErrorType::TypelessVarDeclaration, varNameToken);
-    }
+    if (!value && elementKind == PrimitiveKind::Unspecified)
+        logError(ParserErrorType::TypelessVarDeclaration, varNameToken);
+
     expect<Semicolon>();
 
-    return std::make_unique<AST::VariableDeclaration>(varNameToken.metadata, isConst, type, name, std::move(value));
+    TypeNode* elementType  = _typeCtx.get(elementKind); // nullptr if Unspecified
+    TypeNode* declaredType = (arraySize != 0)
+                                 ? _typeCtx.getArray(elementType, arraySize)
+                                 : elementType;
+
+    return std::make_unique<AST::VariableDeclaration>(
+        varNameToken.metadata, isConst, declaredType, name, std::move(value)
+    );
 }
 
 std::unique_ptr<AST::Statement> Parser::parseVariableAssignment() {
-    auto name = expect<Identifier>();
+    auto       name    = expect<Identifier>();
     const auto namePos = peekPrevious().metadata;
 
     expectValue(Operator::Assignment);
@@ -201,21 +224,36 @@ std::unique_ptr<AST::Statement> Parser::parseVariableAssignment() {
     return std::make_unique<AST::VariableAssignment>(namePos, name.name, std::move(value));
 }
 
-std::unique_ptr<AST::Expression> Parser::parseFunctionCall() {
-    auto [name] = expect<Identifier>();
+std::unique_ptr<AST::Statement> Parser::parseArrayAssignment() {
+    auto       name    = expect<Identifier>();
     const auto namePos = peekPrevious().metadata;
 
-    expect<LParen>();
+    expect<LeftBracket>();
+    auto index = parseExpression();
+    expect<RightBracket>();
+
+    expectValue(Operator::Assignment);
+    auto value = parseExpression();
+    expect<Semicolon>();
+
+    return std::make_unique<AST::ArrayAssignment>(namePos, name.name, std::move(index), std::move(value));
+}
+
+std::unique_ptr<AST::Expression> Parser::parseFunctionCall() {
+    auto       [name]  = expect<Identifier>();
+    const auto namePos = peekPrevious().metadata;
+
+    expect<LeftParen>();
     auto arguments = parseFunctionArguments();
-    expect<RParen>();
+    expect<RightParen>();
 
     return std::make_unique<AST::FunctionCall>(namePos, name, std::move(arguments));
 }
 
 std::unique_ptr<AST::Statement> Parser::parseIfStatement() {
     expect<Keyword>();
-    const auto ifPos = peekPrevious().metadata;
-    auto condition = parseExpression();
+    const auto ifPos     = peekPrevious().metadata;
+    auto       condition = parseExpression();
 
     auto thenBranch = parseStatement();
 
@@ -234,8 +272,8 @@ std::unique_ptr<AST::Statement> Parser::parseIfStatement() {
 
 std::unique_ptr<AST::Statement> Parser::parseWhileLoop() {
     expect<Keyword>();
-    const auto whilePos = peekPrevious().metadata;
-    auto condition = parseExpression();
+    const auto whilePos  = peekPrevious().metadata;
+    auto       condition = parseExpression();
 
     auto block = parseStatement();
 
@@ -244,7 +282,7 @@ std::unique_ptr<AST::Statement> Parser::parseWhileLoop() {
 
 std::unique_ptr<AST::RangeExpression> Parser::parseRangeExpression() {
     const auto startPosition = peek().metadata;
-    auto start = parseExpression();
+    auto       start         = parseExpression();
     expect<DoubleDot>();
     auto end = parseExpression();
 
@@ -253,8 +291,8 @@ std::unique_ptr<AST::RangeExpression> Parser::parseRangeExpression() {
 
 std::unique_ptr<AST::Statement> Parser::parseForLoop() {
     expect<Keyword>();
-    const auto forPos = peekPrevious().metadata;
-    auto identifier = expect<Identifier>();
+    const auto forPos     = peekPrevious().metadata;
+    auto       identifier = expect<Identifier>();
     expectValue(Keyword::In);
     auto range = parseRangeExpression();
 
@@ -288,10 +326,10 @@ std::unique_ptr<AST::Expression> Parser::parseExpression() {
 
 std::unique_ptr<AST::Expression> Parser::parseBooleanOrExpression() {
     const auto startPosition = peek().metadata;
-    auto left = parseBooleanAndExpression();
+    auto       left          = parseBooleanAndExpression();
 
     while (checkValue(Operator::LogicalOr)) {
-        auto op = expect<Operator>();
+        auto op    = expect<Operator>();
         auto right = parseBooleanAndExpression();
 
         left = std::make_unique<AST::BinaryExpression>(startPosition, std::move(left), op, std::move(right));
@@ -301,10 +339,10 @@ std::unique_ptr<AST::Expression> Parser::parseBooleanOrExpression() {
 
 std::unique_ptr<AST::Expression> Parser::parseBooleanAndExpression() {
     const auto startPosition = peek().metadata;
-    auto left = parseBooleanEqualityExpression();
+    auto       left          = parseBooleanEqualityExpression();
 
     while (checkValue(Operator::LogicalAnd)) {
-        auto op = expect<Operator>();
+        auto op    = expect<Operator>();
         auto right = parseBooleanEqualityExpression();
 
         left = std::make_unique<AST::BinaryExpression>(startPosition, std::move(left), op, std::move(right));
@@ -315,10 +353,10 @@ std::unique_ptr<AST::Expression> Parser::parseBooleanAndExpression() {
 
 std::unique_ptr<AST::Expression> Parser::parseBooleanEqualityExpression() {
     const auto startPosition = peek().metadata;
-    auto left = parseComparisonExpression();
+    auto       left          = parseComparisonExpression();
 
     while (checkValue(Operator::Equal) || checkValue(Operator::NotEqual)) {
-        auto op = expect<Operator>();
+        auto op    = expect<Operator>();
         auto right = parseComparisonExpression();
 
         left = std::make_unique<AST::BinaryExpression>(startPosition, std::move(left), op, std::move(right));
@@ -328,11 +366,11 @@ std::unique_ptr<AST::Expression> Parser::parseBooleanEqualityExpression() {
 
 std::unique_ptr<AST::Expression> Parser::parseComparisonExpression() {
     const auto startPosition = peek().metadata;
-    auto left = parseAdditiveExpression();
+    auto       left          = parseAdditiveExpression();
 
     while (checkValue(Operator::LessThan) || checkValue(Operator::LessEqual)
            || checkValue(Operator::GreaterThan) || checkValue(Operator::GreaterEqual)) {
-        auto op = expect<Operator>();
+        auto op    = expect<Operator>();
         auto right = parseAdditiveExpression();
 
         left = std::make_unique<AST::BinaryExpression>(startPosition, std::move(left), op, std::move(right));
@@ -342,10 +380,10 @@ std::unique_ptr<AST::Expression> Parser::parseComparisonExpression() {
 
 std::unique_ptr<AST::Expression> Parser::parseAdditiveExpression() {
     const auto startPosition = peek().metadata;
-    auto left = parseMultiplicativeExpression();
+    auto       left          = parseMultiplicativeExpression();
 
     while (checkValue(Operator::Plus) || checkValue(Operator::Minus)) {
-        auto op = expect<Operator>();
+        auto op    = expect<Operator>();
         auto right = parseMultiplicativeExpression();
 
         left = std::make_unique<AST::BinaryExpression>(startPosition, std::move(left), op, std::move(right));
@@ -355,10 +393,10 @@ std::unique_ptr<AST::Expression> Parser::parseAdditiveExpression() {
 
 std::unique_ptr<AST::Expression> Parser::parseMultiplicativeExpression() {
     const auto startPosition = peek().metadata;
-    auto left = parseUnaryExpression();
+    auto       left          = parseUnaryExpression();
 
     while (checkValue(Operator::Star) || checkValue(Operator::Slash)) {
-        auto op = expect<Operator>();
+        auto op    = expect<Operator>();
         auto right = parseUnaryExpression();
 
         left = std::make_unique<AST::BinaryExpression>(startPosition, std::move(left), op, std::move(right));
@@ -369,7 +407,7 @@ std::unique_ptr<AST::Expression> Parser::parseMultiplicativeExpression() {
 std::unique_ptr<AST::Expression> Parser::parseUnaryExpression() {
     if (checkValue(Operator::Plus) || checkValue(Operator::Minus) ||
         checkValue(Operator::Exclamation)) {
-        auto op = expect<Operator>();
+        auto op      = expect<Operator>();
         auto operand = parseUnaryExpression(); // to allow -++i
 
         return std::make_unique<AST::UnaryExpression>(peekPrevious().metadata, std::move(operand), op);
@@ -381,11 +419,11 @@ std::unique_ptr<AST::Expression> Parser::parseIncDecExpression() {
     // check for prefix ++ and --
     if (checkValue(Operator::PlusPlus) || checkValue(Operator::MinusMinus)) {
         if (!checkNext<Identifier>()) {
-            error(ParserErrorType::IncrementNonVariable, peek());
+            logError(ParserErrorType::IncrementNonVariable, peek());
         }
 
-        auto op = expect<Operator>();
-        auto var = expect<Identifier>();
+        auto op     = expect<Operator>();
+        auto var    = expect<Identifier>();
         auto fixPos = AST::IncDecExpression::Fix::Prefix;
 
         return std::make_unique<AST::IncDecExpression>(peekPrevious().metadata, var.name, op, fixPos);
@@ -394,12 +432,12 @@ std::unique_ptr<AST::Expression> Parser::parseIncDecExpression() {
     auto expr = parsePrimary();
 
     while (checkValue(Operator::PlusPlus) || checkValue(Operator::MinusMinus)) {
-        if (auto var = dynamic_cast<AST::VariableExpression *>(expr.get())) {
-            auto op = expect<Operator>();
+        if (auto var = dynamic_cast<AST::VariableExpression*>(expr.get())) {
+            auto op     = expect<Operator>();
             auto fixPos = AST::IncDecExpression::Fix::Postfix;
-            expr = std::make_unique<AST::IncDecExpression>(peekPrevious().metadata, var->name, op, fixPos);
+            expr        = std::make_unique<AST::IncDecExpression>(peekPrevious().metadata, var->name, op, fixPos);
         } else {
-            error(ParserErrorType::IncrementNonVariable, peek());
+            logError(ParserErrorType::IncrementNonVariable, peek());
         }
     }
     return expr;
@@ -419,21 +457,45 @@ std::unique_ptr<AST::Expression> Parser::parsePrimary() {
         return std::make_unique<AST::StringLiteralNode>(peek().metadata, expect<StringLiteral>().value);
     }
     if (check<Identifier>()) {
-        if (checkNext<LParen>()) return parseFunctionCall();
+        if (checkNext<LeftParen>()) return parseFunctionCall();
+        if (checkNext<LeftBracket>()) return parseArrayIndex();
 
         auto variable = std::make_unique<AST::VariableExpression>(peekPrevious().metadata, expect<Identifier>().name);
 
         return variable;
     }
-    if (check<LParen>()) {
-        expect<LParen>();
+    if (check<LeftParen>()) {
+        expect<LeftParen>();
         auto expression = parseExpression();
-        expect<RParen>();
+        expect<RightParen>();
         return expression;
     }
-    error(ParserErrorType::ExpectedExpression, peek());
+    logError(ParserErrorType::ExpectedExpression, peek());
+}
 
-    throw std::runtime_error("Internal error: unreachable");
+std::unique_ptr<AST::Expression> Parser::parseArrayLiteral() {
+    expect<LeftBracket>();
+
+    std::vector<std::unique_ptr<AST::Expression> > elements;
+    if (!check<RightBracket>()) {
+        elements.push_back(parseExpression());
+        while (check<Comma>()) {
+            expect<Comma>();
+            elements.push_back(parseExpression());
+        }
+    }
+    expect<RightBracket>();
+
+    return std::make_unique<AST::ArrayLiteral>(peekPrevious().metadata, std::move(elements));
+}
+
+std::unique_ptr<AST::Expression> Parser::parseArrayIndex() {
+    const auto [arrayName] = expect<Identifier>();
+    expect<LeftBracket>();
+    auto index = parseExpression();
+    expect<RightBracket>();
+
+    return std::make_unique<AST::ArrayIndex>(peekPrevious().metadata, arrayName, std::move(index));
 }
 
 
@@ -506,16 +568,13 @@ T Parser::expect() {
 
     // error() throws ParseUnwindException, so this line
     // technically never returns, but we call it to log and throw.
-    error(ParserErrorType::UnexpectedToken, peek(), T());
-
-    // Unreachable, but keeps the compiler happy
-    throw std::runtime_error("Internal error: unreachable");
+    logError(ParserErrorType::UnexpectedToken, peek(), T());
 }
 
 template<typename T>
 T Parser::expectValue(T value) {
     if (!checkValue(value)) {
-        error(ParserErrorType::UnexpectedToken, peek(), value);
+        logError(ParserErrorType::UnexpectedToken, peek(), value);
     }
     T returnValue = std::get<T>(peek().type);
     advance();
@@ -556,15 +615,11 @@ bool Parser::isAtStartOfStatement() {
                 return false;
         }
     }
-    if (check<LBrace>()) return true;
+    if (check<LeftBrace>()) return true;
     return false;
 }
 
-void Parser::error(const ParserErrorType& type, const Token& errorToken, const TokenType& expectedTokenType) {
-    if (_isPanicMode) {
-        std::cout << "There was actually a panic mode so I skipped (testing if this flag is necessary)\n";
-        return;
-    } // Don't report secondary errors
+void Parser::logError(const ParserErrorType& type, const Token& errorToken, const TokenType& expectedTokenType) {
     _isPanicMode = true;
 
     _errors.push_back(ParserError(type, errorToken, expectedTokenType));

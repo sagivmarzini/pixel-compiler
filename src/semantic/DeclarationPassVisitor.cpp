@@ -4,6 +4,7 @@
 #include "Symbol.h"
 #include "SymbolTable.h"
 #include "parse/AST/AstNode.h"
+#include "types/TypeContext.h"
 
 void DeclarationPassVisitor::run(AST::AstNode& root) {
     enterScope(); // Push the global scope
@@ -68,7 +69,7 @@ void DeclarationPassVisitor::visit(AST::WhileLoop& node) {
 void DeclarationPassVisitor::visit(AST::ForLoop& node) {
     enterScope();
 
-    const auto symbol = _symbolTable.declare(node.identifier, Symbol::SymbolKind::Variable, Type::Int);
+    const auto symbol = _symbolTable.declare(node.identifier, Symbol::SymbolKind::Variable, _typeCtx.getInt());
     if (!symbol) {
         logError(SemanticErrorType::DuplicateDeclaration, node, node.identifier);
     }
@@ -87,7 +88,7 @@ void DeclarationPassVisitor::visit(AST::Block& node) {
 }
 
 void DeclarationPassVisitor::visit(AST::VariableDeclaration& node) {
-    const auto symbolPtr = _symbolTable.declare(node.name, Symbol::SymbolKind::Variable, node.specifiedType,
+    const auto symbolPtr = _symbolTable.declare(node.name, Symbol::SymbolKind::Variable, node.type,
                                                 node.isConst);
     if (!symbolPtr) {
         logError(SemanticErrorType::DuplicateDeclaration, node, node.name);
@@ -145,5 +146,17 @@ void DeclarationPassVisitor::visit(AST::RangeExpression& node) {
 }
 
 void DeclarationPassVisitor::visit(AST::ExpressionStatement& node) {
+    // nothing to do in declaration pass
+}
+
+void DeclarationPassVisitor::visit(AST::ArrayAssignment& node) {
+    // nothing to do in declaration pass
+}
+
+void DeclarationPassVisitor::visit(AST::ArrayLiteral& node) {
+    // nothing to do in declaration pass
+}
+
+void DeclarationPassVisitor::visit(AST::ArrayIndex& node) {
     // nothing to do in declaration pass
 }

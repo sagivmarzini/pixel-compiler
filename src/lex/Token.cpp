@@ -6,7 +6,7 @@ std::ostream& operator<<(std::ostream& os, const Keyword& keyword) {
     return os << keywordToString(keyword);
 }
 
-std::ostream& operator<<(std::ostream& os, const Type& type) {
+std::ostream& operator<<(std::ostream& os, const PrimitiveKind& type) {
     return os << typeToString(type);
 }
 
@@ -14,22 +14,26 @@ std::ostream& operator<<(std::ostream& os, const Operator& op) {
     return os << operatorToString(op);
 }
 
+Token::Token(TokenType type, int line, int col, std::string lexeme)
+    : type(std::move(type)), metadata(line, col, std::move(lexeme)) {
+}
+
 std::ostream& operator<<(std::ostream& os, const Token& token) {
     os << tokenTypeToString(token.type);
     return os;
 }
 
-std::string typeToString(const Type type) {
+std::string typeToString(const PrimitiveKind type) {
     switch (type) {
-        case Type::Int: return "int";
-        case Type::Float: return "float";
-        case Type::Bool: return "boolean";
-        case Type::Pointer: return "ptr";
-        case Type::String: return "string";
-        case Type::Color: return "color";
-        case Type::Void: return "void";
-        case Type::Unspecified: return "Type"; // for printing 'expected a 'type' token'
-        case Type::Error: return "Error";
+        case PrimitiveKind::Int: return "int";
+        case PrimitiveKind::Float: return "float";
+        case PrimitiveKind::Bool: return "boolean";
+        case PrimitiveKind::Pointer: return "ptr";
+        case PrimitiveKind::String: return "string";
+        case PrimitiveKind::Color: return "color";
+        case PrimitiveKind::Void: return "void";
+        case PrimitiveKind::Unspecified: return "Type"; // for printing 'expected a 'type' token'
+        case PrimitiveKind::Error: return "Error";
         default: return "unknown type";
     }
 }
@@ -79,10 +83,12 @@ std::string tokenTypeToString(const TokenType& tokenType) {
         if constexpr (std::is_same_v<T, Semicolon>) return ";";
         else if constexpr (std::is_same_v<T, Comma>) return ",";
         else if constexpr (std::is_same_v<T, Colon>) return ":";
-        else if constexpr (std::is_same_v<T, LBrace>) return "{";
-        else if constexpr (std::is_same_v<T, RBrace>) return "}";
-        else if constexpr (std::is_same_v<T, LParen>) return "(";
-        else if constexpr (std::is_same_v<T, RParen>) return ")";
+        else if constexpr (std::is_same_v<T, LeftBrace>) return "{";
+        else if constexpr (std::is_same_v<T, RightBrace>) return "}";
+        else if constexpr (std::is_same_v<T, LeftParen>) return "(";
+        else if constexpr (std::is_same_v<T, RightParen>) return ")";
+        else if constexpr (std::is_same_v<T, LeftBracket>) return "[";
+        else if constexpr (std::is_same_v<T, RightBracket>) return "]";
         else if constexpr (std::is_same_v<T, Arrow>) return "->";
         else if constexpr (std::is_same_v<T, DoubleDot>) return "..";
         else if constexpr (std::is_same_v<T, Underscore>) return "Underscore";
@@ -91,12 +97,12 @@ std::string tokenTypeToString(const TokenType& tokenType) {
             return operatorToString(arg);
         } else if constexpr (std::is_same_v<T, Keyword>) {
             return keywordToString(arg);
-        } else if constexpr (std::is_same_v<T, Type>) {
+        } else if constexpr (std::is_same_v<T, PrimitiveKind>) {
             return typeToString(arg);
         } else if constexpr (std::is_same_v<T, Identifier>) {
             return "Identifier(" + arg.name + ")";
         } else if constexpr (std::is_same_v<T, IntegerLiteral>) {
-            return "IntegerLiteral(" + std::to_string(arg.value) + ")";
+            return "IntegerLiteral" + (arg.value == -1 ? "" : "(" + std::to_string(arg.value) + ")");
         } else if constexpr (std::is_same_v<T, FloatLiteral>) {
             return "FloatLiteral(" + std::to_string(arg.value) + ")";
         } else if constexpr (std::is_same_v<T, StringLiteral>) {
