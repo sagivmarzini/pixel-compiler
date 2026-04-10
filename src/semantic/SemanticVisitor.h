@@ -1,0 +1,37 @@
+#ifndef COMPILER_PROJECT_SEMANTICVISITOR_H
+#define COMPILER_PROJECT_SEMANTICVISITOR_H
+
+#include "CompilerError.h"
+#include "SemanticError.h"
+#include "parse/AST/AstVisitor.h"
+#include "SymbolTable.h"
+
+class TypeContext;
+class SymbolPool;
+
+class SemanticVisitor : public AstVisitor {
+public:
+    explicit SemanticVisitor(SymbolTable& symbolTable, TypeContext& typeCtx);
+
+    virtual void run(AST::AstNode& root) = 0;
+
+protected:
+    SymbolTable& _symbolTable;
+    TypeContext& _typeCtx;
+    std::vector<CompilerError> _errors;
+
+    void enterScope() const;
+
+    void exitScope() const;
+
+    template<typename T>
+    void logError(SemanticErrorType type, const AST::AstNode& node, T&& contextData) {
+        _errors.push_back(SemanticError(type, node, ErrorContext(std::forward<T>(contextData))));
+    }
+
+    // Overload for errors with no extra data
+    void logError(SemanticErrorType type, const AST::AstNode& node);
+};
+
+
+#endif //COMPILER_PROJECT_SEMANTICVISITOR_H
