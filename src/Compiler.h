@@ -13,8 +13,6 @@ public:
 
     void compile();
 
-    static void printTokens(const std::vector<Token>& tokens);
-
 private:
     std::string _sourceFileName;
     std::string _sourceCode;

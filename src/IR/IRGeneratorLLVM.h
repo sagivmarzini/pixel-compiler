@@ -21,8 +21,6 @@ public:
     explicit IRGeneratorLLVM(const TypeContext&    typeContext, const FunctionRegistry& registry,
                              const GlobalRegistry& globalRegistry);
 
-    void print() const;
-
     void createExecutable(const std::string& outputPath) const;
 
     llvm::Value* visit(const AST::Program& program);

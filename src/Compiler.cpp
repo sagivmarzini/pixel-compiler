@@ -5,13 +5,11 @@
 #include "semantic/SymbolPool.h"
 #include "semantic/SymbolTable.h"
 #include <fstream>
-#include <iostream>
 #include <sstream>
 #include <utility>
 
 #include "IR/IRGeneratorLLVM.h"
 #include "parse/Parser.h"
-#include "parse/AST/AstPrinter.h"
 #include "semantic/DeclarationPassVisitor.h"
 #include "semantic/TypeCheckerVisitor.h"
 
@@ -41,8 +39,6 @@ void Compiler::compile() {
     Parser parser(tokens, _typeContext);
     auto   ast = parser.parseProgram();
 
-    AstPrinter printer;
-
     // Semantic analyzing
     SymbolPool  symbols;
     SymbolTable symbolTable(symbols);
@@ -54,19 +50,11 @@ void Compiler::compile() {
 
     TypeCheckerVisitor typeChecker(symbolTable, _typeContext);
     typeChecker.run(ast);
-    printer.print(ast);
 
     IRGeneratorLLVM irGenerator(_typeContext, _functionRegistry, _globalRegistry);
     irGenerator.visit(ast);
-    irGenerator.print();
 
     irGenerator.createExecutable("../out");
-}
-
-void Compiler::printTokens(const std::vector<Token>& tokens) {
-    for (const auto& token: tokens) {
-        std::cout << token << '\n';
-    }
 }
 
 void Compiler::initFunctions() {
