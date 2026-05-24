@@ -278,14 +278,13 @@ A summary of the built-in graphics functions. All coordinate and color values ar
 Pixel 1.0 is a first-generation language with known constraints:
 
 - **Single-file programs** — no import system or multi-file compilation
-- **No arrays or collections** — scalar variables only
+- **Arrays are fixed-size only** — the size must be a compile-time integer constant; no dynamic or resizable collections
 - **No structs or user-defined types** — only the built-in primitives
 - **No null / none value**
 - **Functions cannot be stored in variables** or passed as first-class values in Pixel code
-- **Int and Float are not implicitly converted** — arithmetic between them requires explicit casting
 - **No standard library** — beyond the built-in math and graphics functions, there are no file I/O, networking, or
   string manipulation utilities
-- **`for` loop ranges are integers only** — Float ranges require a `while` loop or division
+- **`for` loop ranges are integers only** — Float ranges require a `while` loop
 
 These are intended starting points for future development, not permanent design decisions.
 
