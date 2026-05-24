@@ -1,6 +1,6 @@
 # Contributing to Pixel
 
-Welcome — and thank you for your interest in contributing to Pixel, a compiled creative-coding language that targets native binaries via LLVM.
+Welcome - and thank you for your interest in contributing to Pixel, a compiled creative-coding language that targets native binaries via LLVM.
 
 ---
 
@@ -18,20 +18,22 @@ Welcome — and thank you for your interest in contributing to Pixel, a compiled
 
 ### Prerequisites
 
-| Tool | Version |
-|------|---------|
-| CMake | ≥ 3.20 |
+| Tool         | Version              |
+| ------------ | -------------------- |
+| CMake        | ≥ 3.20               |
 | C++ compiler | C++23 (clang or gcc) |
-| LLVM | 18 |
+| LLVM         | 18                   |
 
-SDL3 and SDL3_ttf are fetched automatically by CMake — you do not need to install them.
+SDL3 and SDL3_ttf are fetched automatically by CMake - you do not need to install them.
 
 **macOS**
+
 ```bash
 brew install llvm@18 cmake
 ```
 
 **Ubuntu / Debian**
+
 ```bash
 wget https://apt.llvm.org/llvm.sh && chmod +x llvm.sh && sudo ./llvm.sh 18
 sudo apt install cmake build-essential
@@ -48,8 +50,8 @@ cmake --build build
 
 This produces two artifacts inside `build/`:
 
-- `pxl` — the compiler executable
-- `libs/libpxl_runtime.a` — the static runtime that is linked into every compiled program
+- `pxl` - the compiler executable
+- `libs/libpxl_runtime.a` - the static runtime that is linked into every compiled program
 
 ### Run a Pixel program
 
@@ -90,36 +92,37 @@ LLVM IR Generator        src/IR/
 Native Binary (out)  ◄── libpxl_runtime.a  runtime/
 ```
 
-### Lexer — `src/lex/`
+### Lexer - `src/lex/`
 
 `Lexer.cpp` converts the raw source text into a flat `std::vector<Token>`. Each `Token` holds a `TokenType` variant (see `Token.h`) and a `TokenMetadata` struct with line, column, and original lexeme. The keyword map at the bottom of `Token.h` drives keyword recognition.
 
 To add a new keyword or operator: add an entry to `Token.h` (the `Keyword` enum or `Operator` enum, plus the keyword map), then update `Lexer.cpp` to emit it.
 
-### Parser — `src/parse/`
+### Parser - `src/parse/`
 
 `Parser.cpp` is a hand-written recursive-descent parser. It consumes the token stream and produces an AST composed of nodes from `src/parse/AST/`. Statements live in `Statement.h`; expressions in `Expression.h`. Every node implements two virtual methods: `accept(AstVisitor&)` for semantic passes and `acceptIR(IRGeneratorLLVM&)` for code generation.
 
 `TypeContext` (`src/types/`) is the authoritative allocator for `TypeNode` objects; the parser calls into it to create and intern type nodes so the same logical type is always the same pointer.
 
 To add a new statement or expression:
+
 1. Define the AST node in `Statement.h` / `Expression.h`
 2. Implement the `accept` and `acceptIR` method bodies in the corresponding `.cpp`
 3. Add the production rule in `Parser.cpp`
 4. Add visitor overloads in `AstVisitor.h` and `AstPrinter.cpp`
 
-### Semantic Analyzer — `src/semantic/`
+### Semantic Analyzer - `src/semantic/`
 
 The semantic phase runs two visitors over the AST in order:
 
-1. **`DeclarationPassVisitor`** — a first pass that registers all top-level function and global declarations into the symbol table before any type checking. This allows functions to call each other regardless of declaration order.
-2. **`TypeCheckerVisitor`** — a full tree walk that resolves types, checks assignments, validates function calls, and annotates every expression node with its `TypeNode*`.
+1. **`DeclarationPassVisitor`** - a first pass that registers all top-level function and global declarations into the symbol table before any type checking. This allows functions to call each other regardless of declaration order.
+2. **`TypeCheckerVisitor`** - a full tree walk that resolves types, checks assignments, validates function calls, and annotates every expression node with its `TypeNode*`.
 
 Built-in functions are registered in `FunctionRegistry.cpp`. Built-in global variables (like `mouseX`, `mouseY`, `keyCode`) are registered in `GlobalRegistry.cpp`. Adding a new built-in means adding an entry to both the registry and the corresponding runtime implementation in `runtime/pxl_graphics.c`.
 
 `SymbolTable` and `Scope` manage lexical scoping. Each `Block` AST node owns a `Scope*`; scopes form a parent chain.
 
-### IR Generator — `src/IR/IRGeneratorLLVM.cpp`
+### IR Generator - `src/IR/IRGeneratorLLVM.cpp`
 
 `IRGeneratorLLVM` implements `AstVisitor` and walks the typed AST to emit LLVM IR via `llvm::IRBuilder`. It holds a `_namedValues` map from `Symbol*` to `llvm::AllocaInst*` for local variables. Global variables are emitted as `llvm::GlobalVariable`.
 
@@ -127,9 +130,9 @@ All calling conventions follow the `FunctionInfo` records from `FunctionRegistry
 
 `castToType()` handles all safe numeric promotions (Int → Float). Adding a new built-in type would require a new `toLLVMType()` implementation in `TypeNode`.
 
-### Runtime — `runtime/`
+### Runtime - `runtime/`
 
-Written in C. `pxl_graphics.c` implements the event loop, the SDL3 renderer, transform stack, all drawing primitives, input polling, and the `noise`/`noise2` functions. It is compiled into `libpxl_runtime.a` and statically linked into every `out` binary — the user's machine needs no runtime dependencies.
+Written in C. `pxl_graphics.c` implements the event loop, the SDL3 renderer, transform stack, all drawing primitives, input polling, and the `noise`/`noise2` functions. It is compiled into `libpxl_runtime.a` and statically linked into every `out` binary - the user's machine needs no runtime dependencies.
 
 ---
 
@@ -140,7 +143,7 @@ Written in C. `pxl_graphics.c` implements the event loop, the SDL3 renderer, tra
 - **Visitor pattern** for all AST traversals. New passes implement `AstVisitor`.
 - **Error reporting.** Use `logError(ErrorType, node)` rather than throwing or printing directly. The compiler collects all errors and reports them after the pass completes.
 - **No comments describing what the code does.** Name things well instead. Add a comment only when a non-obvious constraint or workaround is present.
-- **Runtime is C, not C++.** Keep `runtime/` as plain C99 — no C++ constructs.
+- **Runtime is C, not C++.** Keep `runtime/` as plain C99 - no C++ constructs.
 
 ---
 
@@ -148,7 +151,7 @@ Written in C. `pxl_graphics.c` implements the event loop, the SDL3 renderer, tra
 
 1. Browse issues labelled [`good first issue`](https://github.com/sagivmarzini/pixel-compiler/issues?q=is%3Aopen+label%3A%22good+first+issue%22).
 2. Leave a comment on the issue so others know you are working on it.
-3. Each issue body contains a **Where** section naming which pipeline stage(s) to touch, and an **Acceptance test** — a `.pxl` snippet that must compile and produce the correct output once the feature is done.
+3. Each issue body contains a **Where** section naming which pipeline stage(s) to touch, and an **Acceptance test** - a `.pxl` snippet that must compile and produce the correct output once the feature is done.
 
 ---
 

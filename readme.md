@@ -50,14 +50,14 @@ func draw() -> Void {
 
 ## Features
 
-- **Compiled to native code** — programs run as standalone binaries with no runtime dependencies on the target machine
-- **p5.js-style graphics API** — `setup`/`draw` lifecycle, immediate-mode 2D primitives, fill/stroke state, transform
+- **Compiled to native code** - programs run as standalone binaries with no runtime dependencies on the target machine
+- **p5.js-style graphics API** - `setup`/`draw` lifecycle, immediate-mode 2D primitives, fill/stroke state, transform
   stack
-- **Static typing with inference** — types are checked at compile time; explicit annotations are optional
-- **Named parameters** — all function calls use named arguments for self-documenting code
-- **Interactive input** — mouse position, mouse button, and keyboard state available every frame
-- **Built-in creative math** — `noise`, `noise2`, `map`, `lerp`, `constrain`, `dist`, `random`, and full trig
-- **Cross-platform** — builds and runs on macOS, Linux, and Windows
+- **Static typing with inference** - types are checked at compile time; explicit annotations are optional
+- **Named parameters** - all function calls use named arguments for self-documenting code
+- **Interactive input** - mouse position, mouse button, and keyboard state available every frame
+- **Built-in creative math** - `noise`, `noise2`, `map`, `lerp`, `constrain`, `dist`, `random`, and full trig
+- **Cross-platform** - builds and runs on macOS, Linux, and Windows
 
 ---
 
@@ -90,10 +90,10 @@ LLVM IR Generator
 Native Binary (out)
 ```
 
-**Compiler** (`/compiler`) — written in C++23. Implements the lexer, parser, semantic analyzer, and LLVM IR code
+**Compiler** (`/compiler`) - written in C++23. Implements the lexer, parser, semantic analyzer, and LLVM IR code
 generator. Built as the `pxl` executable.
 
-**Runtime** (`/runtime`) — written in C. Implements the graphics engine (`pxl_graphics`), the event loop, transform
+**Runtime** (`/runtime`) - written in C. Implements the graphics engine (`pxl_graphics`), the event loop, transform
 stack, noise, and all drawing primitives on top of SDL3. Compiled into `libpxl_runtime.a` and statically linked into
 every output binary - no shared libraries required at runtime.
 
@@ -102,14 +102,14 @@ every output binary - no shared libraries required at runtime.
 ## Dependencies
 
 | Dependency                                        | Version | Purpose                                |
-|---------------------------------------------------|---------|----------------------------------------|
+| ------------------------------------------------- | ------- | -------------------------------------- |
 | [LLVM](https://llvm.org)                          | 18      | IR generation and native code emission |
 | [SDL3](https://libsdl.org)                        | latest  | Window, renderer, input                |
 | [SDL3_ttf](https://github.com/libsdl-org/SDL_ttf) | latest  | Font rendering                         |
 | [CMake](https://cmake.org)                        | ≥ 3.20  | Build system                           |
 | C++ compiler                                      | C++23   | Building the compiler itself           |
 
-SDL3 and SDL3_ttf are fetched and built automatically via CMake FetchContent — you do not need to install them manually.
+SDL3 and SDL3_ttf are fetched and built automatically via CMake FetchContent - you do not need to install them manually.
 
 ---
 
@@ -153,8 +153,8 @@ cmake --build build
 
 This builds two things:
 
-- `pxl` — the compiler executable
-- `libpxl_runtime.a` — the static runtime library that gets linked into every compiled program
+- `pxl` - the compiler executable
+- `libpxl_runtime.a` - the static runtime library that gets linked into every compiled program
 
 The compiler automatically knows where `libpxl_runtime.a` lives relative to itself after building.
 
@@ -185,7 +185,7 @@ pxl mysketch.pxl    # also works
 ```
 
 The compiler produces a single self-contained binary called `out`. It has no dependency on the Pixel runtime, SDL3, or
-any other library on the machine it runs on — everything is statically linked in at compile time.
+any other library on the machine it runs on - everything is statically linked in at compile time.
 
 ### Example
 
@@ -261,7 +261,7 @@ For full language documentation, see [`DOCS.md`](DOCS.md).
 A summary of the built-in graphics functions. All coordinate and color values are `Float`.
 
 | Category     | Functions                                                                                                           |
-|--------------|---------------------------------------------------------------------------------------------------------------------|
+| ------------ | ------------------------------------------------------------------------------------------------------------------- |
 | Canvas       | `canvas`, `frameRate`, `title`                                                                                      |
 | Color        | `background`, `fill`, `fillAlpha`, `noFill`, `stroke`, `strokeAlpha`, `noStroke`, `strokeWeight`                    |
 | Primitives   | `rect`, `circle`, `ellipse`, `line`, `triangle`, `point`                                                            |
@@ -277,14 +277,14 @@ A summary of the built-in graphics functions. All coordinate and color values ar
 
 Pixel 1.0 is a first-generation language with known constraints:
 
-- **Single-file programs** — no import system or multi-file compilation
-- **Arrays are fixed-size only** — the size must be a compile-time integer constant; no dynamic or resizable collections
-- **No structs or user-defined types** — only the built-in primitives
+- **Single-file programs** - no import system or multi-file compilation
+- **Arrays are fixed-size only** - the size must be a compile-time integer constant; no dynamic or resizable collections
+- **No structs or user-defined types** - only the built-in primitives
 - **No null / none value**
 - **Functions cannot be stored in variables** or passed as first-class values in Pixel code
-- **No standard library** — beyond the built-in math and graphics functions, there are no file I/O, networking, or
+- **No standard library** - beyond the built-in math and graphics functions, there are no file I/O, networking, or
   string manipulation utilities
-- **`for` loop ranges are integers only** — Float ranges require a `while` loop
+- **`for` loop ranges are integers only** - Float ranges require a `while` loop
 
 These are intended starting points for future development, not permanent design decisions.
 
@@ -300,4 +300,4 @@ Built as a final "Magshimim" project.
 
 ## License
 
-MIT License — see [`LICENSE`](LICENSE) for details.
+MIT License - see [`LICENSE`](LICENSE) for details.
