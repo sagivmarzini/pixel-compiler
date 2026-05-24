@@ -1,5 +1,7 @@
 # Pixel
 
+The first creative coding language that compiles to native binaries via LLVM.
+
 A compiled, statically-typed creative coding language inspired by [p5.js](https://p5js.org)
 and [Processing](https://processing.org). Write expressive graphics programs in a clean, purpose-built syntax - Pixel
 compiles them to native binaries via LLVM.
