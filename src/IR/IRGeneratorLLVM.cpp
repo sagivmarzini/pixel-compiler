@@ -9,7 +9,6 @@
 #include "semantic/Symbol.h"
 #include "semantic/SymbolTable.h"
 #include <llvm/IR/Module.h>
-#include <llvm/IR/Verifier.h>
 #include <vector>
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Support/TargetSelect.h>
@@ -738,13 +737,6 @@ llvm::Value* IRGeneratorLLVM::getArrayElementPtr(llvm::Value*       arrayAddr,
     );
 }
 
-
-void IRGeneratorLLVM::print() const {
-    _module->print(llvm::outs(), nullptr);
-    if (llvm::verifyModule(*_module, &llvm::errs())) {
-        std::cerr << "LLVM Module is broken! See errors above." << std::endl;
-    }
-}
 
 void IRGeneratorLLVM::createExecutable(const std::string& outputPath) const {
     // 1. Initialize LLVM targets for the native architecture
