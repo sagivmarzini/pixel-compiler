@@ -454,7 +454,7 @@ void TypeCheckerVisitor::visit(AST::ReturnStatement& node) {
 
     const PrimitiveKind returnedType       = kindOf(node.value->type);
     const PrimitiveKind functionReturnType = kindOf(_currentFunctionReturnType);
-    if (!isAssignableTo(functionReturnType, returnedType)) {
+   if (!isAssignableTo(returnedType, functionReturnType)) {
         logError(SemanticErrorType::TypeMismatch, node, TypeMismatchData(functionReturnType, returnedType));
     }
 }
