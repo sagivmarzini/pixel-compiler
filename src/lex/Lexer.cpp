@@ -320,7 +320,7 @@ void Lexer::skipMultiLineComment() {
             break;
         }
 
-        if (currentChar == '\n') _line++;
+        if (currentChar == '\n') { _line++; _col = 0; }
 
         comment += eat();
     }
@@ -337,6 +337,7 @@ Token Lexer::parseStringLiteral() {
         }
 
 
+        if (peek() == '\n') { _line++; _col = 0; }
         string += eat();
     }
     eat(); // eat closing quotes
