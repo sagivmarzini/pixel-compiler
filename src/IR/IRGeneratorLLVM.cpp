@@ -491,14 +491,19 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::IncDecExpression& node) {
         addr,
         node.variableName
     );
-
-    llvm::Value* newValue;
-    if (node.op == Operator::PlusPlus) {
-        newValue = _builder->CreateAdd(oldValue, _builder->getInt32(1), "inc");
+llvm::Value* newValue;
+    llvm::Value* step;
+    if (oldValue->getType()->isFloatingPointTy()) {
+        step = llvm::ConstantFP::get(_builder->getFloatTy(), 1.0);
+        newValue = (node.op == Operator::PlusPlus)
+            ? _builder->CreateFAdd(oldValue, step, "finc")
+            : _builder->CreateFSub(oldValue, step, "fdec");
     } else {
-        newValue = _builder->CreateSub(oldValue, _builder->getInt32(1), "dec");
+        step = _builder->getInt32(1);
+        newValue = (node.op == Operator::PlusPlus)
+            ? _builder->CreateAdd(oldValue, step, "inc")
+            : _builder->CreateSub(oldValue, step, "dec");
     }
-
     // Store the updated value back to memory
     _builder->CreateStore(newValue, addr);
 
