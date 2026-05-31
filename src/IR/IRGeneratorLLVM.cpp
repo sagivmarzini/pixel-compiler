@@ -401,10 +401,10 @@ llvm::Value* IRGeneratorLLVM::visit(const AST::BinaryExpression& node) {
         case Operator::Star:
             if (isFloat) return _builder->CreateFMul(lhs, rhs, "multmp");
             if (isInt) return _builder->CreateMul(lhs, rhs, "multmp");
-        case Operator::Slash:
-            lhs = castToType(lhs, _builder->getFloatTy());
-            rhs = castToType(rhs, _builder->getFloatTy());
-            return _builder->CreateFDiv(lhs, rhs, "divtmp");
+      case Operator::Slash:
+            if (isFloat) return _builder->CreateFDiv(lhs, rhs, "divtmp");
+            if (isInt)   return _builder->CreateSDiv(lhs, rhs, "divtmp");
+            throw std::runtime_error("| LLVM | Internal: unexpected type for Slash");
         case Operator::Equal:
             if (isFloat) return _builder->CreateFCmpOEQ(lhs, rhs, "eqtmp");
             if (isInt) return _builder->CreateICmpEQ(lhs, rhs, "eqtmp");
