@@ -1,0 +1,7 @@
+func setup() -> Void {
+}
+
+func draw() -> Void {
+    for i in 0..10 step 2 {
+    }
+}

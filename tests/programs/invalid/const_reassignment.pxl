@@ -1,0 +1,8 @@
+func setup() -> Void {
+}
+
+var counter: Int = 0;
+
+func draw() -> Void {
+    counter = 1;
+}

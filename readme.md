@@ -40,6 +40,7 @@ func draw() -> Void {
 - [Dependencies](#dependencies)
 - [Building from Source](#building-from-source)
 - [Usage](#usage)
+- [Testing](#testing)
 - [Language Overview](#language-overview)
 - [Graphics API](#graphics-api)
 - [Limitations](#limitations)
@@ -193,6 +194,30 @@ any other library on the machine it runs on - everything is statically linked in
 pxl examples/bouncing_ball
 ./out
 ```
+
+---
+
+## Testing
+
+Pixel includes a comprehensive test suite with **90+ unit tests** and **11 integration tests** that verify the compiler across all pipeline stages.
+
+### Running Tests Locally
+
+```bash
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+ctest --test-dir build --output-on-failure
+```
+
+**Test Coverage:**
+- **Lexer tests** — tokenization, keywords, operators, error handling
+- **Parser tests** — AST construction, operator precedence, control flow
+- **Integration tests** — full compilation pipeline (valid and invalid programs)
+- **Regression tests** — for previously reported bugs
+
+Tests run automatically on every pull request via GitHub Actions (Ubuntu 22.04, LLVM 18).
+
+For details on writing and contributing tests, see [`TESTING.md`](TESTING.md).
 
 ---
 

@@ -664,7 +664,7 @@ llvm::Function* IRGeneratorLLVM::getOrDeclareBuiltinFunction(const std::string& 
 
     if (info->kind == FunctionKind::Intrinsic && info->intrinsicId.has_value()) {
         auto* f32 = llvm::Type::getFloatTy(_module->getContext());
-        return llvm::Intrinsic::getOrInsertDeclaration(_module.get(), *info->intrinsicId, {f32});
+        return llvm::Intrinsic::getDeclaration(_module.get(), *info->intrinsicId, {f32});
     }
 
     const std::string& llvmName = info->llvmName.empty() ? name : info->llvmName;
@@ -751,7 +751,7 @@ void IRGeneratorLLVM::createExecutable(const std::string& outputPath) const {
 
     // 2. Get the target triple (e.g., "x86_64-pc-linux-gnu")
     const llvm::Triple targetTriple(llvm::sys::getDefaultTargetTriple());
-    _module->setTargetTriple(targetTriple);
+    _module->setTargetTriple(targetTriple.str());
 
     std::string error;
     const auto* target = llvm::TargetRegistry::lookupTarget(targetTriple.str(), error);

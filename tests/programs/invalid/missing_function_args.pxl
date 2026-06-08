@@ -1,0 +1,10 @@
+func add(a: Int, b: Int) -> Int {
+    return a;
+}
+
+func setup() -> Void {
+    var x = add();
+}
+
+func draw() -> Void {
+}

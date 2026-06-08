@@ -1,0 +1,8 @@
+func setup() -> Void {
+}
+
+func draw() -> Void {
+    var x: Float = 5.0;
+    x++;
+    x--;
+}
