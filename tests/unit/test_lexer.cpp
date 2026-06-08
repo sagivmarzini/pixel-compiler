@@ -38,13 +38,13 @@ TEST_CASE("Lexer — float literals", "[lexer]") {
         auto tokens = lex("3.14");
         REQUIRE(std::holds_alternative<FloatLiteral>(tokens[0].type));
         float val = std::get<FloatLiteral>(tokens[0].type).value;
-        REQUIRE(val > 3.13f && val < 3.15f);
+        REQUIRE((val > 3.13f && val < 3.15f));
     }
     SECTION("leading zero") {
         auto tokens = lex("0.5");
         REQUIRE(std::holds_alternative<FloatLiteral>(tokens[0].type));
         float val = std::get<FloatLiteral>(tokens[0].type).value;
-        REQUIRE(val > 0.49f && val < 0.51f);
+        REQUIRE((val > 0.49f && val < 0.51f));
     }
     SECTION("range boundary: 1..5 lexes as IntegerLiteral(1), DoubleDot, IntegerLiteral(5)") {
         auto tokens = lex("1..5");

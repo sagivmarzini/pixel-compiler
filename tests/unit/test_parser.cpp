@@ -227,7 +227,7 @@ TEST_CASE("Parser — function calls", "[parser]") {
         auto* var_decl = dynamic_cast<AST::VariableDeclaration*>(func_decl->body->statements[0].get());
         auto* call = dynamic_cast<AST::FunctionCall*>(var_decl->initializer.get());
         REQUIRE(call != nullptr);
-        CHECK(call->name == "foo");
+        CHECK(call->functionName == "foo");
     }
     SECTION("function call with named arguments") {
         auto prog = parse("func f() -> Void { g(x: 1, y: 2); }");
