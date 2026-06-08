@@ -67,3 +67,13 @@ pxl_add_compile_test(invalid/undefined_var
     ${CMAKE_CURRENT_SOURCE_DIR}/programs/invalid/undefined_var.pxl FALSE)
 pxl_add_compile_test(invalid/unexpected_char
     ${CMAKE_CURRENT_SOURCE_DIR}/programs/invalid/unexpected_char.pxl FALSE)
+
+# 80/20 tests: High-impact type checking and semantic errors
+pxl_add_compile_test(invalid/type_mismatch
+    ${CMAKE_CURRENT_SOURCE_DIR}/programs/invalid/type_mismatch.pxl FALSE)
+pxl_add_compile_test(invalid/const_reassignment
+    ${CMAKE_CURRENT_SOURCE_DIR}/programs/invalid/const_reassignment.pxl FALSE)
+pxl_add_compile_test(invalid/missing_function_args
+    ${CMAKE_CURRENT_SOURCE_DIR}/programs/invalid/missing_function_args.pxl FALSE)
+pxl_add_compile_test(invalid/negative_array_size
+    ${CMAKE_CURRENT_SOURCE_DIR}/programs/invalid/negative_array_size.pxl FALSE)

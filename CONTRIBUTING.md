@@ -159,13 +159,35 @@ Written in C. `pxl_graphics.c` implements the event loop, the SDL3 renderer, tra
 
 1. Fork the repository and create a feature branch: `git checkout -b feat/my-feature`
 2. Make your changes following the coding conventions above.
-3. Verify the build passes: `cmake --build build`
-4. Write or update a `.pxl` test sketch that exercises your change.
+3. Build and test locally:
+   ```bash
+   cmake --build build
+   ctest --test-dir build --output-on-failure
+   ```
+4. Add tests that exercise your change:
+   - **Unit tests** (if modifying lexer/parser): add to `tests/unit/test_lexer.cpp` or `tests/unit/test_parser.cpp`
+   - **Integration test** (any change): add a `.pxl` program to `tests/programs/valid/` or `tests/programs/invalid/`
+   - **Regression test** (bug fixes): include a test that reproduces the original bug
+   - See [`TESTING.md`](TESTING.md) for detailed examples and patterns.
 5. Open a pull request against `main`. The PR description should explain:
    - What changed and why
    - Which pipeline stage(s) were modified
    - How to test it manually
 6. Link the related issue with `Closes #N` in the PR body.
+
+> **Note:** All pull requests require passing tests. GitHub Actions automatically runs the full test suite on every PR.
+
+---
+
+## Testing Strategy
+
+Pixel uses **Catch2 v3** for unit tests and **CTest** for integration tests. The strategy focuses on high-impact tests:
+
+- **Lexer/Parser tests** catch syntax and parsing errors immediately
+- **Integration tests** verify the full compilation pipeline
+- **Regression tests** prevent previously-fixed bugs from reoccurring
+
+For details on the testing approach and how to contribute tests, see [`TESTING.md`](TESTING.md) and [`TEST_ARCHITECTURE.md`](TEST_ARCHITECTURE.md).
 
 ---
 
