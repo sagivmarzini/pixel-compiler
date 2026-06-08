@@ -92,9 +92,9 @@ TEST_CASE("Parser — for loop", "[parser]") {
         auto prog = parse("func f() -> Void { for i in 0..10 {} }");
         auto* func_decl = dynamic_cast<AST::FunctionDeclaration*>(prog.statements[0].get());
         REQUIRE(func_decl != nullptr);
-        auto& block = func_decl->body;
-        REQUIRE(block.statements.size() == 1);
-        auto* for_loop = dynamic_cast<AST::ForLoop*>(block.statements[0].get());
+        auto* block = func_decl->body.get();
+        REQUIRE(block->statements.size() == 1);
+        auto* for_loop = dynamic_cast<AST::ForLoop*>(block->statements[0].get());
         REQUIRE(for_loop != nullptr);
     }
 }
@@ -104,8 +104,8 @@ TEST_CASE("Parser — if / else", "[parser]") {
         auto prog = parse("func f() -> Void { if true {} }");
         auto* func_decl = dynamic_cast<AST::FunctionDeclaration*>(prog.statements[0].get());
         REQUIRE(func_decl != nullptr);
-        REQUIRE(func_decl->body.statements.size() == 1);
-        auto* if_stmt = dynamic_cast<AST::IfStatement*>(func_decl->body.statements[0].get());
+        REQUIRE(func_decl->body->statements.size() == 1);
+        auto* if_stmt = dynamic_cast<AST::IfStatement*>(func_decl->body->statements[0].get());
         REQUIRE(if_stmt != nullptr);
         CHECK(if_stmt->elseBranch == nullptr);
     }
@@ -113,7 +113,7 @@ TEST_CASE("Parser — if / else", "[parser]") {
         auto prog = parse("func f() -> Void { if true {} else {} }");
         auto* func_decl = dynamic_cast<AST::FunctionDeclaration*>(prog.statements[0].get());
         REQUIRE(func_decl != nullptr);
-        auto* if_stmt = dynamic_cast<AST::IfStatement*>(func_decl->body.statements[0].get());
+        auto* if_stmt = dynamic_cast<AST::IfStatement*>(func_decl->body->statements[0].get());
         REQUIRE(if_stmt != nullptr);
         REQUIRE(if_stmt->elseBranch != nullptr);
     }
@@ -127,7 +127,7 @@ TEST_CASE("Parser — while loop", "[parser]") {
         auto prog = parse("func f() -> Void { while true {} }");
         auto* func_decl = dynamic_cast<AST::FunctionDeclaration*>(prog.statements[0].get());
         REQUIRE(func_decl != nullptr);
-        auto* while_loop = dynamic_cast<AST::WhileLoop*>(func_decl->body.statements[0].get());
+        auto* while_loop = dynamic_cast<AST::WhileLoop*>(func_decl->body->statements[0].get());
         REQUIRE(while_loop != nullptr);
     }
 }
@@ -136,7 +136,7 @@ TEST_CASE("Parser — binary expressions and precedence", "[parser]") {
     SECTION("addition") {
         auto prog = parse("func f() -> Void { var x = 1 + 2; }");
         auto* func_decl = dynamic_cast<AST::FunctionDeclaration*>(prog.statements[0].get());
-        auto* var_decl = dynamic_cast<AST::VariableDeclaration*>(func_decl->body.statements[0].get());
+        auto* var_decl = dynamic_cast<AST::VariableDeclaration*>(func_decl->body->statements[0].get());
         REQUIRE(var_decl != nullptr);
         auto* bin_expr = dynamic_cast<AST::BinaryExpression*>(var_decl->initializer.get());
         REQUIRE(bin_expr != nullptr);
@@ -145,7 +145,7 @@ TEST_CASE("Parser — binary expressions and precedence", "[parser]") {
     SECTION("multiplication binds tighter than addition") {
         auto prog = parse("func f() -> Void { var x = 1 + 2 * 3; }");
         auto* func_decl = dynamic_cast<AST::FunctionDeclaration*>(prog.statements[0].get());
-        auto* var_decl = dynamic_cast<AST::VariableDeclaration*>(func_decl->body.statements[0].get());
+        auto* var_decl = dynamic_cast<AST::VariableDeclaration*>(func_decl->body->statements[0].get());
         auto* plus_expr = dynamic_cast<AST::BinaryExpression*>(var_decl->initializer.get());
         REQUIRE(plus_expr != nullptr);
         CHECK(plus_expr->op == Operator::Plus);
@@ -156,7 +156,7 @@ TEST_CASE("Parser — binary expressions and precedence", "[parser]") {
     SECTION("comparison") {
         auto prog = parse("func f() -> Void { var b = 1 < 2; }");
         auto* func_decl = dynamic_cast<AST::FunctionDeclaration*>(prog.statements[0].get());
-        auto* var_decl = dynamic_cast<AST::VariableDeclaration*>(func_decl->body.statements[0].get());
+        auto* var_decl = dynamic_cast<AST::VariableDeclaration*>(func_decl->body->statements[0].get());
         auto* cmp_expr = dynamic_cast<AST::BinaryExpression*>(var_decl->initializer.get());
         REQUIRE(cmp_expr != nullptr);
         CHECK(cmp_expr->op == Operator::LessThan);
@@ -167,9 +167,9 @@ TEST_CASE("Parser — increment/decrement expressions", "[parser]") {
     SECTION("postfix ++") {
         auto prog = parse("func f() -> Void { x++; }");
         auto* func_decl = dynamic_cast<AST::FunctionDeclaration*>(prog.statements[0].get());
-        auto* expr_stmt = dynamic_cast<AST::ExpressionStatement*>(func_decl->body.statements[0].get());
+        auto* expr_stmt = dynamic_cast<AST::ExpressionStatement*>(func_decl->body->statements[0].get());
         REQUIRE(expr_stmt != nullptr);
-        auto* inc_dec = dynamic_cast<AST::IncDecExpression*>(expr_stmt->value.get());
+        auto* inc_dec = dynamic_cast<AST::IncDecExpression*>(expr_stmt->expression.get());
         REQUIRE(inc_dec != nullptr);
         CHECK(inc_dec->fix == AST::IncDecExpression::Fix::Postfix);
         CHECK(inc_dec->op == Operator::PlusPlus);
@@ -177,9 +177,9 @@ TEST_CASE("Parser — increment/decrement expressions", "[parser]") {
     SECTION("prefix --") {
         auto prog = parse("func f() -> Void { --x; }");
         auto* func_decl = dynamic_cast<AST::FunctionDeclaration*>(prog.statements[0].get());
-        auto* expr_stmt = dynamic_cast<AST::ExpressionStatement*>(func_decl->body.statements[0].get());
+        auto* expr_stmt = dynamic_cast<AST::ExpressionStatement*>(func_decl->body->statements[0].get());
         REQUIRE(expr_stmt != nullptr);
-        auto* inc_dec = dynamic_cast<AST::IncDecExpression*>(expr_stmt->value.get());
+        auto* inc_dec = dynamic_cast<AST::IncDecExpression*>(expr_stmt->expression.get());
         REQUIRE(inc_dec != nullptr);
         CHECK(inc_dec->fix == AST::IncDecExpression::Fix::Prefix);
     }
@@ -189,14 +189,14 @@ TEST_CASE("Parser — return statements", "[parser]") {
     SECTION("return with value") {
         auto prog = parse("func f() -> Int { return 42; }");
         auto* func_decl = dynamic_cast<AST::FunctionDeclaration*>(prog.statements[0].get());
-        auto* ret_stmt = dynamic_cast<AST::ReturnStatement*>(func_decl->body.statements[0].get());
+        auto* ret_stmt = dynamic_cast<AST::ReturnStatement*>(func_decl->body->statements[0].get());
         REQUIRE(ret_stmt != nullptr);
         REQUIRE(ret_stmt->value != nullptr);
     }
     SECTION("return without value") {
         auto prog = parse("func f() -> Void { return; }");
         auto* func_decl = dynamic_cast<AST::FunctionDeclaration*>(prog.statements[0].get());
-        auto* ret_stmt = dynamic_cast<AST::ReturnStatement*>(func_decl->body.statements[0].get());
+        auto* ret_stmt = dynamic_cast<AST::ReturnStatement*>(func_decl->body->statements[0].get());
         REQUIRE(ret_stmt != nullptr);
         CHECK(ret_stmt->value == nullptr);
     }
@@ -206,14 +206,14 @@ TEST_CASE("Parser — array operations", "[parser]") {
     SECTION("array index") {
         auto prog = parse("func f() -> Void { var x = arr[0]; }");
         auto* func_decl = dynamic_cast<AST::FunctionDeclaration*>(prog.statements[0].get());
-        auto* var_decl = dynamic_cast<AST::VariableDeclaration*>(func_decl->body.statements[0].get());
+        auto* var_decl = dynamic_cast<AST::VariableDeclaration*>(func_decl->body->statements[0].get());
         auto* arr_index = dynamic_cast<AST::ArrayIndex*>(var_decl->initializer.get());
         REQUIRE(arr_index != nullptr);
     }
     SECTION("array literal") {
         auto prog = parse("func f() -> Void { var xs = [1, 2, 3]; }");
         auto* func_decl = dynamic_cast<AST::FunctionDeclaration*>(prog.statements[0].get());
-        auto* var_decl = dynamic_cast<AST::VariableDeclaration*>(func_decl->body.statements[0].get());
+        auto* var_decl = dynamic_cast<AST::VariableDeclaration*>(func_decl->body->statements[0].get());
         auto* arr_lit = dynamic_cast<AST::ArrayLiteral*>(var_decl->initializer.get());
         REQUIRE(arr_lit != nullptr);
         CHECK(arr_lit->elements.size() == 3);
@@ -224,7 +224,7 @@ TEST_CASE("Parser — function calls", "[parser]") {
     SECTION("function call as expression") {
         auto prog = parse("func f() -> Void { var x = foo(a: 1); }");
         auto* func_decl = dynamic_cast<AST::FunctionDeclaration*>(prog.statements[0].get());
-        auto* var_decl = dynamic_cast<AST::VariableDeclaration*>(func_decl->body.statements[0].get());
+        auto* var_decl = dynamic_cast<AST::VariableDeclaration*>(func_decl->body->statements[0].get());
         auto* call = dynamic_cast<AST::FunctionCall*>(var_decl->initializer.get());
         REQUIRE(call != nullptr);
         CHECK(call->name == "foo");
@@ -232,9 +232,9 @@ TEST_CASE("Parser — function calls", "[parser]") {
     SECTION("function call with named arguments") {
         auto prog = parse("func f() -> Void { g(x: 1, y: 2); }");
         auto* func_decl = dynamic_cast<AST::FunctionDeclaration*>(prog.statements[0].get());
-        auto* expr_stmt = dynamic_cast<AST::ExpressionStatement*>(func_decl->body.statements[0].get());
+        auto* expr_stmt = dynamic_cast<AST::ExpressionStatement*>(func_decl->body->statements[0].get());
         REQUIRE(expr_stmt != nullptr);
-        auto* call = dynamic_cast<AST::FunctionCall*>(expr_stmt->value.get());
+        auto* call = dynamic_cast<AST::FunctionCall*>(expr_stmt->expression.get());
         REQUIRE(call != nullptr);
         CHECK(call->arguments.size() == 2);
     }
