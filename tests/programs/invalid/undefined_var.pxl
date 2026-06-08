@@ -1,0 +1,6 @@
+func setup() -> Void {
+}
+
+func draw() -> Void {
+    undefined_var = 42;
+}

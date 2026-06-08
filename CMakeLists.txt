@@ -163,3 +163,7 @@ target_compile_definitions(pxl PRIVATE
 )
 
 target_link_libraries(pxl PRIVATE ${llvm_libs})
+
+# ─── Tests ──────────────────────────────────────────────────────────────────
+enable_testing()
+add_subdirectory(tests)

@@ -1,0 +1,12 @@
+var counter: Int = 0;
+
+func setup() -> Void {
+    counter = 1;
+}
+
+func draw() -> Void {
+    var x = 42;
+    var y = 3.14;
+    var flag = true;
+    counter++;
+}
